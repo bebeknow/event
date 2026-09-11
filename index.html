@@ -219,6 +219,27 @@
     margin:22px 0 26px;background:var(--card);border:2px dashed var(--accent);
     border-radius:16px;padding:18px;font-size:16px;font-weight:800;color:var(--accent-deep);
   }
+  #done .code-box{
+    margin-top:14px;padding-top:14px;border-top:1px dashed var(--accent);
+  }
+  #done .code-box[hidden]{display:none}
+  #done .code-label{font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--ink-soft)}
+  #done .code-num{
+    font-size:44px;font-weight:900;letter-spacing:.18em;color:var(--ink);
+    line-height:1.2;margin:4px 0 2px;font-variant-numeric:tabular-nums;
+  }
+  #done .code-meta{font-size:12.5px;font-weight:600;color:var(--ink-soft)}
+  #done .code-clock{
+    font-size:13px;font-weight:700;color:var(--accent-deep);margin-top:8px;
+    font-variant-numeric:tabular-nums;
+  }
+  .hint.warn{color:var(--err);font-weight:600}
+  .hint.warn[hidden]{display:none}
+  .notice{
+    margin:0 0 14px;padding:12px 14px;border-radius:12px;
+    background:#fff6d6;color:#6b5320;font-size:13px;line-height:1.6;border:1px solid #f0dc9a;
+  }
+  .notice[hidden]{display:none}
   #done .links{text-align:left}
   #done .done-label{
     font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--accent-deep);
@@ -304,6 +325,7 @@
     <div class="sec-title">참여 정보를 알려주세요</div>
 
     <form id="eventForm" novalidate>
+      <div class="notice" id="deviceNotice" hidden></div>
       <div class="card">
         <div class="field">
           <label class="t" for="f-name">보호자 성함<span class="req">*</span></label>
@@ -312,6 +334,7 @@
         <div class="field">
           <label class="t" for="f-phone">휴대전화번호<span class="req">*</span></label>
           <input type="tel" id="f-phone" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000">
+          <p class="hint warn" id="phoneWarn" hidden></p>
         </div>
         <div class="field">
           <label class="t" for="f-zip">받으실 주소<span class="req">*</span></label>
@@ -400,7 +423,15 @@
     <div class="check">✓</div>
     <h2>참여가 완료되었어요!</h2>
     <p>이제 아기에게 보낼 엽서를 쓰러 가볼까요?</p>
-    <div class="staff">이 화면을 스태프에게 보여주세요 🙂</div>
+    <div class="staff">
+      이 화면을 스태프에게 보여주세요 🙂
+      <div class="code-box" id="codeBox" hidden>
+        <div class="code-label">수령 코드</div>
+        <div class="code-num" id="codeNum">0000</div>
+        <div class="code-meta"><span id="codeWho"></span> · <span id="codeNo"></span></div>
+        <div class="code-clock" id="codeClock">--:--:--</div>
+      </div>
+    </div>
 
     <div class="done-label">FOLLOW BEBEKNOW</div>
     <div class="links" id="doneLinks">
@@ -454,7 +485,16 @@ var LINKS = {
 };
 
 /* ============================================================
- * [2] 구글폼 설정
+ * [2] 중복 차단 백엔드 (Google Apps Script 웹 앱 URL)
+ *  ★ bebeknow_apps_script.gs 를 배포하고 받은 URL을 여기에 넣으세요.
+ *    (https://script.google.com/macros/s/…/exec)
+ *  - 넣으면: 전화번호 중복 차단 + 수령 코드 발급 + "참여자" 탭에 저장
+ *  - 비워두면: 아래 [3] 구글폼으로 저장 (중복 차단 없음)
+ * ============================================================ */
+var GAS_URL = "";
+
+/* ============================================================
+ * [3] 구글폼 설정 (GAS_URL이 비어 있을 때만 사용)
  *  응답은 구글시트 "베베노 느린 우체통 이벤트(응답)"에 자동 저장됩니다.
  * ============================================================ */
 var GF = {
@@ -551,12 +591,53 @@ function hideErr(){ document.getElementById("errMsg").style.display="none"; }
   document.addEventListener("keydown", function(e){ if(e.key === "Escape" && !layer.hidden) closeAddr(); });
 })();
 
-/* ---------- 전화번호 자동 하이픈 ---------- */
+/* ---------- 이 기기에서 이미 참여했는지 (참고용 안내, 차단은 아님) ---------- */
+var DEVICE_KEY = "bebeknow_event_done";
+(function(){
+  try{
+    var raw = localStorage.getItem(DEVICE_KEY);
+    if(!raw) return;
+    var d = JSON.parse(raw);
+    var n = document.getElementById("deviceNotice");
+    n.textContent = "이 기기에서 이미 참여하셨어요 (" + d.at + ", " + d.name + "님). 다른 분이시면 계속 진행해주세요.";
+    n.hidden = false;
+  }catch(e){}
+})();
+
+/* ---------- 전화번호 자동 하이픈 + 중복 미리 조회 ---------- */
+var phoneWarn = document.getElementById("phoneWarn");
+var precheckTimer = null, precheckSeq = 0;
+function phoneDigits(v){ return String(v||"").replace(/\D/g,""); }
+
+function precheckPhone(phone){
+  if(!GAS_URL) return;
+  var seq = ++precheckSeq;
+  fetch(GAS_URL + "?phone=" + encodeURIComponent(phone), {method:"GET", redirect:"follow"})
+    .then(function(r){ return r.json(); })
+    .then(function(res){
+      if(seq !== precheckSeq) return;  // 더 최신 조회가 있으면 무시
+      if(res && res.status === "dup"){
+        phoneWarn.textContent = "이미 참여하신 번호예요 (" + res.at + " 참여). 한 분당 한 번만 참여할 수 있어요.";
+        phoneWarn.hidden = false;
+      }else{
+        phoneWarn.hidden = true;
+      }
+    })
+    .catch(function(){ /* 조회 실패는 무시 — 제출 시 다시 확인 */ });
+}
+
 document.getElementById("f-phone").addEventListener("input", function(){
-  var d = this.value.replace(/\D/g,"").slice(0,11);
+  var d = phoneDigits(this.value).slice(0,11);
   if(d.length > 7) this.value = d.slice(0,3)+"-"+d.slice(3,7)+"-"+d.slice(7);
   else if(d.length > 3) this.value = d.slice(0,3)+"-"+d.slice(3);
   else this.value = d;
+
+  phoneWarn.hidden = true;
+  clearTimeout(precheckTimer);
+  var v = this.value;
+  if(/^01[016789]-\d{3,4}-\d{4}$/.test(v)){
+    precheckTimer = setTimeout(function(){ precheckPhone(v); }, 400);
+  }
 });
 
 /* ---------- 제출 ---------- */
@@ -581,10 +662,44 @@ document.getElementById("eventForm").addEventListener("submit", function(ev){
   if(!agree1) return showErr("개인정보 수집·이용 동의(필수)에 체크해주세요.");
   if(!agree2) return showErr("마케팅 정보 수신 동의 여부를 선택해주세요. (동의하지 않으셔도 참여 가능해요)");
 
+  var btn = document.getElementById("submitBtn");
+  function lock(){ btn.disabled = true; btn.textContent = "제출 중..."; }
+  function unlock(){ btn.disabled = false; btn.textContent = "참여 완료하기"; }
+
+  /* ===== A. 중복 차단 백엔드로 제출 (GAS_URL 설정 시) ===== */
+  if(GAS_URL){
+    lock();
+    var payload = {
+      name: name, phone: phone, zip: zip, address: addr1, address2: addr2,
+      baby: baby || "미입력", events: events.join(", "),
+      agree1: true, agree2: agree2.value === "yes"
+    };
+    fetch(GAS_URL, { method:"POST", body: JSON.stringify(payload), redirect:"follow" })
+      .then(function(r){ return r.json(); })
+      .then(function(res){
+        if(!res || res.status === "error" || res.status === "bad"){
+          unlock();
+          return showErr("저장 중 문제가 생겼어요. 잠시 후 다시 시도하거나 스태프에게 알려주세요.");
+        }
+        if(res.status === "dup"){
+          unlock();
+          phoneWarn.textContent = "이미 참여하신 번호예요 (" + res.at + " 참여).";
+          phoneWarn.hidden = false;
+          return showErr("이미 참여하신 번호예요 (" + res.at + " 참여). 한 분당 한 번만 참여할 수 있어요. 완료 화면을 잃어버리셨다면 스태프에게 번호를 알려주세요.");
+        }
+        finish(res);
+      })
+      .catch(function(){
+        unlock();
+        showErr("네트워크 연결이 불안정해요. 잠시 후 다시 시도해주세요.");
+      });
+    return;
+  }
+
+  /* ===== B. 구글폼으로 제출 (GAS_URL 미설정 시 — 중복 차단 없음) ===== */
   if(!GF.action || !GF.entries.name){
     return showErr("폼 연결 설정이 아직 완료되지 않았습니다. 담당자에게 알려주세요.");
   }
-
   var p = new URLSearchParams();
   p.append(GF.entries.name, name);
   p.append(GF.entries.phone, phone);
@@ -594,18 +709,36 @@ document.getElementById("eventForm").addEventListener("submit", function(ev){
   if(GF.entries.agree1) p.append(GF.entries.agree1, "개인정보 수집·이용에 동의합니다");
   if(GF.entries.agree2) p.append(GF.entries.agree2, agree2.value==="yes" ? "마케팅 정보 수신에 동의합니다" : "동의하지 않습니다");
 
-  var btn = document.getElementById("submitBtn");
-  btn.disabled = true; btn.textContent = "제출 중...";
-
+  lock();
   fetch(GF.action, {
     method:"POST", mode:"no-cors",
     headers:{"Content-Type":"application/x-www-form-urlencoded"},
     body:p.toString()
-  }).then(finish).catch(finish);
+  }).then(function(){ finish(null); }).catch(function(){ finish(null); });
 
-  function finish(){
+  /* ===== 완료 화면 ===== */
+  function finish(res){
     document.getElementById("formView").style.display="none";
     document.getElementById("done").style.display="block";
+
+    if(res && res.code){
+      var box = document.getElementById("codeBox");
+      document.getElementById("codeNum").textContent = res.code;
+      document.getElementById("codeWho").textContent = name + " · " + phone.slice(-4);
+      document.getElementById("codeNo").textContent = "No." + res.no;
+      box.hidden = false;
+      /* 실시간 시계 — 캡처 화면은 시간이 멈춰 있어 구분됩니다 */
+      var clock = document.getElementById("codeClock");
+      function tick(){
+        var t = new Date();
+        function z(n){ return (n<10?"0":"")+n; }
+        clock.textContent = (t.getMonth()+1)+"/"+t.getDate()+" "+z(t.getHours())+":"+z(t.getMinutes())+":"+z(t.getSeconds());
+      }
+      tick(); setInterval(tick, 1000);
+    }
+    try{
+      localStorage.setItem(DEVICE_KEY, JSON.stringify({ name: name, at: (res && res.at) || "오늘" }));
+    }catch(e){}
     window.scrollTo(0,0);
   }
 });
