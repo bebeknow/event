@@ -691,6 +691,7 @@ function precheckPhone(phone){
         phoneWarn.textContent = "이미 참여하신 번호예요 (" + res.at + " 참여). 한 분당 한 번만 참여할 수 있어요.";
         phoneWarn.hidden = false;
       }else{
+        phoneWarn.textContent = "";
         phoneWarn.hidden = true;
       }
     })
@@ -703,6 +704,7 @@ document.getElementById("f-phone").addEventListener("input", function(){
   else if(d.length > 3) this.value = d.slice(0,3)+"-"+d.slice(3);
   else this.value = d;
 
+  phoneWarn.textContent = "";
   phoneWarn.hidden = true;
   clearTimeout(precheckTimer);
   var v = this.value;
