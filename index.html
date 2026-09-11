@@ -235,12 +235,25 @@
   }
   .hint.warn{color:var(--err);font-weight:600}
   .hint.warn[hidden]{display:none}
-  .notice{
-    margin:0 0 14px;padding:12px 14px;border-radius:12px;
-    background:#fff6d6;color:#6b5320;font-size:13px;line-height:1.6;border:1px solid #f0dc9a;
-  }
-  .notice[hidden]{display:none}
   #done .links{text-align:left}
+
+  /* ===== 이미 참여 완료된 기기 ===== */
+  #locked{display:none;text-align:center;padding:40px 0 0}
+  #locked .lock-ico{
+    width:84px;height:84px;border-radius:50%;background:var(--accent-tint);
+    font-size:38px;line-height:84px;margin:0 auto 20px;
+  }
+  #locked h2{font-size:21px;font-weight:800;margin-bottom:8px}
+  #locked p{font-size:14px;color:var(--ink-soft);line-height:1.7}
+  #locked .lock-box{
+    margin:20px 0 26px;background:var(--card);border:1px solid var(--line);
+    border-radius:16px;padding:18px;font-size:14px;line-height:1.7;color:var(--ink);
+  }
+  #locked .done-label{
+    font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--accent-deep);
+    text-align:left;margin:0 2px 8px;
+  }
+  #locked .links{text-align:left}
   #done .done-label{
     font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--accent-deep);
     text-align:left;margin:0 2px 8px;
@@ -325,7 +338,6 @@
     <div class="sec-title">참여 정보를 알려주세요</div>
 
     <form id="eventForm" novalidate>
-      <div class="notice" id="deviceNotice" hidden></div>
       <div class="card">
         <div class="field">
           <label class="t" for="f-name">보호자 성함<span class="req">*</span></label>
@@ -452,6 +464,34 @@
       </a>
     </div>
 
+    <footer>
+      <div class="foot-brand">BEBEKNOW</div>
+      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow</p>
+    </footer>
+  </div>
+
+  <!-- ===== 이미 참여 완료된 기기 ===== -->
+  <div id="locked">
+    <div class="lock-ico">🔒</div>
+    <h2>이미 참여가 완료된 기기예요</h2>
+    <p id="lockMeta"></p>
+    <div class="lock-box">
+      한 기기·한 번호당 <b>한 번만</b> 참여할 수 있어요.<br>
+      아직 선물을 받지 못하셨다면 스태프에게 <b>휴대전화번호</b>를 알려주세요.
+    </div>
+    <div class="done-label">FOLLOW BEBEKNOW</div>
+    <div class="links">
+      <a class="link-row ig" data-link="instagram" href="#" target="_blank" rel="noopener noreferrer">
+        <div class="num">📸</div>
+        <div class="tx"><b>인스타그램 팔로우하기</b><span>@bebeknow_official</span></div>
+        <div class="go">바로가기 ↗</div>
+      </a>
+      <a class="link-row web" data-link="homepage" href="#" target="_blank" rel="noopener noreferrer">
+        <div class="num">🏠</div>
+        <div class="tx"><b>공식 홈페이지 둘러보기</b><span>베베노 제품과 브랜드 이야기</span></div>
+        <div class="go">바로가기 ↗</div>
+      </a>
+    </div>
     <footer>
       <div class="foot-brand">BEBEKNOW</div>
       <p class="foot-txt">주식회사 라이프비기닝 · bebeknow</p>
@@ -591,17 +631,37 @@ function hideErr(){ document.getElementById("errMsg").style.display="none"; }
   document.addEventListener("keydown", function(e){ if(e.key === "Escape" && !layer.hidden) closeAddr(); });
 })();
 
-/* ---------- 이 기기에서 이미 참여했는지 (참고용 안내, 차단은 아님) ---------- */
+/* ---------- 참여 완료된 기기 잠금 ----------
+ *  - 제출이 끝난 기기는 다음 접속부터 입력 폼 대신 "이미 참여 완료" 화면만 보입니다.
+ *  - 풀리는 경우 ① GAS_URL 연결 상태에서 시트의 해당 번호가 삭제됨 (자동 확인)
+ *              ② 스태프가 주소 뒤에 ?reset 을 붙여 접속 (비상 해제)
+ * -------------------------------------------- */
 var DEVICE_KEY = "bebeknow_event_done";
+function readDevice(){ try{ var r = localStorage.getItem(DEVICE_KEY); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
+function clearDevice(){ try{ localStorage.removeItem(DEVICE_KEY); }catch(e){} }
+function showLocked(d){
+  document.getElementById("formView").style.display = "none";
+  document.getElementById("done").style.display = "none";
+  document.getElementById("lockMeta").textContent = (d.at || "오늘") + " · " + (d.name || "") + "님 · 끝번호 " + (d.phone ? d.phone.slice(-4) : "----");
+  document.getElementById("locked").style.display = "block";
+  window.scrollTo(0,0);
+}
+function showForm(){
+  document.getElementById("locked").style.display = "none";
+  document.getElementById("formView").style.display = "block";
+}
 (function(){
-  try{
-    var raw = localStorage.getItem(DEVICE_KEY);
-    if(!raw) return;
-    var d = JSON.parse(raw);
-    var n = document.getElementById("deviceNotice");
-    n.textContent = "이 기기에서 이미 참여하셨어요 (" + d.at + ", " + d.name + "님). 다른 분이시면 계속 진행해주세요.";
-    n.hidden = false;
-  }catch(e){}
+  if(/[?&]reset(=|&|$)/.test(location.search)){ clearDevice(); return; }   /* 스태프 비상 해제 */
+  var d = readDevice();
+  if(!d) return;
+  showLocked(d);
+  /* 서버 연결 시: 시트에서 지워졌으면 자동으로 잠금 해제 */
+  if(GAS_URL && d.phone){
+    fetch(GAS_URL + "?phone=" + encodeURIComponent(d.phone), {method:"GET", redirect:"follow"})
+      .then(function(r){ return r.json(); })
+      .then(function(res){ if(res && res.status === "ok"){ clearDevice(); showForm(); } })
+      .catch(function(){ /* 확인 실패 시 잠금 유지 */ });
+  }
 })();
 
 /* ---------- 전화번호 자동 하이픈 + 중복 미리 조회 ---------- */
@@ -737,7 +797,9 @@ document.getElementById("eventForm").addEventListener("submit", function(ev){
       tick(); setInterval(tick, 1000);
     }
     try{
-      localStorage.setItem(DEVICE_KEY, JSON.stringify({ name: name, at: (res && res.at) || "오늘" }));
+      var t = new Date();
+      var stamp = (res && res.at) || ((t.getMonth()+1) + "/" + t.getDate() + " " + (t.getHours()<10?"0":"") + t.getHours() + ":" + (t.getMinutes()<10?"0":"") + t.getMinutes());
+      localStorage.setItem(DEVICE_KEY, JSON.stringify({ name: name, at: stamp, phone: phoneDigits(phone), code: (res && res.code) || "" }));
     }catch(e){}
     window.scrollTo(0,0);
   }
