@@ -281,8 +281,6 @@
     background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;
   }
   .wish-row select:focus{border-color:var(--accent);background-color:#fff}
-  .special-note{margin-top:10px}
-  .special-note[hidden]{display:none}
   .gate form > .sec-label:first-child{margin-top:4px}
 
   /* ===== 완료 화면 요약 ===== */
@@ -445,19 +443,6 @@
               </select>
             </div>
             <p class="hint">2027년 12월까지 선택할 수 있어요. 우편 사정에 따라 그 주 안에서 며칠 차이가 날 수 있어요.</p>
-          </div>
-          <div class="field">
-            <label class="t">특별한 날에 맞춰 받고 싶다면<span class="opt">(선택)</span></label>
-            <div class="chips" id="specialChips">
-              <label class="chip"><input type="radio" name="special" value="첫돌"><span>🎂 첫돌</span></label>
-              <label class="chip"><input type="radio" name="special" value="100일"><span>💯 100일</span></label>
-              <label class="chip"><input type="radio" name="special" value="200일"><span>🌱 200일</span></label>
-              <label class="chip"><input type="radio" name="special" value="생일"><span>🎈 생일</span></label>
-              <label class="chip"><input type="radio" name="special" value="크리스마스"><span>🎄 크리스마스</span></label>
-              <label class="chip"><input type="radio" name="special" value="기타"><span>✨ 기타</span></label>
-            </div>
-            <input type="text" id="f-specialNote" class="special-note" placeholder="날짜나 메모를 적어주세요 (예: 3월 14일)" hidden>
-            <p class="hint">특별한 날을 고르시면 그 날에 맞춰 며칠 전에 부쳐드릴게요.</p>
           </div>
         </div>
       </div>
@@ -725,23 +710,6 @@ var wishMonthSel = document.getElementById("f-wishMonth");
   if(!wishMonthSel.value && wishMonthSel.options.length) wishMonthSel.selectedIndex = wishMonthSel.options.length - 1;
 })();
 
-/* ---------- 특별한 날: 고르면 메모칸 표시, 같은 칩 다시 누르면 해제 ---------- */
-var specialNote = document.getElementById("f-specialNote");
-var specialLast = null;
-Array.prototype.forEach.call(document.querySelectorAll('input[name="special"]'), function(r){
-  r.addEventListener("click", function(){
-    if(specialLast === r){ r.checked = false; specialLast = null; specialNote.hidden = true; return; }
-    specialLast = r; specialNote.hidden = false;
-    specialNote.placeholder = r.value === "기타" ? "어떤 날인지 적어주세요 (예: 결혼기념일 5월 2일)" : r.value + " 날짜를 적어주세요 (예: 3월 14일)";
-    setTimeout(function(){ specialNote.focus(); }, 50);
-  });
-});
-function specialText(){
-  var r = document.querySelector('input[name="special"]:checked');
-  if(!r) return "";
-  var note = specialNote.value.trim();
-  return r.value + (note ? " · " + note : "");
-}
 function wishText(){
   var o = wishMonthSel.options[wishMonthSel.selectedIndex];
   return (o ? o.textContent : "") + " " + document.getElementById("f-wishWeek").value;
@@ -906,7 +874,6 @@ document.getElementById("eventForm").addEventListener("submit", function(ev){
   if(postbox && !addr1) return showErr("엽서 받으실 주소를 입력해주세요. (주소 검색 버튼을 누르거나 직접 입력)");
   if(postbox && !wishMonthSel.value) return showErr("엽서 받고 싶은 시기를 선택해주세요.");
   var wish = postbox ? wishText() : "";
-  var special = postbox ? specialText() : "";
   if(!postbox){ zip = ""; addr1 = ""; addr2 = ""; addr = ""; baby = ""; }
   if(!agree1) return showErr("개인정보 수집·이용 동의(필수)에 체크해주세요.");
   if(!agree2) return showErr("마케팅 정보 수신 동의 여부를 선택해주세요. (동의하지 않으셔도 참여 가능해요)");
@@ -922,7 +889,7 @@ document.getElementById("eventForm").addEventListener("submit", function(ev){
       name: name, phone: phone,
       missions: missionText, postbox: postbox, photo: photo,
       zip: zip, address: addr1, address2: addr2, baby: postbox ? (baby || "미입력") : "",
-      wish: wish, special: special,
+      wish: wish,
       agree1: true, agree2: agree2.value === "yes"
     };
     fetch(GAS_URL, { method:"POST", body: JSON.stringify(payload), redirect:"follow" })
@@ -994,7 +961,7 @@ document.getElementById("eventForm").addEventListener("submit", function(ev){
     });
     var lp = document.createElement("li");
     lp.innerHTML = postbox
-      ? '<span class="ok">💌</span>느린 우체통 참여 — 엽서 쓰러 가세요!<br><small style="color:var(--ink-soft);font-weight:600">' + wish + (special ? " · " + special : "") + ' 도착 예정</small>'
+      ? '<span class="ok">💌</span>느린 우체통 참여 — 엽서 쓰러 가세요!<br><small style="color:var(--ink-soft);font-weight:600">' + wish + ' 도착 예정</small>'
       : '<span class="no">—</span>느린 우체통 미참여';
     sum.appendChild(lp);
     var lph = document.createElement("li");
