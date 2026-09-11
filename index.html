@@ -272,6 +272,17 @@
   #postboxFields{margin-top:18px;padding-top:18px;border-top:1px dashed var(--line)}
   #postboxFields[hidden]{display:none}
   #postboxFields .sub-h{font-size:13px;font-weight:800;color:var(--accent-deep);margin-bottom:14px}
+  .wish-row{display:flex;gap:8px}
+  .wish-row select{
+    flex:1;min-width:0;padding:13px 12px;font-size:16px;color:var(--ink);font-family:inherit;
+    border:1.5px solid var(--line);border-radius:12px;background:#fdfbf8;outline:none;
+    -webkit-appearance:none;appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%238a7c70' stroke-width='1.8'/></svg>");
+    background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;
+  }
+  .wish-row select:focus{border-color:var(--accent);background-color:#fff}
+  .special-note{margin-top:10px}
+  .special-note[hidden]{display:none}
   .gate form > .sec-label:first-child{margin-top:4px}
 
   /* ===== 완료 화면 요약 ===== */
@@ -421,6 +432,32 @@
           <div class="field">
             <label class="t" for="f-baby">아기 개월수 또는 출산예정일<span class="opt">(선택)</span></label>
             <input type="text" id="f-baby" placeholder="예: 8개월 / 2027년 1월 예정">
+          </div>
+          <div class="field">
+            <label class="t" for="f-wishMonth">엽서 받고 싶은 시기<span class="req">*</span></label>
+            <div class="wish-row">
+              <select id="f-wishMonth"></select>
+              <select id="f-wishWeek">
+                <option value="첫째 주">첫째 주</option>
+                <option value="둘째 주">둘째 주</option>
+                <option value="셋째 주">셋째 주</option>
+                <option value="넷째 주">넷째 주</option>
+              </select>
+            </div>
+            <p class="hint">2027년 12월까지 선택할 수 있어요. 우편 사정에 따라 그 주 안에서 며칠 차이가 날 수 있어요.</p>
+          </div>
+          <div class="field">
+            <label class="t">특별한 날에 맞춰 받고 싶다면<span class="opt">(선택)</span></label>
+            <div class="chips" id="specialChips">
+              <label class="chip"><input type="radio" name="special" value="첫돌"><span>🎂 첫돌</span></label>
+              <label class="chip"><input type="radio" name="special" value="100일"><span>💯 100일</span></label>
+              <label class="chip"><input type="radio" name="special" value="200일"><span>🌱 200일</span></label>
+              <label class="chip"><input type="radio" name="special" value="생일"><span>🎈 생일</span></label>
+              <label class="chip"><input type="radio" name="special" value="크리스마스"><span>🎄 크리스마스</span></label>
+              <label class="chip"><input type="radio" name="special" value="기타"><span>✨ 기타</span></label>
+            </div>
+            <input type="text" id="f-specialNote" class="special-note" placeholder="날짜나 메모를 적어주세요 (예: 3월 14일)" hidden>
+            <p class="hint">특별한 날을 고르시면 그 날에 맞춰 며칠 전에 부쳐드릴게요.</p>
           </div>
         </div>
       </div>
@@ -668,6 +705,48 @@ postboxChk.addEventListener("change", function(){
   if(this.checked) setTimeout(function(){ postboxFields.scrollIntoView({behavior:"smooth", block:"nearest"}); }, 50);
 });
 
+/* ---------- 엽서 희망 시기: 다음 달 ~ 2027년 12월, 기본값 6개월 뒤 ---------- */
+var WISH_LIMIT = { y: 2027, m: 12 };
+var wishMonthSel = document.getElementById("f-wishMonth");
+(function(){
+  var now = new Date();
+  var y = now.getFullYear(), m = now.getMonth() + 2;          // 다음 달부터
+  if(m > 12){ m -= 12; y += 1; }
+  var def = new Date(now.getFullYear(), now.getMonth() + 6, 1); // 6개월 뒤
+  var defVal = def.getFullYear() + "-" + (def.getMonth() + 1 < 10 ? "0" : "") + (def.getMonth() + 1);
+  while(y < WISH_LIMIT.y || (y === WISH_LIMIT.y && m <= WISH_LIMIT.m)){
+    var v = y + "-" + (m < 10 ? "0" : "") + m;
+    var o = document.createElement("option");
+    o.value = v; o.textContent = y + "년 " + m + "월";
+    if(v === defVal) o.selected = true;
+    wishMonthSel.appendChild(o);
+    m++; if(m > 12){ m = 1; y++; }
+  }
+  if(!wishMonthSel.value && wishMonthSel.options.length) wishMonthSel.selectedIndex = wishMonthSel.options.length - 1;
+})();
+
+/* ---------- 특별한 날: 고르면 메모칸 표시, 같은 칩 다시 누르면 해제 ---------- */
+var specialNote = document.getElementById("f-specialNote");
+var specialLast = null;
+Array.prototype.forEach.call(document.querySelectorAll('input[name="special"]'), function(r){
+  r.addEventListener("click", function(){
+    if(specialLast === r){ r.checked = false; specialLast = null; specialNote.hidden = true; return; }
+    specialLast = r; specialNote.hidden = false;
+    specialNote.placeholder = r.value === "기타" ? "어떤 날인지 적어주세요 (예: 결혼기념일 5월 2일)" : r.value + " 날짜를 적어주세요 (예: 3월 14일)";
+    setTimeout(function(){ specialNote.focus(); }, 50);
+  });
+});
+function specialText(){
+  var r = document.querySelector('input[name="special"]:checked');
+  if(!r) return "";
+  var note = specialNote.value.trim();
+  return r.value + (note ? " · " + note : "");
+}
+function wishText(){
+  var o = wishMonthSel.options[wishMonthSel.selectedIndex];
+  return (o ? o.textContent : "") + " " + document.getElementById("f-wishWeek").value;
+}
+
 /* ---------- 오류 메시지 ---------- */
 function showErr(t){
   var m = document.getElementById("errMsg");
@@ -825,6 +904,9 @@ document.getElementById("eventForm").addEventListener("submit", function(ev){
   if(!name) return showErr("성함을 입력해주세요.");
   if(!/^01[016789]-\d{3,4}-\d{4}$/.test(phone)) return showErr("휴대전화번호를 확인해주세요. (예: 010-1234-5678)");
   if(postbox && !addr1) return showErr("엽서 받으실 주소를 입력해주세요. (주소 검색 버튼을 누르거나 직접 입력)");
+  if(postbox && !wishMonthSel.value) return showErr("엽서 받고 싶은 시기를 선택해주세요.");
+  var wish = postbox ? wishText() : "";
+  var special = postbox ? specialText() : "";
   if(!postbox){ zip = ""; addr1 = ""; addr2 = ""; addr = ""; baby = ""; }
   if(!agree1) return showErr("개인정보 수집·이용 동의(필수)에 체크해주세요.");
   if(!agree2) return showErr("마케팅 정보 수신 동의 여부를 선택해주세요. (동의하지 않으셔도 참여 가능해요)");
@@ -840,6 +922,7 @@ document.getElementById("eventForm").addEventListener("submit", function(ev){
       name: name, phone: phone,
       missions: missionText, postbox: postbox, photo: photo,
       zip: zip, address: addr1, address2: addr2, baby: postbox ? (baby || "미입력") : "",
+      wish: wish, special: special,
       agree1: true, agree2: agree2.value === "yes"
     };
     fetch(GAS_URL, { method:"POST", body: JSON.stringify(payload), redirect:"follow" })
@@ -910,7 +993,9 @@ document.getElementById("eventForm").addEventListener("submit", function(ev){
       sum.appendChild(li);
     });
     var lp = document.createElement("li");
-    lp.innerHTML = postbox ? '<span class="ok">💌</span>느린 우체통 참여 — 엽서 쓰러 가세요!' : '<span class="no">—</span>느린 우체통 미참여';
+    lp.innerHTML = postbox
+      ? '<span class="ok">💌</span>느린 우체통 참여 — 엽서 쓰러 가세요!<br><small style="color:var(--ink-soft);font-weight:600">' + wish + (special ? " · " + special : "") + ' 도착 예정</small>'
+      : '<span class="no">—</span>느린 우체통 미참여';
     sum.appendChild(lp);
     var lph = document.createElement("li");
     lph.innerHTML = photo ? '<span class="ok">📷</span>오늘의 한 컷 참여 — 사진 찍으러 가세요!' : '<span class="no">—</span>오늘의 한 컷 미참여';
