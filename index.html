@@ -271,6 +271,8 @@
   .evt-list .toggle:has(input:checked){border-color:var(--accent-deep);background:var(--accent-tint)}
   #postboxFields{margin-top:18px;padding-top:18px;border-top:1px dashed var(--line)}
   #postboxFields[hidden]{display:none}
+  #postboxFields .sub-h{font-size:13px;font-weight:800;color:var(--accent-deep);margin-bottom:14px}
+  .gate form > .sec-label:first-child{margin-top:4px}
 
   /* ===== 완료 화면 요약 ===== */
   .done-summary{list-style:none;margin-top:12px;padding-top:12px;border-top:1px dashed var(--accent);text-align:left}
@@ -369,23 +371,14 @@
       <div class="m-progress" id="missionProgress">미션 <b>0</b> / 3 완료</div>
     </div>
 
-    <!-- ===== 참여 정보 ===== -->
-    <div class="sec-label">ABOUT YOU</div>
-    <div class="sec-title">참여 정보를 알려주세요</div>
-
+    <!-- ===== 이벤트 선택 + 참여 정보 (미션 완료 후 열림) ===== -->
     <div class="gate locked" id="gate">
-    <div class="gate-msg" id="gateMsg">🔒 위 미션 3개를 모두 완료하면 입력란이 열려요</div>
+    <div class="gate-msg" id="gateMsg">🔒 위 미션 3개를 모두 완료하면 아래가 열려요</div>
     <form id="eventForm" novalidate>
+
+      <div class="sec-label">EVENT</div>
+      <div class="sec-title">이벤트</div>
       <div class="card">
-        <div class="field">
-          <label class="t" for="f-name">보호자 성함<span class="req">*</span></label>
-          <input type="text" id="f-name" autocomplete="name" placeholder="이름을 입력해주세요">
-        </div>
-        <div class="field">
-          <label class="t" for="f-phone">휴대전화번호<span class="req">*</span></label>
-          <input type="tel" id="f-phone" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000">
-          <p class="hint warn" id="phoneWarn" hidden></p>
-        </div>
         <div class="field">
           <label class="t">참여하실 이벤트<span class="opt">(선택 · 둘 다 가능)</span></label>
           <div class="evt-list">
@@ -399,7 +392,22 @@
             </label>
           </div>
         </div>
+      </div>
+
+      <div class="sec-label">ABOUT YOU</div>
+      <div class="sec-title">참여 정보를 알려주세요</div>
+      <div class="card">
+        <div class="field">
+          <label class="t" for="f-name">보호자 성함<span class="req">*</span></label>
+          <input type="text" id="f-name" autocomplete="name" placeholder="이름을 입력해주세요">
+        </div>
+        <div class="field">
+          <label class="t" for="f-phone">휴대전화번호<span class="req">*</span></label>
+          <input type="tel" id="f-phone" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000">
+          <p class="hint warn" id="phoneWarn" hidden></p>
+        </div>
         <div id="postboxFields" hidden>
+          <p class="sub-h">💌 느린 우체통 배송 정보</p>
           <div class="field">
             <label class="t" for="f-zip">엽서 받으실 주소<span class="req">*</span></label>
             <div class="addr-row">
@@ -631,7 +639,7 @@ function refreshMissions(){
     if(m[k]) n++;
   });
   var prog = document.getElementById("missionProgress");
-  prog.innerHTML = n === 3 ? "🎉 미션 3개 완료! 아래에 참여 정보를 입력해주세요" : "미션 <b>" + n + "</b> / 3 완료";
+  prog.innerHTML = n === 3 ? "🎉 미션 3개 완료! 아래에서 이벤트를 고르고 정보를 입력해주세요" : "미션 <b>" + n + "</b> / 3 완료";
   prog.classList.toggle("all", n === 3);
   document.getElementById("gate").classList.toggle("locked", n !== 3);
   saveMissions(m);
