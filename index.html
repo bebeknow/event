@@ -219,18 +219,8 @@
     margin:22px 0 26px;background:var(--card);border:2px dashed var(--accent);
     border-radius:16px;padding:18px;font-size:16px;font-weight:800;color:var(--accent-deep);
   }
-  #done .code-box{
-    margin-top:14px;padding-top:14px;border-top:1px dashed var(--accent);
-  }
-  #done .code-box[hidden]{display:none}
-  #done .code-label{font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--ink-soft)}
-  #done .code-num{
-    font-size:44px;font-weight:900;letter-spacing:.18em;color:var(--ink);
-    line-height:1.2;margin:4px 0 2px;font-variant-numeric:tabular-nums;
-  }
-  #done .code-meta{font-size:12.5px;font-weight:600;color:var(--ink-soft)}
-  #done .code-clock{
-    font-size:13px;font-weight:700;color:var(--accent-deep);margin-top:8px;
+  #done .staff-time{
+    margin-top:8px;font-size:12.5px;font-weight:600;color:var(--ink-soft);
     font-variant-numeric:tabular-nums;
   }
   .hint.warn{color:var(--err);font-weight:600}
@@ -437,12 +427,7 @@
     <p>이제 아기에게 보낼 엽서를 쓰러 가볼까요?</p>
     <div class="staff">
       이 화면을 스태프에게 보여주세요 🙂
-      <div class="code-box" id="codeBox" hidden>
-        <div class="code-label">수령 코드</div>
-        <div class="code-num" id="codeNum">0000</div>
-        <div class="code-meta"><span id="codeWho"></span> · <span id="codeNo"></span></div>
-        <div class="code-clock" id="codeClock">--:--:--</div>
-      </div>
+      <div class="staff-time" id="staffTime"></div>
     </div>
 
     <div class="done-label">FOLLOW BEBEKNOW</div>
@@ -528,7 +513,7 @@ var LINKS = {
  * [2] 중복 차단 백엔드 (Google Apps Script 웹 앱 URL)
  *  ★ bebeknow_apps_script.gs 를 배포하고 받은 URL을 여기에 넣으세요.
  *    (https://script.google.com/macros/s/…/exec)
- *  - 넣으면: 전화번호 중복 차단 + 수령 코드 발급 + "참여자" 탭에 저장
+ *  - 넣으면: 전화번호 중복 차단 + "참여자" 탭에 저장
  *  - 비워두면: 아래 [3] 구글폼으로 저장 (중복 차단 없음)
  * ============================================================ */
 var GAS_URL = "https://script.google.com/macros/s/AKfycbwOrp74H1BYqzJ-8Wv7jv4q5qJ8K0qfA1z6YpHIRz-LsfTCHWrP8SoGe_8QYl51Q_zOew/exec";
@@ -787,25 +772,19 @@ document.getElementById("eventForm").addEventListener("submit", function(ev){
     document.getElementById("formView").style.display="none";
     document.getElementById("done").style.display="block";
 
-    if(res && res.code){
-      var box = document.getElementById("codeBox");
-      document.getElementById("codeNum").textContent = res.code;
-      document.getElementById("codeWho").textContent = name + " · " + phone.slice(-4);
-      document.getElementById("codeNo").textContent = "No." + res.no;
-      box.hidden = false;
-      /* 실시간 시계 — 캡처 화면은 시간이 멈춰 있어 구분됩니다 */
-      var clock = document.getElementById("codeClock");
-      function tick(){
-        var t = new Date();
-        function z(n){ return (n<10?"0":"")+n; }
-        clock.textContent = (t.getMonth()+1)+"/"+t.getDate()+" "+z(t.getHours())+":"+z(t.getMinutes())+":"+z(t.getSeconds());
-      }
-      tick(); setInterval(tick, 1000);
-    }
-    try{
+    /* 참여자 이름 + 초 단위로 움직이는 시계 — 캡처 화면은 시간이 멈춰 있어 구분됩니다 */
+    var clock = document.getElementById("staffTime");
+    function z(n){ return (n<10?"0":"")+n; }
+    function tick(){
       var t = new Date();
-      var stamp = (res && res.at) || ((t.getMonth()+1) + "/" + t.getDate() + " " + (t.getHours()<10?"0":"") + t.getHours() + ":" + (t.getMinutes()<10?"0":"") + t.getMinutes());
-      localStorage.setItem(DEVICE_KEY, JSON.stringify({ name: name, at: stamp, phone: phoneDigits(phone), code: (res && res.code) || "" }));
+      clock.textContent = name + "님 · " + (t.getMonth()+1)+"/"+t.getDate()+" "+z(t.getHours())+":"+z(t.getMinutes())+":"+z(t.getSeconds());
+    }
+    tick(); setInterval(tick, 1000);
+
+    try{
+      var t0 = new Date();
+      var stamp = (res && res.at) || ((t0.getMonth()+1) + "/" + t0.getDate() + " " + z(t0.getHours()) + ":" + z(t0.getMinutes()));
+      localStorage.setItem(DEVICE_KEY, JSON.stringify({ name: name, at: stamp, phone: phoneDigits(phone) }));
     }catch(e){}
     window.scrollTo(0,0);
   }
