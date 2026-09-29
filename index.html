@@ -362,7 +362,7 @@
           <div class="m-tx"><span class="m-sub">01 · 공식 홈페이지</span><b>카카오 1초 회원가입하기</b></div>
           <button type="button" class="m-badge" data-mbadge="home" title="완료 취소">✓ 완료</button>
         </div>
-        <a class="m-link" data-link="join" data-mgo="home" href="#" target="_blank" rel="noopener noreferrer">회원가입하러 가기 ↗</a>
+        <a class="m-link" data-link="join" data-mgo="home" href="#">회원가입하러 가기 ↗</a>
       </div>
 
       <div class="mission" data-mission="kakao">
@@ -507,7 +507,7 @@
         <a data-link="kakao" href="#" target="_blank" rel="noopener noreferrer">카카오톡 채널</a>
       </div>
       <div class="foot-brand">BEBEKNOW</div>
-      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.09.29-4</span></p>
+      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.09.29-5</span></p>
     </footer>
   </div>
 
@@ -598,7 +598,8 @@
 var LINKS = {
   instagram: "https://www.instagram.com/bebeknow_official/",
   homepage : "https://bebeknow.com/",
-  join     : "https://www.bebeknow.com/member/login.html",   /* 미션 02: 카카오 1초 회원가입 페이지 */
+  /* 미션 01: 카카오 1초 회원가입 페이지. returnUrl → 가입/로그인 후 이벤트 페이지로 자동 복귀 */
+  join     : "https://www.bebeknow.com/member/login.html?returnUrl=" + encodeURIComponent("https://bebeknow.github.io/event/"),
   kakao    : "https://pf.kakao.com/_xiBGRG"
 };
 
