@@ -356,22 +356,22 @@
 
       <p class="m-intro">버튼을 눌러 다녀오면 자동으로 완료돼요. 3개 모두 누르면 아래 입력란이 열립니다.</p>
 
-      <div class="mission" data-mission="kakao">
-        <div class="m-head">
-          <div class="m-num kko">01</div>
-          <div class="m-tx"><span class="m-sub">01 · 카카오톡</span><b>베베노 채널 추가하기</b></div>
-          <button type="button" class="m-badge" data-mbadge="kakao" title="완료 취소">✓ 완료</button>
-        </div>
-        <a class="m-link" data-link="kakao" data-mgo="kakao" href="#" target="_blank" rel="noopener noreferrer">채널 추가하러 가기 ↗</a>
-      </div>
-
       <div class="mission" data-mission="home">
         <div class="m-head">
-          <div class="m-num web">02</div>
-          <div class="m-tx"><span class="m-sub">02 · 공식 홈페이지</span><b>카카오 1초 회원가입하기</b></div>
+          <div class="m-num web">01</div>
+          <div class="m-tx"><span class="m-sub">01 · 공식 홈페이지</span><b>카카오 1초 회원가입하기</b></div>
           <button type="button" class="m-badge" data-mbadge="home" title="완료 취소">✓ 완료</button>
         </div>
         <a class="m-link" data-link="join" data-mgo="home" href="#" target="_blank" rel="noopener noreferrer">회원가입하러 가기 ↗</a>
+      </div>
+
+      <div class="mission" data-mission="kakao">
+        <div class="m-head">
+          <div class="m-num kko">02</div>
+          <div class="m-tx"><span class="m-sub">02 · 카카오톡</span><b>베베노 채널 추가하기</b></div>
+          <button type="button" class="m-badge" data-mbadge="kakao" title="완료 취소">✓ 완료</button>
+        </div>
+        <a class="m-link" data-link="kakao" data-mgo="kakao" href="#" target="_blank" rel="noopener noreferrer">채널 추가하러 가기 ↗</a>
       </div>
 
       <div class="mission" data-mission="insta">
@@ -655,7 +655,7 @@ var GF = {
  *  - ✓ 완료 배지를 누르면 취소 (잘못 눌렀을 때)
  * ------------------------------------------------------------------ */
 var MISSION_KEY = "bebeknow_missions";
-var MISSION_ORDER = ["kakao", "home", "insta"];
+var MISSION_ORDER = ["home", "kakao", "insta"];
 var MISSION_LABEL = { kakao: "카카오톡 채널 추가", home: "공식 홈페이지 회원가입", insta: "인스타그램 팔로우" };
 var missions = (function(){ try{ return JSON.parse(localStorage.getItem(MISSION_KEY) || "{}"); }catch(e){ return {}; } })();
 function saveMissions(){ try{ localStorage.setItem(MISSION_KEY, JSON.stringify(missions)); }catch(e){} }
@@ -824,11 +824,15 @@ function showForm(){
 (function(){
   /* 스태프 비상 해제: ?reset / ?RESET / #reset 모두 인식 (대소문자 무관) */
   if(/reset/i.test(location.search + location.hash)){
-    var had = !!readDevice();
+    var had = !!readDevice() || Object.keys(missions).length > 0;
     clearDevice();
+    /* 미션 완료 상태도 함께 초기화 */
+    Object.keys(missions).forEach(function(k){ delete missions[k]; });
+    try{ localStorage.removeItem(MISSION_KEY); }catch(e){}
+    refreshMissions();
     var m = document.createElement("div");
     m.style.cssText = "margin:0 0 14px;padding:12px 14px;border-radius:12px;background:#eaf3e2;color:#3f6b2a;font-size:13.5px;line-height:1.6;font-weight:600;";
-    m.textContent = had ? "✅ 이 기기의 참여 기록을 초기화했어요. 다시 참여할 수 있습니다." : "ℹ️ 이 기기에는 참여 기록이 없어요. 바로 참여할 수 있습니다.";
+    m.textContent = had ? "✅ 이 기기의 참여 기록과 미션 상태를 초기화했어요. 처음부터 다시 참여할 수 있습니다." : "ℹ️ 이 기기에는 참여 기록이 없어요. 바로 참여할 수 있습니다.";
     var form = document.getElementById("eventForm");
     form.insertBefore(m, form.firstChild);
     try{ history.replaceState(null, "", location.pathname); }catch(e){}   /* 주소에서 ?reset 제거 */
