@@ -507,7 +507,7 @@
         <a data-link="kakao" href="#" target="_blank" rel="noopener noreferrer">카카오톡 채널</a>
       </div>
       <div class="foot-brand">BEBEKNOW</div>
-      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.09.29-3</span></p>
+      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.09.29-4</span></p>
     </footer>
   </div>
 
@@ -677,9 +677,10 @@ function refreshMissions(){
   document.getElementById("gate").classList.toggle("locked", n !== total);
   saveMissions();
 }
+/* 미션 3개가 모두 끝났을 때만 입력란으로 스크롤 (중간에는 화면을 움직이지 않음) */
 function scrollToNext(){
-  var next = nextMission();
-  var el = next ? document.querySelector('.mission[data-mission="' + next + '"]') : document.getElementById("gate");
+  if(!allMissionsDone()) return;
+  var el = document.getElementById("gate");
   if(el) setTimeout(function(){ el.scrollIntoView({behavior:"smooth", block:"start"}); }, 250);
 }
 (function(){
