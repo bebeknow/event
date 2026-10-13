@@ -486,7 +486,7 @@
         <a data-link="kakao" href="#" target="_blank" rel="noopener noreferrer">카카오톡 채널</a>
       </div>
       <div class="foot-brand">BEBEKNOW</div>
-      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.10.13-4</span></p>
+      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.10.13-5</span></p>
     </footer>
   </div>
 
@@ -753,6 +753,26 @@ function showForm(){
   document.getElementById("formView").style.display = "block";
 }
 (function(){
+  /* 미리보기: ?demo 를 붙이면 샘플 이름으로 완료 화면만 표시 (저장·잠금 없음, 스태프 교육용) */
+  if(/demo/i.test(location.search + location.hash)){
+    document.getElementById("formView").style.display = "none";
+    document.getElementById("done").style.display = "block";
+    var dz = function(n){ return (n<10?"0":"")+n; };
+    var dclock = document.getElementById("staffTime");
+    var dtick = function(){ var t = new Date(); dclock.textContent = "김베베님 · " + (t.getMonth()+1)+"/"+t.getDate()+" "+dz(t.getHours())+":"+dz(t.getMinutes())+":"+dz(t.getSeconds()); };
+    dtick(); setInterval(dtick, 1000);
+    var dsum = document.getElementById("doneSummary");
+    MISSION_ORDER.forEach(function(k){
+      var li = document.createElement("li");
+      li.innerHTML = '<span class="ok">✅</span>' + MISSION_LABEL[k] + ' <small style="color:var(--ink-soft)">(자가 체크)</small>';
+      dsum.appendChild(li);
+    });
+    var dm = document.createElement("div");
+    dm.style.cssText = "margin:0 0 14px;padding:10px 14px;border-radius:12px;background:#fff6d6;color:#6b5320;font-size:12.5px;font-weight:700;text-align:center;";
+    dm.textContent = "미리보기 화면입니다 (실제 참여 아님)";
+    document.getElementById("done").insertBefore(dm, document.getElementById("done").firstChild);
+    return;
+  }
   /* 스태프 비상 해제: ?reset / ?RESET / #reset 모두 인식 (대소문자 무관) */
   if(/reset/i.test(location.search + location.hash)){
     var had = !!readDevice() || Object.keys(missions).length > 0;
