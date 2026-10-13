@@ -77,6 +77,15 @@
   .addr-head button{width:34px;height:34px;border-radius:50%;border:none;background:var(--bg);color:var(--ink);font-size:16px;cursor:pointer;font-family:inherit}
   #addrEmbed{flex:1;min-height:0}
   #addrEmbed iframe{width:100%!important;height:100%!important}
+  .switch{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:#fdfbf8;margin-bottom:14px;cursor:pointer}
+  .switch b{font-size:15px}
+  .switch small{display:block;color:var(--ink-soft);font-size:12px;margin-top:2px}
+  .switch .tg{position:relative;width:52px;height:30px;border-radius:999px;background:#d9cfc4;flex-shrink:0;transition:background .15s}
+  .switch .tg::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .switch input{position:absolute;opacity:0;width:0;height:0}
+  .switch input:checked ~ .tg{background:var(--ok)}
+  .switch input:checked ~ .tg::after{left:25px}
+  .switch.on{border-color:var(--ok);background:#f3f8ee}
   [hidden]{display:none!important}
   footer{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:20px}
 </style>
@@ -99,7 +108,7 @@
   <!-- ===== ① 스태프 작성 ===== -->
   <div id="step1" hidden>
     <h1>구매 기록</h1>
-    <p class="sub">구매자 찾기 → 제품·색상·금액 → 현장 수령이면 바로 기록, 배송이면 고객에게 전달</p>
+    <p class="sub">참여자면 번호로 찾기 → 제품·금액 → 현장 수령이면 바로 기록, 배송이면 고객에게 전달</p>
 
     <div class="stat">
       <div><b id="stToday">-</b><span>오늘 구매</span></div>
@@ -110,8 +119,14 @@
     </div>
 
     <div class="card">
+      <label class="switch on" id="partSwitch">
+        <span><b>🎫 이벤트 참여자</b><small>켜짐: 참여자 검색 → 캐럿헤드 증정 · 보증 1년 연장 / 꺼짐: 일반 구매(연락처 선택)</small></span>
+        <input type="checkbox" id="isPart" checked><span class="tg"></span>
+      </label>
+
+      <div id="partBlock">
       <div class="field">
-        <label class="t" for="last4">구매자 전화번호 <small>뒷자리 4자리 또는 전체 번호</small></label>
+        <label class="t" for="last4">참여자 전화번호 <small>뒷자리 4자리 또는 전체 번호</small></label>
         <div class="row">
           <input type="tel" id="last4" class="big" inputmode="numeric" maxlength="13" placeholder="0000">
           <button class="btn sec" id="findBtn" style="flex:0 0 96px;margin-top:0">찾기</button>
@@ -119,15 +134,17 @@
         <div id="matches"></div>
         <button class="btn sec" id="manualBtn" style="margin-top:10px" hidden>참여자 목록에 없어요 → 직접 입력</button>
       </div>
-      <div id="manual" hidden>
-        <div class="row">
-          <div class="field"><label class="t" for="mName">이름</label><input type="text" id="mName" placeholder="이름"></div>
-          <div class="field" style="flex:1.6"><label class="t" for="mPhone">휴대전화번호</label><input type="tel" id="mPhone" inputmode="numeric" placeholder="010-0000-0000"></div>
-        </div>
-      </div>
       <div id="who" class="field" hidden>
         <label class="t">구매자</label>
         <div style="font-size:16px"><b id="whoName"></b> <span id="whoPhone" style="color:var(--ink-soft)"></span><span id="whoTag" class="tag"></span></div>
+      </div>
+      </div>
+
+      <div id="manual" hidden>
+        <div class="row">
+          <div class="field"><label class="t" for="mName">이름 <small id="mNameOpt">(선택)</small></label><input type="text" id="mName" placeholder="이름"></div>
+          <div class="field" style="flex:1.6"><label class="t" for="mPhone">휴대전화번호 <small id="mPhoneOpt">(선택)</small></label><input type="tel" id="mPhone" inputmode="numeric" placeholder="010-0000-0000"></div>
+        </div>
       </div>
 
       <div class="field">
@@ -140,7 +157,7 @@
         </div>
       </div>
       <div class="field" id="colorField">
-        <label class="t">색상 <small>(캐럿헤드도 같은 색으로)</small></label>
+        <label class="t">색상 <small id="colorHint">(캐럿헤드도 같은 색으로)</small></label>
         <div class="chips">
           <label class="chip pink"><input type="radio" name="color" value="핑크"><span>핑크</span></label>
           <label class="chip beige"><input type="radio" name="color" value="베이지"><span>베이지</span></label>
@@ -169,7 +186,7 @@
     </div>
 
     <button class="btn ghost" id="logoutBtn">나가기</button>
-    <footer>bebeknow staff · <span id="ver">v2026.10.13-3</span></footer>
+    <footer>bebeknow staff · <span id="ver">v2026.10.13-4</span></footer>
   </div>
 
   <!-- ===== ② 고객 작성 (배송) ===== -->
@@ -180,7 +197,11 @@
       <div class="summary" id="sum2"></div>
       <div class="field">
         <label class="t">받으시는 분</label>
-        <div style="font-size:16px"><b id="s2Name"></b> <span id="s2Phone" style="color:var(--ink-soft)"></span></div>
+        <div id="s2Known" style="font-size:16px"><b id="s2Name"></b> <span id="s2Phone" style="color:var(--ink-soft)"></span></div>
+        <div id="s2Edit" class="row" hidden>
+          <input type="text" id="s2NameIn" placeholder="성함">
+          <input type="tel" id="s2PhoneIn" inputmode="numeric" placeholder="010-0000-0000" style="flex:1.6">
+        </div>
       </div>
       <div class="field">
         <label class="t" for="zip">배송 주소</label>
@@ -230,6 +251,17 @@
 var GAS_URL = "https://script.google.com/macros/s/AKfycbwOrp74H1BYqzJ-8Wv7jv4q5qJ8K0qfA1z6YpHIRz-LsfTCHWrP8SoGe_8QYl51Q_zOew/exec";
 var PIN_KEY = "bebeknow_staff_pin";
 var pin = "", buyer = null, manualMode = false, order = null, shipDate = "";
+function isPart(){ return $("isPart").checked; }
+function applyPartMode(){
+  var on = isPart();
+  $("partSwitch").classList.toggle("on", on);
+  $("partBlock").hidden = !on;
+  // 참여자: 검색으로 찾거나 '직접 입력'(필수) / 미참여: 이름·번호 선택 입력
+  if(on){ $("manual").hidden = !manualMode; $("mNameOpt").textContent = "(필수)"; $("mPhoneOpt").textContent = "(필수)"; }
+  else { $("manual").hidden = false; $("mNameOpt").textContent = "(선택)"; $("mPhoneOpt").textContent = "(선택)"; }
+  var product = radio("product");
+  $("colorField").hidden = !(on && (product === "콧물흡입기" || product === "아기비데"));
+}
 
 function $(id){ return document.getElementById(id); }
 function show(id){ ["login","step1","step2","done"].forEach(function(k){ $(k).hidden = (k !== id); }); window.scrollTo(0,0); }
@@ -307,35 +339,43 @@ $("last4").addEventListener("input", function(){
 });
 $("last4").addEventListener("keydown", function(e){ if(e.key === "Enter") find(); });
 $("manualBtn").addEventListener("click", function(){
-  manualMode = true; $("manual").hidden = false; setBuyer(null);
+  manualMode = true; applyPartMode(); setBuyer(null);
   Array.prototype.forEach.call($("matches").children, function(c){ c.classList.remove("sel"); });
   $("mName").focus();
 });
 $("mPhone").addEventListener("input", function(){ this.value = fmtPhone(this.value); });
 $("amount").addEventListener("input", function(){ var d = digits(this.value); this.value = d ? Number(d).toLocaleString("ko-KR") : ""; });
-Array.prototype.forEach.call(document.querySelectorAll('input[name="product"]'), function(r){
-  r.addEventListener("change", function(){ $("colorField").hidden = !(r.value === "콧물흡입기" || r.value === "아기비데"); });
+Array.prototype.forEach.call(document.querySelectorAll('input[name="product"]'), function(r){ r.addEventListener("change", applyPartMode); });
+$("isPart").addEventListener("change", function(){
+  if(!isPart()){ buyer = null; $("who").hidden = true; $("matches").innerHTML = ""; $("manualBtn").hidden = true; $("last4").value = ""; }
+  applyPartMode(); msg($("msg1"), "");
 });
+applyPartMode();
 Array.prototype.forEach.call(document.querySelectorAll('input[name="method"]'), function(r){
   r.addEventListener("change", function(){ $("step1Btn").textContent = r.value === "배송" ? "다음 → 고객님께 전달" : "기록하기"; });
 });
 
 /* ---------- ① 스태프 작성 완료 ---------- */
 function collectStep1(){
-  var name, phone;
-  if(manualMode){
-    name = $("mName").value.trim(); phone = $("mPhone").value.trim();
-    if(!name) return msg($("msg1"), "이름을 입력해주세요.", "err");
-    if(digits(phone).length < 10) return msg($("msg1"), "휴대전화번호를 확인해주세요.", "err");
+  var name = "", phone = "", part = isPart();
+  if(part){
+    if(manualMode){
+      name = $("mName").value.trim(); phone = $("mPhone").value.trim();
+      if(!name) return msg($("msg1"), "이름을 입력해주세요.", "err");
+      if(digits(phone).length < 10) return msg($("msg1"), "휴대전화번호를 확인해주세요.", "err");
+    }else{
+      if(!buyer) return msg($("msg1"), "먼저 전화번호로 참여자를 찾아 선택해주세요. (참여자가 아니면 위 스위치를 끄세요)", "err");
+      name = buyer.name; phone = buyer.phone;
+    }
   }else{
-    if(!buyer) return msg($("msg1"), "먼저 전화번호로 구매자를 찾아 선택해주세요.", "err");
-    name = buyer.name; phone = buyer.phone;
+    name = $("mName").value.trim(); phone = $("mPhone").value.trim();
+    if(phone && digits(phone).length < 10) return msg($("msg1"), "휴대전화번호를 확인해주세요.", "err");
   }
   var product = radio("product"), color = radio("color");
-  var needColor = product === "콧물흡입기" || product === "아기비데";
+  var needColor = part && (product === "콧물흡입기" || product === "아기비데");
   if(!product) return msg($("msg1"), "제품을 선택해주세요.", "err");
   if(needColor && !color) return msg($("msg1"), "색상을 선택해주세요.", "err");
-  return { name: name, phone: phone, product: product, color: needColor ? color : "", qty: Math.max(1, parseInt($("qty").value, 10) || 1),
+  return { participant: part, name: name, phone: phone, product: product, color: needColor ? color : "", qty: Math.max(1, parseInt($("qty").value, 10) || 1),
            amount: digits($("amount").value), memo: $("memo").value.trim(), method: radio("method") };
 }
 $("step1Btn").addEventListener("click", function(){
@@ -344,7 +384,10 @@ $("step1Btn").addEventListener("click", function(){
   order = o;
   if(o.method === "배송"){
     $("sum2").innerHTML = "<b>" + o.product + (o.color ? " · " + o.color : "") + "</b> × " + o.qty + " · 결제 " + fmtWon(o.amount) + "<br>" + (shipDate ? "<b>" + shipDate + "</b> 발송 예정" : "");
+    var known = !!(o.name && digits(o.phone).length >= 10);
+    $("s2Known").hidden = !known; $("s2Edit").hidden = known;
     $("s2Name").textContent = o.name; $("s2Phone").textContent = o.phone;
+    $("s2NameIn").value = o.name; $("s2PhoneIn").value = o.phone;
     $("zip").value = ""; $("addr").value = ""; $("addr2").value = ""; $("request").value = ""; $("agree").checked = false; msg($("msg2"), "");
     show("step2");
     return;
@@ -354,11 +397,16 @@ $("step1Btn").addEventListener("click", function(){
 
 /* ---------- ② 고객 작성 → 접수 ---------- */
 $("backBtn").addEventListener("click", function(){ show("step1"); });
+$("s2PhoneIn").addEventListener("input", function(){ this.value = fmtPhone(this.value); });
 $("submitBtn").addEventListener("click", function(){
   msg($("msg2"), "");
+  var nm = $("s2Edit").hidden ? order.name : $("s2NameIn").value.trim();
+  var ph = $("s2Edit").hidden ? order.phone : $("s2PhoneIn").value.trim();
+  if(!nm) return msg($("msg2"), "받으시는 분 성함을 입력해주세요.", "err");
+  if(digits(ph).length < 10) return msg($("msg2"), "연락처를 확인해주세요.", "err");
   if(!$("addr").value.trim()) return msg($("msg2"), "배송 주소를 입력해주세요.", "err");
   if(!$("agree").checked) return msg($("msg2"), "개인정보 수집·이용에 동의해주세요.", "err");
-  var o = Object.assign({}, order, { zip: $("zip").value.trim(), address: $("addr").value.trim(), address2: $("addr2").value.trim(), request: $("request").value.trim(), agree: true });
+  var o = Object.assign({}, order, { name: nm, phone: ph, zip: $("zip").value.trim(), address: $("addr").value.trim(), address2: $("addr2").value.trim(), request: $("request").value.trim(), agree: true });
   save(o, $("submitBtn"), $("msg2"));
 });
 
@@ -372,8 +420,8 @@ function save(o, btn, msgEl){
     var isShip = res.method === "배송";
     $("doneTitle").textContent = isShip ? "주문이 접수되었습니다" : "기록되었습니다";
     $("doneShip").hidden = !isShip; $("doneShip").textContent = isShip ? (res.shipDate || shipDate) + " 발송 예정" : "";
-    $("doneText").innerHTML = o.name + "님 · " + o.product + (o.color ? " " + o.color : "") + " × " + o.qty + (o.amount ? " · " + fmtWon(o.amount) : "")
-      + (o.product === "콧물흡입기" ? "<br>🎁 캐럿헤드(" + o.color + ") 증정 · 🛡️ 보증 1년 연장" : "")
+    $("doneText").innerHTML = (o.name ? o.name + "님 · " : "") + o.product + (o.color ? " " + o.color : "") + " × " + o.qty + (o.amount ? " · " + fmtWon(o.amount) : "")
+      + (res.warranty ? "<br>🎁 캐럿헤드(" + o.color + ") 증정 · 🛡️ 보증 1년 연장" : (o.participant ? "" : "<br><span style='color:var(--ink-soft)'>이벤트 미참여 구매 (증정·보증 연장 없음)</span>"))
       + (isShip ? "<br>주문번호 " + res.orderNo + (res.shipLogged ? "" : "<br><span style='color:var(--err)'>⚠ 택배 업로드 시트 기록 실패 — 시트에서 직접 확인</span>") : "");
     show("done"); refreshStats();
   }).catch(function(){ btn.disabled = false; btn.textContent = label; msg(msgEl, "네트워크 연결을 확인해주세요.", "err"); });
@@ -385,6 +433,7 @@ $("nextBtn").addEventListener("click", function(){
   var c = document.querySelector('input[name="color"]:checked'); if(c) c.checked = false;
   document.querySelector('input[name="product"][value="콧물흡입기"]').checked = true; $("colorField").hidden = false;
   document.querySelector('input[name="method"][value="현장"]').checked = true; $("step1Btn").textContent = "기록하기";
+  $("isPart").checked = true; applyPartMode();
   msg($("msg1"), ""); show("step1"); setTimeout(function(){ $("last4").focus(); }, 50);
 });
 
