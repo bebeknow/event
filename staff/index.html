@@ -120,7 +120,7 @@
 
     <div class="card">
       <label class="switch on" id="partSwitch">
-        <span><b>🎫 이벤트 참여자</b><small>켜짐: 참여자 검색 → 캐럿헤드 증정 · 보증 1년 연장 / 꺼짐: 일반 구매(연락처 선택)</small></span>
+        <span><b>🎫 이벤트 참여자</b><small>켜짐: 참여자 검색 → 캐럿헤드 증정 · 보증 1년 연장 / 꺼짐: 일반 구매 (연락처 없음)</small></span>
         <input type="checkbox" id="isPart" checked><span class="tg"></span>
       </label>
 
@@ -166,7 +166,7 @@
       </div>
       <div class="row">
         <div class="field" style="flex:.6"><label class="t" for="qty">수량</label><input type="number" id="qty" value="1" min="1" max="9" inputmode="numeric"></div>
-        <div class="field" style="flex:1.4"><label class="t" for="amount">결제 금액 <small>(원)</small></label><input type="tel" id="amount" inputmode="numeric" placeholder="예: 189,000"></div>
+        <div class="field" style="flex:1.4"><label class="t" for="amount">결제 금액 <small>(원)</small></label><input type="tel" id="amount" inputmode="numeric" placeholder=""></div>
       </div>
       <div class="field">
         <label class="t" for="memo">메모 <small>(선택)</small></label>
@@ -186,7 +186,7 @@
     </div>
 
     <button class="btn ghost" id="logoutBtn">나가기</button>
-    <footer>bebeknow staff · <span id="ver">v2026.10.13-4</span></footer>
+    <footer>bebeknow staff · <span id="ver">v2026.10.13-5</span></footer>
   </div>
 
   <!-- ===== ② 고객 작성 (배송) ===== -->
@@ -256,11 +256,12 @@ function applyPartMode(){
   var on = isPart();
   $("partSwitch").classList.toggle("on", on);
   $("partBlock").hidden = !on;
-  // 참여자: 검색으로 찾거나 '직접 입력'(필수) / 미참여: 이름·번호 선택 입력
-  if(on){ $("manual").hidden = !manualMode; $("mNameOpt").textContent = "(필수)"; $("mPhoneOpt").textContent = "(필수)"; }
-  else { $("manual").hidden = false; $("mNameOpt").textContent = "(선택)"; $("mPhoneOpt").textContent = "(선택)"; }
-  var product = radio("product");
-  $("colorField").hidden = !(on && (product === "콧물흡입기" || product === "아기비데"));
+  // 참여자: 검색으로 찾거나 '직접 입력'(필수) / 미참여: 이름·번호 입력 없음
+  $("manual").hidden = !(on && manualMode);
+  $("mNameOpt").textContent = "(필수)"; $("mPhoneOpt").textContent = "(필수)";
+  // 색상은 콧물흡입기일 때만 (본품 색상). 참여자면 캐럿헤드도 같은 색
+  $("colorField").hidden = radio("product") !== "콧물흡입기";
+  $("colorHint").textContent = on ? "(캐럿헤드도 같은 색으로)" : "(본품 색상)";
 }
 
 function $(id){ return document.getElementById(id); }
@@ -367,12 +368,9 @@ function collectStep1(){
       if(!buyer) return msg($("msg1"), "먼저 전화번호로 참여자를 찾아 선택해주세요. (참여자가 아니면 위 스위치를 끄세요)", "err");
       name = buyer.name; phone = buyer.phone;
     }
-  }else{
-    name = $("mName").value.trim(); phone = $("mPhone").value.trim();
-    if(phone && digits(phone).length < 10) return msg($("msg1"), "휴대전화번호를 확인해주세요.", "err");
   }
   var product = radio("product"), color = radio("color");
-  var needColor = part && (product === "콧물흡입기" || product === "아기비데");
+  var needColor = product === "콧물흡입기";
   if(!product) return msg($("msg1"), "제품을 선택해주세요.", "err");
   if(needColor && !color) return msg($("msg1"), "색상을 선택해주세요.", "err");
   return { participant: part, name: name, phone: phone, product: product, color: needColor ? color : "", qty: Math.max(1, parseInt($("qty").value, 10) || 1),
