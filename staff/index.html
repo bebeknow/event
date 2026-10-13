@@ -33,7 +33,7 @@
   .chip span{display:inline-block;padding:12px 16px;font-size:15px;font-weight:700;border-radius:12px;border:1.5px solid var(--line);background:#fdfbf8;color:var(--ink-soft)}
   .chip input:checked + span{background:var(--accent-deep);border-color:var(--accent-deep);color:#fff}
   .chip.pink input:checked + span{background:#e8788f;border-color:#e8788f}
-  .chip.orange input:checked + span{background:#ef8b3a;border-color:#ef8b3a}
+  .chip.beige input:checked + span{background:#c9a27a;border-color:#c9a27a}
   .chip.green input:checked + span{background:#5fa36a;border-color:#5fa36a}
   .match{display:block;width:100%;text-align:left;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:#fdfbf8;margin-top:8px;font-family:inherit;font-size:15px;cursor:pointer}
   .match b{font-size:16px}
@@ -72,20 +72,20 @@
   <!-- ===== 기록 ===== -->
   <div id="app" hidden>
     <h1>현장구매 기록</h1>
-    <p class="sub">구매자가 완료 화면을 보여주면 → 뒷자리 4자리 → 제품·색상 → 기록</p>
+    <p class="sub">구매자가 완료 화면을 보여주면 → 번호 뒷자리(또는 전체) → 제품·색상 → 기록</p>
 
     <div class="stat">
       <div><b id="stToday">-</b><span>오늘 구매</span></div>
-      <div><b id="stPink">-</b><span>핑크 캐럿헤드</span></div>
-      <div><b id="stOrange">-</b><span>오렌지</span></div>
+      <div><b id="stPink">-</b><span>핑크</span></div>
+      <div><b id="stBeige">-</b><span>베이지</span></div>
       <div><b id="stGreen">-</b><span>그린</span></div>
     </div>
 
     <div class="card">
       <div class="field">
-        <label class="t" for="last4">전화번호 뒷자리 4자리</label>
+        <label class="t" for="last4">전화번호 <small style="font-weight:400;color:var(--ink-soft)">뒷자리 4자리 또는 전체 번호</small></label>
         <div class="row">
-          <input type="tel" id="last4" class="big" inputmode="numeric" maxlength="4" placeholder="0000">
+          <input type="tel" id="last4" class="big" inputmode="numeric" maxlength="13" placeholder="0000">
           <button class="btn sec" id="findBtn" style="flex:0 0 96px;margin-top:0">찾기</button>
         </div>
         <div id="matches"></div>
@@ -121,7 +121,7 @@
         <label class="t">색상 <small style="font-weight:400;color:var(--ink-soft)">(캐럿헤드도 같은 색으로)</small></label>
         <div class="chips">
           <label class="chip pink"><input type="radio" name="color" value="핑크"><span>핑크</span></label>
-          <label class="chip orange"><input type="radio" name="color" value="오렌지"><span>오렌지</span></label>
+          <label class="chip beige"><input type="radio" name="color" value="베이지"><span>베이지</span></label>
           <label class="chip green"><input type="radio" name="color" value="그린"><span>그린</span></label>
         </div>
       </div>
@@ -140,7 +140,7 @@
     </div>
 
     <button class="btn sec" id="logoutBtn">나가기</button>
-    <footer>bebeknow staff · <span id="ver">v2026.10.13-1</span></footer>
+    <footer>bebeknow staff · <span id="ver">v2026.10.13-2</span></footer>
   </div>
 
 </div>
@@ -185,7 +185,7 @@ $("logoutBtn").addEventListener("click", function(){ try{ sessionStorage.removeI
 function applyStats(res){
   $("stToday").textContent = res.today;
   $("stPink").textContent = res.colors["핑크"] || 0;
-  $("stOrange").textContent = res.colors["오렌지"] || 0;
+  $("stBeige").textContent = res.colors["베이지"] || 0;
   $("stGreen").textContent = res.colors["그린"] || 0;
 }
 function refreshStats(){
@@ -221,17 +221,18 @@ function renderMatches(list){
   if(list.length === 1) box.firstChild.click();
 }
 function find(){
-  var l4 = digits($("last4").value).slice(-4);
+  var q = digits($("last4").value);
+  var l4 = q.slice(-4);
   msg($("msg"), "", "");
   setBuyer(null); $("matches").innerHTML = ""; $("manualBtn").hidden = true;
-  if(l4.length !== 4) return msg($("msg"), "뒷자리 4자리를 입력해주세요.", "err");
+  if(q.length !== 4 && q.length < 10) return msg($("msg"), "뒷자리 4자리 또는 전체 번호를 입력해주세요.", "err");
   $("findBtn").disabled = true; $("findBtn").textContent = "…";
-  getJSON(GAS_URL + "?staff=lookup&pin=" + encodeURIComponent(pin) + "&last4=" + l4).then(function(res){
+  getJSON(GAS_URL + "?staff=lookup&pin=" + encodeURIComponent(pin) + "&q=" + q).then(function(res){
     $("findBtn").disabled = false; $("findBtn").textContent = "찾기";
     if(res.status === "unauth"){ try{ sessionStorage.removeItem(PIN_KEY); }catch(e){} return location.reload(); }
     if(res.status !== "ok") return msg($("msg"), "조회에 실패했어요. 다시 시도해주세요.", "err");
     if(!res.matches.length){
-      msg($("msg"), "뒷자리 " + l4 + " 참여자가 없어요. 미션을 안 한 분이면 직접 입력으로 기록할 수 있어요.", "err");
+      msg($("msg"), (q.length >= 10 ? "이 번호의" : "뒷자리 " + l4) + " 참여자가 없어요. 미션을 안 한 분이면 직접 입력으로 기록할 수 있어요.", "err");
       $("manualBtn").hidden = false;
       return;
     }
@@ -240,7 +241,14 @@ function find(){
   }).catch(function(){ $("findBtn").disabled = false; $("findBtn").textContent = "찾기"; msg($("msg"), "네트워크 연결을 확인해주세요.", "err"); });
 }
 $("findBtn").addEventListener("click", find);
-$("last4").addEventListener("input", function(){ this.value = digits(this.value).slice(0,4); if(this.value.length === 4) find(); });
+var findTimer = null;
+$("last4").addEventListener("input", function(){
+  var d = digits(this.value).slice(0,11);
+  this.value = d.length > 4 ? fmtPhone(d) : d;
+  clearTimeout(findTimer);
+  if(d.length === 11) find();                                   /* 전체 번호 → 바로 */
+  else if(d.length === 4) findTimer = setTimeout(find, 700);    /* 뒷자리 4자리 → 잠깐 기다렸다가 */
+});
 $("last4").addEventListener("keydown", function(e){ if(e.key === "Enter") find(); });
 $("manualBtn").addEventListener("click", function(){
   manualMode = true; $("manual").hidden = false; setBuyer(null);
