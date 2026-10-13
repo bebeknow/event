@@ -495,7 +495,7 @@
         <a data-link="kakao" href="#" target="_blank" rel="noopener noreferrer">카카오톡 채널</a>
       </div>
       <div class="foot-brand">bebeknow</div>
-      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.10.13-7</span></p>
+      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.10.13-8</span></p>
     </footer>
   </div>
 
@@ -853,7 +853,7 @@ document.getElementById("eventForm").addEventListener("submit", function(ev){
       .then(function(res){
         if(!res || res.status === "error" || res.status === "bad"){
           unlock();
-          return showErr("저장 중 문제가 생겼어요. 잠시 후 다시 시도하거나 스태프에게 알려주세요.");
+          return showErr("저장 중 문제가 생겼어요. 잠시 후 다시 시도하거나 스태프에게 알려주세요." + (res && res.message ? " [" + String(res.message).slice(0, 80) + "]" : res && res.status ? " [" + res.status + "]" : ""));
         }
         if(res.status === "dup"){
           unlock();
