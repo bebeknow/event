@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>베베노 스태프 · 현장구매 기록</title>
+<title>베베노 스태프 · 구매 기록</title>
 <style>
   :root{
     --bg:#faf6f1;--card:#fff;--ink:#4a3f36;--ink-soft:#8a7c70;--line:#e9dfd5;
@@ -15,26 +15,32 @@
     background:var(--bg);color:var(--ink);min-height:100vh;padding:18px 16px 48px;display:flex;justify-content:center;-webkit-font-smoothing:antialiased}
   .wrap{width:100%;max-width:460px}
   h1{font-size:18px;font-weight:800;margin:4px 0 2px}
+  h2{font-size:15px;font-weight:800;color:var(--accent-deep);margin:0 0 12px}
   .sub{font-size:12.5px;color:var(--ink-soft);margin-bottom:14px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:12px;box-shadow:0 2px 12px rgba(74,63,54,.06)}
   label.t{display:block;font-size:13px;font-weight:700;margin-bottom:8px}
-  input[type=text],input[type=tel],input[type=password],input[type=number]{
-    width:100%;padding:14px;font-size:18px;color:var(--ink);border:1.5px solid var(--line);border-radius:12px;background:#fdfbf8;outline:none;font-family:inherit}
-  input:focus{border-color:var(--accent);background:#fff}
+  label.t small{font-weight:400;color:var(--ink-soft)}
+  input[type=text],input[type=tel],input[type=password],input[type=number],textarea{
+    width:100%;padding:14px;font-size:17px;color:var(--ink);border:1.5px solid var(--line);border-radius:12px;background:#fdfbf8;outline:none;font-family:inherit}
+  textarea{min-height:72px;resize:vertical;font-size:15px}
+  input:focus,textarea:focus{border-color:var(--accent);background:#fff}
+  input[readonly]{color:var(--ink)}
   .big{font-size:26px;letter-spacing:.2em;text-align:center;font-weight:800}
   .row{display:flex;gap:8px}
   .row > *{flex:1}
   .btn{width:100%;padding:16px;font-size:16px;font-weight:800;color:#fff;background:var(--accent-deep);border:none;border-radius:14px;cursor:pointer;font-family:inherit;margin-top:6px}
   .btn.sec{background:#fff;color:var(--accent-deep);border:1.5px solid var(--accent)}
+  .btn.ghost{background:none;color:var(--ink-soft);border:1.5px solid var(--line)}
   .btn:disabled{opacity:.5}
   .chips{display:flex;flex-wrap:wrap;gap:8px}
-  .chip{position:relative}
+  .chip{position:relative;flex:1}
   .chip input{position:absolute;opacity:0;inset:0}
-  .chip span{display:inline-block;padding:12px 16px;font-size:15px;font-weight:700;border-radius:12px;border:1.5px solid var(--line);background:#fdfbf8;color:var(--ink-soft)}
+  .chip span{display:block;text-align:center;padding:12px 10px;font-size:15px;font-weight:700;border-radius:12px;border:1.5px solid var(--line);background:#fdfbf8;color:var(--ink-soft);white-space:nowrap}
   .chip input:checked + span{background:var(--accent-deep);border-color:var(--accent-deep);color:#fff}
   .chip.pink input:checked + span{background:#e8788f;border-color:#e8788f}
   .chip.beige input:checked + span{background:#c9a27a;border-color:#c9a27a}
   .chip.green input:checked + span{background:#5fa36a;border-color:#5fa36a}
+  .chip.ship input:checked + span{background:#4f7fb3;border-color:#4f7fb3}
   .match{display:block;width:100%;text-align:left;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:#fdfbf8;margin-top:8px;font-family:inherit;font-size:15px;cursor:pointer}
   .match b{font-size:16px}
   .match small{display:block;color:var(--ink-soft);font-size:12px;margin-top:2px}
@@ -44,12 +50,33 @@
   .msg{display:none;margin-top:10px;padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.5;font-weight:600}
   .msg.err{display:block;background:#faeae6;color:var(--err)}
   .msg.ok{display:block;background:#e8f3df;color:#3f6b2a}
-  .stat{display:flex;gap:8px;margin-bottom:12px}
-  .stat div{flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+  .stat{display:flex;gap:6px;margin-bottom:12px}
+  .stat div{flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 4px;text-align:center}
   .stat b{display:block;font-size:20px;font-weight:800}
   .stat span{font-size:11px;color:var(--ink-soft)}
   .tag{display:inline-block;font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;background:var(--accent-tint);color:var(--accent-deep);margin-left:6px;vertical-align:middle}
   .tag.no{background:#faeae6;color:var(--err)}
+  .summary{background:var(--accent-tint);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.7;margin-bottom:14px}
+  .summary b{font-weight:800}
+  .agree-row{display:flex;align-items:flex-start;gap:10px}
+  .agree-row input{width:22px;height:22px;margin-top:2px;accent-color:var(--accent-deep);flex-shrink:0}
+  .agree-row label{font-size:13.5px;line-height:1.5}
+  .agree-row label small{display:block;color:var(--ink-soft);font-size:12px;margin-top:3px}
+  .done-box{text-align:center;padding:30px 0 10px}
+  .done-box .ck{width:72px;height:72px;border-radius:50%;background:var(--ok);color:#fff;font-size:38px;line-height:72px;margin:0 auto 16px}
+  .done-box .big2{font-size:20px;font-weight:800;margin-bottom:8px}
+  .done-box p{font-size:14.5px;color:var(--ink-soft);line-height:1.7}
+  .done-box .ship{font-size:18px;font-weight:800;color:var(--accent-deep);margin:12px 0 4px}
+  .addr-row{display:flex;gap:8px}
+  .addr-row input{flex:1;min-width:0}
+  .addr-btn{flex:0 0 auto;padding:0 16px;font-size:14px;font-weight:700;color:#fff;background:var(--accent-deep);border:none;border-radius:12px;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .addr-layer{position:fixed;inset:0;z-index:1000;background:rgba(74,63,54,.45);display:flex;align-items:flex-end;justify-content:center}
+  .addr-layer[hidden]{display:none}
+  .addr-panel{width:100%;max-width:460px;height:85vh;height:85dvh;background:#fff;border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden}
+  .addr-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);flex-shrink:0}
+  .addr-head button{width:34px;height:34px;border-radius:50%;border:none;background:var(--bg);color:var(--ink);font-size:16px;cursor:pointer;font-family:inherit}
+  #addrEmbed{flex:1;min-height:0}
+  #addrEmbed iframe{width:100%!important;height:100%!important}
   [hidden]{display:none!important}
   footer{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:20px}
 </style>
@@ -60,7 +87,7 @@
   <!-- ===== 로그인 ===== -->
   <div id="login">
     <h1>베베노 스태프</h1>
-    <p class="sub">현장구매 기록 · 비밀번호는 시트 "집계" 탭 B2</p>
+    <p class="sub">구매 기록 (현장 수령 · 배송 주문) · 비밀번호는 시트 "집계" 탭 B2</p>
     <div class="card">
       <label class="t" for="pin">비밀번호</label>
       <input type="password" id="pin" class="big" inputmode="numeric" maxlength="6" placeholder="••••">
@@ -69,13 +96,14 @@
     </div>
   </div>
 
-  <!-- ===== 기록 ===== -->
-  <div id="app" hidden>
-    <h1>현장구매 기록</h1>
-    <p class="sub">구매자가 완료 화면을 보여주면 → 번호 뒷자리(또는 전체) → 제품·색상 → 기록</p>
+  <!-- ===== ① 스태프 작성 ===== -->
+  <div id="step1" hidden>
+    <h1>구매 기록</h1>
+    <p class="sub">구매자 찾기 → 제품·색상·금액 → 현장 수령이면 바로 기록, 배송이면 고객에게 전달</p>
 
     <div class="stat">
       <div><b id="stToday">-</b><span>오늘 구매</span></div>
+      <div><b id="stShip">-</b><span>배송</span></div>
       <div><b id="stPink">-</b><span>핑크</span></div>
       <div><b id="stBeige">-</b><span>베이지</span></div>
       <div><b id="stGreen">-</b><span>그린</span></div>
@@ -83,7 +111,7 @@
 
     <div class="card">
       <div class="field">
-        <label class="t" for="last4">전화번호 <small style="font-weight:400;color:var(--ink-soft)">뒷자리 4자리 또는 전체 번호</small></label>
+        <label class="t" for="last4">구매자 전화번호 <small>뒷자리 4자리 또는 전체 번호</small></label>
         <div class="row">
           <input type="tel" id="last4" class="big" inputmode="numeric" maxlength="13" placeholder="0000">
           <button class="btn sec" id="findBtn" style="flex:0 0 96px;margin-top:0">찾기</button>
@@ -91,18 +119,12 @@
         <div id="matches"></div>
         <button class="btn sec" id="manualBtn" style="margin-top:10px" hidden>참여자 목록에 없어요 → 직접 입력</button>
       </div>
-
       <div id="manual" hidden>
-        <div class="field">
-          <label class="t" for="mName">이름</label>
-          <input type="text" id="mName" placeholder="이름">
-        </div>
-        <div class="field">
-          <label class="t" for="mPhone">휴대전화번호</label>
-          <input type="tel" id="mPhone" inputmode="numeric" placeholder="010-0000-0000">
+        <div class="row">
+          <div class="field"><label class="t" for="mName">이름</label><input type="text" id="mName" placeholder="이름"></div>
+          <div class="field" style="flex:1.6"><label class="t" for="mPhone">휴대전화번호</label><input type="tel" id="mPhone" inputmode="numeric" placeholder="010-0000-0000"></div>
         </div>
       </div>
-
       <div id="who" class="field" hidden>
         <label class="t">구매자</label>
         <div style="font-size:16px"><b id="whoName"></b> <span id="whoPhone" style="color:var(--ink-soft)"></span><span id="whoTag" class="tag"></span></div>
@@ -110,7 +132,7 @@
 
       <div class="field">
         <label class="t">제품</label>
-        <div class="chips" id="products">
+        <div class="chips">
           <label class="chip"><input type="radio" name="product" value="콧물흡입기" checked><span>콧물흡입기</span></label>
           <label class="chip"><input type="radio" name="product" value="아기비데"><span>아기비데</span></label>
           <label class="chip"><input type="radio" name="product" value="실리콘약병"><span>실리콘약병</span></label>
@@ -118,7 +140,7 @@
         </div>
       </div>
       <div class="field" id="colorField">
-        <label class="t">색상 <small style="font-weight:400;color:var(--ink-soft)">(캐럿헤드도 같은 색으로)</small></label>
+        <label class="t">색상 <small>(캐럿헤드도 같은 색으로)</small></label>
         <div class="chips">
           <label class="chip pink"><input type="radio" name="color" value="핑크"><span>핑크</span></label>
           <label class="chip beige"><input type="radio" name="color" value="베이지"><span>베이지</span></label>
@@ -126,56 +148,110 @@
         </div>
       </div>
       <div class="row">
-        <div class="field">
-          <label class="t" for="qty">수량</label>
-          <input type="number" id="qty" value="1" min="1" max="9" inputmode="numeric">
-        </div>
-        <div class="field" style="flex:2">
-          <label class="t" for="memo">메모 <small style="font-weight:400;color:var(--ink-soft)">(선택)</small></label>
-          <input type="text" id="memo" placeholder="예: 그린 품절로 핑크 지급">
+        <div class="field" style="flex:.6"><label class="t" for="qty">수량</label><input type="number" id="qty" value="1" min="1" max="9" inputmode="numeric"></div>
+        <div class="field" style="flex:1.4"><label class="t" for="amount">결제 금액 <small>(원)</small></label><input type="tel" id="amount" inputmode="numeric" placeholder="예: 189,000"></div>
+      </div>
+      <div class="field">
+        <label class="t" for="memo">메모 <small>(선택)</small></label>
+        <input type="text" id="memo" placeholder="예: 그린 품절로 핑크 지급">
+      </div>
+
+      <div class="field">
+        <label class="t">수령 방식</label>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="method" value="현장" checked><span>🛍️ 현장 수령</span></label>
+          <label class="chip ship"><input type="radio" name="method" value="배송"><span>🚚 배송</span></label>
         </div>
       </div>
-      <button class="btn" id="saveBtn">기록하기</button>
-      <div class="msg" id="msg"></div>
+
+      <button class="btn" id="step1Btn">기록하기</button>
+      <div class="msg" id="msg1"></div>
     </div>
 
-    <button class="btn sec" id="logoutBtn">나가기</button>
-    <footer>bebeknow staff · <span id="ver">v2026.10.13-2</span></footer>
+    <button class="btn ghost" id="logoutBtn">나가기</button>
+    <footer>bebeknow staff · <span id="ver">v2026.10.13-3</span></footer>
+  </div>
+
+  <!-- ===== ② 고객 작성 (배송) ===== -->
+  <div id="step2" hidden>
+    <h1>배송 정보</h1>
+    <p class="sub">고객님께서 직접 입력해 주세요</p>
+    <div class="card">
+      <div class="summary" id="sum2"></div>
+      <div class="field">
+        <label class="t">받으시는 분</label>
+        <div style="font-size:16px"><b id="s2Name"></b> <span id="s2Phone" style="color:var(--ink-soft)"></span></div>
+      </div>
+      <div class="field">
+        <label class="t" for="zip">배송 주소</label>
+        <div class="addr-row">
+          <input type="text" id="zip" inputmode="numeric" placeholder="우편번호">
+          <button type="button" class="addr-btn" id="addrSearchBtn">🔍 주소 검색</button>
+        </div>
+        <input type="text" id="addr" placeholder="주소 검색을 누르거나 직접 입력" style="margin-top:8px">
+        <input type="text" id="addr2" placeholder="상세주소 (동 · 호수)" style="margin-top:8px">
+      </div>
+      <div class="field">
+        <label class="t" for="request">배송 요청사항 <small>(선택)</small></label>
+        <textarea id="request" placeholder="예: 부재 시 문 앞에 놓아주세요"></textarea>
+      </div>
+      <div class="field agree-row">
+        <input type="checkbox" id="agree">
+        <label for="agree"><b>[필수]</b> 개인정보 수집·이용 동의<small>성함·연락처·주소를 상품 배송 목적으로 수집하며, 배송 완료 후 3개월 뒤 파기합니다.</small></label>
+      </div>
+      <button class="btn" id="submitBtn">주문 접수</button>
+      <div class="msg" id="msg2"></div>
+      <button class="btn ghost" id="backBtn">← 직원 작성으로 돌아가기</button>
+    </div>
+  </div>
+
+  <!-- ===== 완료 ===== -->
+  <div id="done" hidden>
+    <div class="card done-box">
+      <div class="ck">✓</div>
+      <div class="big2" id="doneTitle">기록되었습니다</div>
+      <div class="ship" id="doneShip" hidden></div>
+      <p id="doneText"></p>
+    </div>
+    <button class="btn" id="nextBtn">다음 고객 입력</button>
   </div>
 
 </div>
 
+<div id="addrLayer" class="addr-layer" hidden>
+  <div class="addr-panel" role="dialog" aria-modal="true" aria-label="주소 검색">
+    <div class="addr-head"><b>주소 검색</b><button type="button" id="addrClose" aria-label="닫기">✕</button></div>
+    <div id="addrEmbed"></div>
+  </div>
+</div>
+
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <script>
 var GAS_URL = "https://script.google.com/macros/s/AKfycbwOrp74H1BYqzJ-8Wv7jv4q5qJ8K0qfA1z6YpHIRz-LsfTCHWrP8SoGe_8QYl51Q_zOew/exec";
 var PIN_KEY = "bebeknow_staff_pin";
-var pin = "";
-var buyer = null;        // {name, phone}
-var manualMode = false;
+var pin = "", buyer = null, manualMode = false, order = null, shipDate = "";
 
 function $(id){ return document.getElementById(id); }
-function msg(el, t, cls){ el.className = "msg " + cls; el.textContent = t; if(!t) el.className = "msg"; }
+function show(id){ ["login","step1","step2","done"].forEach(function(k){ $(k).hidden = (k !== id); }); window.scrollTo(0,0); }
+function msg(el, t, cls){ el.className = "msg " + (t ? cls : ""); el.textContent = t || ""; }
 function digits(v){ return String(v||"").replace(/\D/g,""); }
 function fmtPhone(v){ var d = digits(v).slice(0,11); if(d.length>7) return d.slice(0,3)+"-"+d.slice(3,7)+"-"+d.slice(7); if(d.length>3) return d.slice(0,3)+"-"+d.slice(3); return d; }
+function fmtWon(n){ return n ? Number(n).toLocaleString("ko-KR") + "원" : "-"; }
 function getJSON(url){ return fetch(url, {redirect:"follow"}).then(function(r){ return r.json(); }); }
 function postJSON(body){ return fetch(GAS_URL, {method:"POST", body: JSON.stringify(body), redirect:"follow"}).then(function(r){ return r.json(); }); }
+function radio(name){ var r = document.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ""; }
 
 /* ---------- 로그인 ---------- */
-function enter(p){
-  pin = p;
-  try{ sessionStorage.setItem(PIN_KEY, p); }catch(e){}
-  $("login").hidden = true; $("app").hidden = false;
-  refreshStats();
-  setTimeout(function(){ $("last4").focus(); }, 50);
-}
+function enter(p){ pin = p; try{ sessionStorage.setItem(PIN_KEY, p); }catch(e){} show("step1"); refreshStats(); setTimeout(function(){ $("last4").focus(); }, 50); }
 $("loginBtn").addEventListener("click", function(){
   var p = $("pin").value.trim();
   if(!p) return msg($("loginMsg"), "비밀번호를 입력해주세요.", "err");
-  this.disabled = true; msg($("loginMsg"), "확인 중…", "ok");
+  $("loginBtn").disabled = true; msg($("loginMsg"), "확인 중…", "ok");
   getJSON(GAS_URL + "?staff=today&pin=" + encodeURIComponent(p)).then(function(res){
     $("loginBtn").disabled = false;
     if(res.status === "unauth") return msg($("loginMsg"), "비밀번호가 맞지 않아요. 시트 '집계' 탭 B2를 확인해주세요.", "err");
     if(res.status !== "ok") return msg($("loginMsg"), "연결에 문제가 있어요. 잠시 후 다시 시도해주세요.", "err");
-    msg($("loginMsg"), "", ""); enter(p); applyStats(res);
+    msg($("loginMsg"), ""); enter(p); applyStats(res);
   }).catch(function(){ $("loginBtn").disabled = false; msg($("loginMsg"), "네트워크 연결을 확인해주세요.", "err"); });
 });
 $("pin").addEventListener("keydown", function(e){ if(e.key === "Enter") $("loginBtn").click(); });
@@ -183,71 +259,51 @@ $("logoutBtn").addEventListener("click", function(){ try{ sessionStorage.removeI
 
 /* ---------- 오늘 통계 ---------- */
 function applyStats(res){
-  $("stToday").textContent = res.today;
-  $("stPink").textContent = res.colors["핑크"] || 0;
-  $("stBeige").textContent = res.colors["베이지"] || 0;
-  $("stGreen").textContent = res.colors["그린"] || 0;
+  $("stToday").textContent = res.today; $("stShip").textContent = res.ship;
+  $("stPink").textContent = res.colors["핑크"] || 0; $("stBeige").textContent = res.colors["베이지"] || 0; $("stGreen").textContent = res.colors["그린"] || 0;
+  if(res.shipDate) shipDate = res.shipDate;
 }
-function refreshStats(){
-  getJSON(GAS_URL + "?staff=today&pin=" + encodeURIComponent(pin)).then(function(res){ if(res.status === "ok") applyStats(res); }).catch(function(){});
-}
+function refreshStats(){ getJSON(GAS_URL + "?staff=today&pin=" + encodeURIComponent(pin)).then(function(res){ if(res.status === "ok") applyStats(res); }).catch(function(){}); }
 
 /* ---------- 참여자 찾기 ---------- */
 function setBuyer(b, participant){
-  buyer = b;
-  $("who").hidden = !b;
-  if(b){
-    $("whoName").textContent = b.name;
-    $("whoPhone").textContent = b.phone;
-    var tag = $("whoTag");
-    tag.textContent = participant ? "미션 참여자" : "참여 기록 없음";
-    tag.className = "tag" + (participant ? "" : " no");
-  }
+  buyer = b; $("who").hidden = !b;
+  if(b){ $("whoName").textContent = b.name; $("whoPhone").textContent = b.phone;
+    var tag = $("whoTag"); tag.textContent = participant ? "미션 참여자" : "참여 기록 없음"; tag.className = "tag" + (participant ? "" : " no"); }
 }
 function renderMatches(list){
   var box = $("matches"); box.innerHTML = "";
   list.forEach(function(m){
-    var b = document.createElement("button");
-    b.type = "button"; b.className = "match";
+    var b = document.createElement("button"); b.type = "button"; b.className = "match";
     b.innerHTML = "<b>" + m.name + "</b> " + m.masked + "<small>" + m.at + " 참여</small>";
     b.addEventListener("click", function(){
       Array.prototype.forEach.call(box.children, function(c){ c.classList.remove("sel"); });
-      b.classList.add("sel");
-      manualMode = false; $("manual").hidden = true;
-      setBuyer({ name: m.name, phone: m.phone }, true);
+      b.classList.add("sel"); manualMode = false; $("manual").hidden = true; setBuyer({ name: m.name, phone: m.phone }, true);
     });
     box.appendChild(b);
   });
   if(list.length === 1) box.firstChild.click();
 }
 function find(){
-  var q = digits($("last4").value);
-  var l4 = q.slice(-4);
-  msg($("msg"), "", "");
-  setBuyer(null); $("matches").innerHTML = ""; $("manualBtn").hidden = true;
-  if(q.length !== 4 && q.length < 10) return msg($("msg"), "뒷자리 4자리 또는 전체 번호를 입력해주세요.", "err");
+  var q = digits($("last4").value), l4 = q.slice(-4);
+  msg($("msg1"), ""); setBuyer(null); $("matches").innerHTML = ""; $("manualBtn").hidden = true;
+  if(q.length !== 4 && q.length < 10) return msg($("msg1"), "뒷자리 4자리 또는 전체 번호를 입력해주세요.", "err");
   $("findBtn").disabled = true; $("findBtn").textContent = "…";
   getJSON(GAS_URL + "?staff=lookup&pin=" + encodeURIComponent(pin) + "&q=" + q).then(function(res){
     $("findBtn").disabled = false; $("findBtn").textContent = "찾기";
     if(res.status === "unauth"){ try{ sessionStorage.removeItem(PIN_KEY); }catch(e){} return location.reload(); }
-    if(res.status !== "ok") return msg($("msg"), "조회에 실패했어요. 다시 시도해주세요.", "err");
-    if(!res.matches.length){
-      msg($("msg"), (q.length >= 10 ? "이 번호의" : "뒷자리 " + l4) + " 참여자가 없어요. 미션을 안 한 분이면 직접 입력으로 기록할 수 있어요.", "err");
-      $("manualBtn").hidden = false;
-      return;
-    }
-    renderMatches(res.matches);
+    if(res.status !== "ok") return msg($("msg1"), "조회에 실패했어요. 다시 시도해주세요.", "err");
     $("manualBtn").hidden = false;
-  }).catch(function(){ $("findBtn").disabled = false; $("findBtn").textContent = "찾기"; msg($("msg"), "네트워크 연결을 확인해주세요.", "err"); });
+    if(!res.matches.length) return msg($("msg1"), (q.length >= 10 ? "이 번호의" : "뒷자리 " + l4) + " 참여자가 없어요. 미션을 안 한 분이면 직접 입력으로 기록할 수 있어요.", "err");
+    renderMatches(res.matches);
+  }).catch(function(){ $("findBtn").disabled = false; $("findBtn").textContent = "찾기"; msg($("msg1"), "네트워크 연결을 확인해주세요.", "err"); });
 }
 $("findBtn").addEventListener("click", find);
 var findTimer = null;
 $("last4").addEventListener("input", function(){
-  var d = digits(this.value).slice(0,11);
-  this.value = d.length > 4 ? fmtPhone(d) : d;
+  var d = digits(this.value).slice(0,11); this.value = d.length > 4 ? fmtPhone(d) : d;
   clearTimeout(findTimer);
-  if(d.length === 11) find();                                   /* 전체 번호 → 바로 */
-  else if(d.length === 4) findTimer = setTimeout(find, 700);    /* 뒷자리 4자리 → 잠깐 기다렸다가 */
+  if(d.length === 11) find(); else if(d.length === 4) findTimer = setTimeout(find, 700);
 });
 $("last4").addEventListener("keydown", function(e){ if(e.key === "Enter") find(); });
 $("manualBtn").addEventListener("click", function(){
@@ -256,54 +312,110 @@ $("manualBtn").addEventListener("click", function(){
   $("mName").focus();
 });
 $("mPhone").addEventListener("input", function(){ this.value = fmtPhone(this.value); });
-
-/* 제품에 따라 색상 칸 표시 */
+$("amount").addEventListener("input", function(){ var d = digits(this.value); this.value = d ? Number(d).toLocaleString("ko-KR") : ""; });
 Array.prototype.forEach.call(document.querySelectorAll('input[name="product"]'), function(r){
   r.addEventListener("change", function(){ $("colorField").hidden = !(r.value === "콧물흡입기" || r.value === "아기비데"); });
 });
+Array.prototype.forEach.call(document.querySelectorAll('input[name="method"]'), function(r){
+  r.addEventListener("change", function(){ $("step1Btn").textContent = r.value === "배송" ? "다음 → 고객님께 전달" : "기록하기"; });
+});
 
-/* ---------- 기록 ---------- */
-$("saveBtn").addEventListener("click", function(){
-  msg($("msg"), "", "");
+/* ---------- ① 스태프 작성 완료 ---------- */
+function collectStep1(){
   var name, phone;
   if(manualMode){
     name = $("mName").value.trim(); phone = $("mPhone").value.trim();
-    if(!name) return msg($("msg"), "이름을 입력해주세요.", "err");
-    if(digits(phone).length < 10) return msg($("msg"), "휴대전화번호를 확인해주세요.", "err");
+    if(!name) return msg($("msg1"), "이름을 입력해주세요.", "err");
+    if(digits(phone).length < 10) return msg($("msg1"), "휴대전화번호를 확인해주세요.", "err");
   }else{
-    if(!buyer) return msg($("msg"), "먼저 뒷자리 4자리로 구매자를 찾아 선택해주세요.", "err");
+    if(!buyer) return msg($("msg1"), "먼저 전화번호로 구매자를 찾아 선택해주세요.", "err");
     name = buyer.name; phone = buyer.phone;
   }
-  var product = (document.querySelector('input[name="product"]:checked') || {}).value;
-  var colorEl = document.querySelector('input[name="color"]:checked');
-  var color = colorEl ? colorEl.value : "";
+  var product = radio("product"), color = radio("color");
   var needColor = product === "콧물흡입기" || product === "아기비데";
-  if(!product) return msg($("msg"), "제품을 선택해주세요.", "err");
-  if(needColor && !color) return msg($("msg"), "색상을 선택해주세요.", "err");
-  var qty = Math.max(1, parseInt($("qty").value, 10) || 1);
-  var btn = $("saveBtn"); btn.disabled = true; btn.textContent = "기록 중…";
-  postJSON({ action:"buy", pin: pin, name: name, phone: phone, product: product, color: needColor ? color : "", qty: qty, memo: $("memo").value.trim() })
-    .then(function(res){
-      btn.disabled = false; btn.textContent = "기록하기";
-      if(res.status === "unauth"){ try{ sessionStorage.removeItem(PIN_KEY); }catch(e){} return location.reload(); }
-      if(res.status !== "ok") return msg($("msg"), "저장에 실패했어요. 다시 시도해주세요.", "err");
-      msg($("msg"), "✅ 기록됨 · " + name + " · " + product + (color ? " " + color : "") + " ×" + qty + (product === "콧물흡입기" ? " → 캐럿헤드(" + color + ") 증정" : ""), "ok");
-      /* 다음 입력 준비 */
-      buyer = null; manualMode = false; $("manual").hidden = true; $("who").hidden = true;
-      $("matches").innerHTML = ""; $("manualBtn").hidden = true;
-      $("last4").value = ""; $("mName").value = ""; $("mPhone").value = ""; $("memo").value = ""; $("qty").value = 1;
-      if(colorEl) colorEl.checked = false;
-      refreshStats();
-      setTimeout(function(){ $("last4").focus(); }, 50);
-    })
-    .catch(function(){ btn.disabled = false; btn.textContent = "기록하기"; msg($("msg"), "네트워크 연결을 확인해주세요.", "err"); });
+  if(!product) return msg($("msg1"), "제품을 선택해주세요.", "err");
+  if(needColor && !color) return msg($("msg1"), "색상을 선택해주세요.", "err");
+  return { name: name, phone: phone, product: product, color: needColor ? color : "", qty: Math.max(1, parseInt($("qty").value, 10) || 1),
+           amount: digits($("amount").value), memo: $("memo").value.trim(), method: radio("method") };
+}
+$("step1Btn").addEventListener("click", function(){
+  msg($("msg1"), "");
+  var o = collectStep1(); if(!o) return;
+  order = o;
+  if(o.method === "배송"){
+    $("sum2").innerHTML = "<b>" + o.product + (o.color ? " · " + o.color : "") + "</b> × " + o.qty + " · 결제 " + fmtWon(o.amount) + "<br>" + (shipDate ? "<b>" + shipDate + "</b> 발송 예정" : "");
+    $("s2Name").textContent = o.name; $("s2Phone").textContent = o.phone;
+    $("zip").value = ""; $("addr").value = ""; $("addr2").value = ""; $("request").value = ""; $("agree").checked = false; msg($("msg2"), "");
+    show("step2");
+    return;
+  }
+  save(o, $("step1Btn"), $("msg1"));
 });
 
-/* ---------- 자동 로그인 (같은 브라우저 세션) ---------- */
+/* ---------- ② 고객 작성 → 접수 ---------- */
+$("backBtn").addEventListener("click", function(){ show("step1"); });
+$("submitBtn").addEventListener("click", function(){
+  msg($("msg2"), "");
+  if(!$("addr").value.trim()) return msg($("msg2"), "배송 주소를 입력해주세요.", "err");
+  if(!$("agree").checked) return msg($("msg2"), "개인정보 수집·이용에 동의해주세요.", "err");
+  var o = Object.assign({}, order, { zip: $("zip").value.trim(), address: $("addr").value.trim(), address2: $("addr2").value.trim(), request: $("request").value.trim(), agree: true });
+  save(o, $("submitBtn"), $("msg2"));
+});
+
+/* ---------- 저장 ---------- */
+function save(o, btn, msgEl){
+  var label = btn.textContent; btn.disabled = true; btn.textContent = "저장 중…";
+  postJSON(Object.assign({ action: "buy", pin: pin }, o)).then(function(res){
+    btn.disabled = false; btn.textContent = label;
+    if(res.status === "unauth"){ try{ sessionStorage.removeItem(PIN_KEY); }catch(e){} return location.reload(); }
+    if(res.status !== "ok") return msg(msgEl, "저장에 실패했어요. 다시 시도해주세요." + (res.message ? " [" + res.message + "]" : ""), "err");
+    var isShip = res.method === "배송";
+    $("doneTitle").textContent = isShip ? "주문이 접수되었습니다" : "기록되었습니다";
+    $("doneShip").hidden = !isShip; $("doneShip").textContent = isShip ? (res.shipDate || shipDate) + " 발송 예정" : "";
+    $("doneText").innerHTML = o.name + "님 · " + o.product + (o.color ? " " + o.color : "") + " × " + o.qty + (o.amount ? " · " + fmtWon(o.amount) : "")
+      + (o.product === "콧물흡입기" ? "<br>🎁 캐럿헤드(" + o.color + ") 증정 · 🛡️ 보증 1년 연장" : "")
+      + (isShip ? "<br>주문번호 " + res.orderNo + (res.shipLogged ? "" : "<br><span style='color:var(--err)'>⚠ 택배 업로드 시트 기록 실패 — 시트에서 직접 확인</span>") : "");
+    show("done"); refreshStats();
+  }).catch(function(){ btn.disabled = false; btn.textContent = label; msg(msgEl, "네트워크 연결을 확인해주세요.", "err"); });
+}
+$("nextBtn").addEventListener("click", function(){
+  buyer = null; manualMode = false; order = null;
+  $("manual").hidden = true; $("who").hidden = true; $("matches").innerHTML = ""; $("manualBtn").hidden = true;
+  $("last4").value = ""; $("mName").value = ""; $("mPhone").value = ""; $("memo").value = ""; $("qty").value = 1; $("amount").value = "";
+  var c = document.querySelector('input[name="color"]:checked'); if(c) c.checked = false;
+  document.querySelector('input[name="product"][value="콧물흡입기"]').checked = true; $("colorField").hidden = false;
+  document.querySelector('input[name="method"][value="현장"]').checked = true; $("step1Btn").textContent = "기록하기";
+  msg($("msg1"), ""); show("step1"); setTimeout(function(){ $("last4").focus(); }, 50);
+});
+
+/* ---------- 주소 검색 (카카오 우편번호) ---------- */
 (function(){
-  var saved = ""; try{ saved = sessionStorage.getItem(PIN_KEY) || ""; }catch(e){}
-  if(saved){ $("pin").value = saved; $("loginBtn").click(); }
+  var layer = $("addrLayer"), embed = $("addrEmbed");
+  function closeAddr(){ layer.hidden = true; embed.innerHTML = ""; }
+  function openAddr(){
+    if(!window.daum || !window.daum.Postcode){ $("addr").focus(); return msg($("msg2"), "주소 검색을 불러오지 못했어요. 직접 입력해주세요.", "err"); }
+    layer.hidden = false; embed.innerHTML = "";
+    new daum.Postcode({
+      oncomplete: function(data){
+        var a = data.userSelectedType === "R" ? data.roadAddress : data.jibunAddress, extra = "";
+        if(data.userSelectedType === "R"){
+          if(data.bname && /[동로가]$/.test(data.bname)) extra += data.bname;
+          if(data.buildingName && data.apartment === "Y") extra += (extra ? ", " : "") + data.buildingName;
+          if(extra) a += " (" + extra + ")";
+        }
+        $("zip").value = data.zonecode; $("addr").value = a; closeAddr(); $("addr2").focus();
+      },
+      onclose: function(state){ if(state === "FORCE_CLOSE") closeAddr(); },
+      width: "100%", height: "100%"
+    }).embed(embed);
+  }
+  $("addrSearchBtn").addEventListener("click", openAddr);
+  $("addrClose").addEventListener("click", closeAddr);
+  layer.addEventListener("click", function(e){ if(e.target === layer) closeAddr(); });
 })();
+
+/* ---------- 자동 로그인 ---------- */
+(function(){ var saved = ""; try{ saved = sessionStorage.getItem(PIN_KEY) || ""; }catch(e){} if(saved){ $("pin").value = saved; $("loginBtn").click(); } })();
 </script>
 </body>
 </html>
