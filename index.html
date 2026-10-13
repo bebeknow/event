@@ -234,6 +234,14 @@
     font-family:inherit;cursor:pointer;
   }
   .mission.done .m-badge{display:inline-block;animation:pop .35s ease}
+  .mission.pending .m-badge{
+    display:inline-block;background:#fdfbf8;border-color:var(--line);color:var(--ink-soft);
+    font-weight:700;pointer-events:none;animation:none;
+  }
+  .mission.pending .m-badge::before{content:"⏳ 진행 중";}
+  .mission.pending .m-badge{font-size:0}
+  .mission.pending .m-badge::before{font-size:13px}
+  .mission.pending .m-link{background:#fff;border:1.5px solid var(--accent);color:var(--accent-deep);box-shadow:none}
   @keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
   .m-link{
     display:block;margin:12px 0 0 52px;padding:14px 14px;border-radius:12px;
@@ -475,7 +483,7 @@
         <a data-link="kakao" href="#" target="_blank" rel="noopener noreferrer">카카오톡 채널</a>
       </div>
       <div class="foot-brand">BEBEKNOW</div>
-      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.10.13-2</span></p>
+      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.10.13-3</span></p>
     </footer>
   </div>
 
@@ -617,26 +625,31 @@ var GF = {
   if(fl && fl.querySelectorAll("a[href]").length === 0) fl.style.display = "none";
 })();
 
-/* ---------- 미션: 링크를 누르면 자동 완료 (폰에 저장되어 갔다 와도 유지) ----------
- *  - 버튼(링크)을 누르는 순간 완료로 기록 → 돌아오면 ✓ 완료 배지 표시
- *  - 다음 미션으로 자동 스크롤, 3개 다 되면 입력란이 열리고 그쪽으로 스크롤
+/* ---------- 미션: 버튼을 누르고 다녀오면 완료 (폰에 저장되어 갔다 와도 유지) ----------
+ *  - 버튼을 누르면 "진행 중" 표시 → 앱/탭에 갔다가 이 페이지로 돌아오면 ✓ 완료
+ *    (같은 탭으로 이동하는 회원가입은 돌아와서 페이지가 다시 열릴 때 완료)
+ *  - 페이지를 떠난 흔적이 없어도 12초 뒤에는 완료 처리 (막다른 길 방지)
+ *  - 3개 다 되면 입력란이 열리고 그쪽으로 스크롤
  *  - ✓ 완료 배지를 누르면 취소 (잘못 눌렀을 때)
  * ------------------------------------------------------------------ */
 var MISSION_KEY = "bebeknow_missions";
 var MISSION_ORDER = ["home", "kakao", "insta"];
 var MISSION_LABEL = { kakao: "카카오톡 채널 추가", home: "공식 홈페이지 회원가입", insta: "인스타그램 팔로우" };
+var MISSION_FALLBACK_MS = 12000;
 var missions = (function(){ try{ return JSON.parse(localStorage.getItem(MISSION_KEY) || "{}"); }catch(e){ return {}; } })();
 function saveMissions(){ try{ localStorage.setItem(MISSION_KEY, JSON.stringify(missions)); }catch(e){} }
-function missionState(){ var m = {}; MISSION_ORDER.forEach(function(k){ m[k] = !!missions[k]; }); return m; }
-function allMissionsDone(){ return MISSION_ORDER.every(function(k){ return !!missions[k]; }); }
-function nextMission(){ for(var i = 0; i < MISSION_ORDER.length; i++){ if(!missions[MISSION_ORDER[i]]) return MISSION_ORDER[i]; } return null; }
+function isDone(k){ return missions[k] === true; }
+function missionState(){ var m = {}; MISSION_ORDER.forEach(function(k){ m[k] = isDone(k); }); return m; }
+function allMissionsDone(){ return MISSION_ORDER.every(isDone); }
+function nextMission(){ for(var i = 0; i < MISSION_ORDER.length; i++){ if(!isDone(MISSION_ORDER[i])) return MISSION_ORDER[i]; } return null; }
 function refreshMissions(){
   var n = 0, next = nextMission();
   MISSION_ORDER.forEach(function(k){
     var card = document.querySelector('.mission[data-mission="' + k + '"]');
-    card.classList.toggle("done", !!missions[k]);
+    card.classList.toggle("done", isDone(k));
+    card.classList.toggle("pending", missions[k] === "pending");
     card.classList.toggle("next", k === next);
-    if(missions[k]) n++;
+    if(isDone(k)) n++;
   });
   var prog = document.getElementById("missionProgress");
   var total = MISSION_ORDER.length;
@@ -651,20 +664,37 @@ function scrollToNext(){
   var el = document.getElementById("gate");
   if(el) setTimeout(function(){ el.scrollIntoView({behavior:"smooth", block:"start"}); }, 250);
 }
+/* 진행 중인 미션을 완료로 바꾸고 화면 갱신 */
+function completeMission(k){
+  if(missions[k] !== "pending") return;
+  missions[k] = true;
+  refreshMissions();
+  scrollToNext();
+}
+function completeAllPending(){
+  MISSION_ORDER.forEach(function(k){ if(missions[k] === "pending") completeMission(k); });
+}
 (function(){
-  /* 링크 클릭 = 완료 (새 탭/앱으로 나가는 건 브라우저가 그대로 처리) */
+  /* 링크 클릭 = "진행 중" (새 탭/앱으로 나가는 건 브라우저가 그대로 처리) */
   Array.prototype.forEach.call(document.querySelectorAll("[data-mgo]"), function(a){
     a.addEventListener("click", function(){
       var k = a.getAttribute("data-mgo");
       if(missions[k]) return;
-      missions[k] = true;
+      missions[k] = "pending";
       refreshMissions();
-      /* 돌아왔을 때 다음 미션이 눈에 들어오도록 */
-      var once = function(){ if(document.visibilityState === "visible"){ document.removeEventListener("visibilitychange", once); scrollToNext(); } };
-      document.addEventListener("visibilitychange", once);
-      setTimeout(function(){ document.removeEventListener("visibilitychange", once); scrollToNext(); }, 4000);
+      /* 떠났다가 돌아오면 완료, 아니면 일정 시간 뒤 완료 */
+      var left = false;
+      var onVis = function(){
+        if(document.visibilityState === "hidden"){ left = true; return; }
+        if(left){ document.removeEventListener("visibilitychange", onVis); completeMission(k); }
+      };
+      document.addEventListener("visibilitychange", onVis);
+      setTimeout(function(){ document.removeEventListener("visibilitychange", onVis); completeMission(k); }, MISSION_FALLBACK_MS);
     });
   });
+  /* 페이지가 다시 열렸을 때(같은 탭 이동 후 복귀·새로고침) 진행 중이던 미션은 완료 처리 */
+  completeAllPending();
+  window.addEventListener("pageshow", function(e){ if(e.persisted) completeAllPending(); });
   /* ✓ 완료 배지 = 취소 */
   Array.prototype.forEach.call(document.querySelectorAll("[data-mbadge]"), function(b){
     b.addEventListener("click", function(){
