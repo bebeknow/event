@@ -205,7 +205,7 @@
     </div>
 
     <button class="btn ghost" id="logoutBtn">나가기</button>
-    <footer>bebeknow staff · <span id="ver">v2026.10.14-8</span></footer>
+    <footer>bebeknow staff · <span id="ver">v2026.10.14-9</span></footer>
   </div>
 
   <!-- ===== ② 고객 작성 (배송) ===== -->
@@ -312,7 +312,7 @@ $("qty").addEventListener("change", autoAmount);
 autoAmount();
 applyPartMode();
 Array.prototype.forEach.call(document.querySelectorAll('input[name="method"]'), function(r){
-  r.addEventListener("change", function(){ $("step1Btn").textContent = r.value === "배송" ? "다음 → 고객님께 전달" : "구매 접수"; });
+  r.addEventListener("change", function(){ $("step1Btn").textContent = r.value === "배송" ? "배송 정보 입력" : "구매 접수"; });
 });
 
 /* ---------- ① 스태프 작성 완료 ---------- */
