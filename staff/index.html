@@ -194,8 +194,8 @@
         <div class="chips">
           <label class="chip"><input type="radio" name="product" value="콧물흡입기" checked><span>콧물흡입기</span></label>
           <label class="chip"><input type="radio" name="product" value="아기비데"><span>아기비데</span></label>
-          <label class="chip"><input type="radio" name="product" value="실리콘약병"><span>실리콘약병</span></label>
-          <label class="chip"><input type="radio" name="product" value="기타"><span>기타</span></label>
+          <label class="chip"><input type="radio" name="product" value="실리콘약병 3개입"><span>실리콘약병 3개입</span></label>
+          <label class="chip"><input type="radio" name="product" value="실리콘약병 1개입"><span>실리콘약병 1개입</span></label>
         </div>
       </div>
       <div class="field" id="colorField">
@@ -208,7 +208,7 @@
       </div>
       <div class="row">
         <div class="field" style="flex:.6"><label class="t" for="qty">수량</label><input type="number" id="qty" value="1" min="1" max="9" inputmode="numeric"></div>
-        <div class="field" style="flex:1.4"><label class="t" for="amount">결제 금액 <small>(원)</small><span class="req" style="color:var(--err)"> *</span></label><input type="tel" id="amount" inputmode="numeric" placeholder=""></div>
+        <div class="field" style="flex:1.4"><label class="t" for="amount">결제 금액 <small>(원 · 제품×수량 자동, 수정 가능)</small></label><input type="tel" id="amount" inputmode="numeric" placeholder=""></div>
       </div>
       <div class="field wide">
         <label class="t" for="memo">메모 <small>(선택)</small></label>
@@ -228,7 +228,7 @@
     </div>
 
     <button class="btn ghost" id="logoutBtn">나가기</button>
-    <footer>bebeknow staff · <span id="ver">v2026.10.14-3</span></footer>
+    <footer>bebeknow staff · <span id="ver">v2026.10.14-4</span></footer>
   </div>
 
   <!-- ===== ② 고객 작성 (배송) ===== -->
@@ -290,6 +290,12 @@
 var GAS_URL = "https://script.google.com/macros/s/AKfycbwOrp74H1BYqzJ-8Wv7jv4q5qJ8K0qfA1z6YpHIRz-LsfTCHWrP8SoGe_8QYl51Q_zOew/exec";
 var PIN_KEY = "bebeknow_staff_pin";
 var pin = "", buyer = null, manualMode = false, order = null, shipDate = "";
+/* 제품 단가 (여기서 수정) */
+var PRICES = { "콧물흡입기": 189000, "아기비데": 84800, "실리콘약병 3개입": 14800, "실리콘약병 1개입": 8000 };
+function autoAmount(){
+  var p = PRICES[radio("product")] || 0, q = Math.max(1, parseInt($("qty").value, 10) || 1);
+  $("amount").value = p ? (p * q).toLocaleString("ko-KR") : "";
+}
 function isPart(){ return $("isPart").checked; }
 function applyPartMode(){
   var on = isPart();
@@ -382,7 +388,10 @@ $("manualBtn").addEventListener("click", function(){
 });
 $("mPhone").addEventListener("input", function(){ this.value = fmtPhone(this.value); });
 $("amount").addEventListener("input", function(){ var d = digits(this.value); this.value = d ? Number(d).toLocaleString("ko-KR") : ""; });
-Array.prototype.forEach.call(document.querySelectorAll('input[name="product"]'), function(r){ r.addEventListener("change", applyPartMode); });
+Array.prototype.forEach.call(document.querySelectorAll('input[name="product"]'), function(r){ r.addEventListener("change", function(){ applyPartMode(); autoAmount(); }); });
+$("qty").addEventListener("input", autoAmount);
+$("qty").addEventListener("change", autoAmount);
+autoAmount();
 $("isPart").addEventListener("change", function(){
   if(!isPart()){ buyer = null; $("who").hidden = true; $("matches").innerHTML = ""; $("manualBtn").hidden = true; $("last4").value = ""; }
   applyPartMode(); msg($("msg1"), "");
@@ -465,7 +474,7 @@ $("nextBtn").addEventListener("click", function(){
   $("manual").hidden = true; $("who").hidden = true; $("matches").innerHTML = ""; $("manualBtn").hidden = true;
   $("last4").value = ""; $("mName").value = ""; $("mPhone").value = ""; $("memo").value = ""; $("qty").value = 1; $("amount").value = "";
   var c = document.querySelector('input[name="color"]:checked'); if(c) c.checked = false;
-  document.querySelector('input[name="product"][value="콧물흡입기"]').checked = true; $("colorField").hidden = false;
+  document.querySelector('input[name="product"][value="콧물흡입기"]').checked = true; $("colorField").hidden = false; autoAmount();
   document.querySelector('input[name="method"][value="현장"]').checked = true; $("step1Btn").textContent = "기록하기";
   $("isPart").checked = true; applyPartMode();
   msg($("msg1"), ""); show("step1"); setTimeout(function(){ $("last4").focus(); }, 50);
