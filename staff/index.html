@@ -62,6 +62,8 @@
   .agree-row input{width:22px;height:22px;margin-top:2px;accent-color:var(--accent-deep);flex-shrink:0}
   .agree-row label{font-size:13.5px;line-height:1.5}
   .agree-row label small{display:block;color:var(--ink-soft);font-size:12px;margin-top:3px}
+  .notice{font-size:13.5px;line-height:1.6;color:var(--ink-soft);background:#fdfbf8;border:1px dashed var(--line);border-radius:12px;padding:12px 14px;margin-bottom:6px}
+  .notice b{color:var(--ink)}
   .done-box{text-align:center;padding:30px 0 10px}
   .done-box .ck{width:72px;height:72px;border-radius:50%;background:var(--ok);color:#fff;font-size:38px;line-height:72px;margin:0 auto 16px}
   .done-box .big2{font-size:20px;font-weight:800;margin-bottom:8px}
@@ -133,7 +135,7 @@
     #step2 .card{display:grid;grid-template-columns:1fr 1fr;column-gap:28px;align-items:start}
     #step2 .card > .summary{grid-column:1 / -1}
     #step2 .card > #submitBtn,#step2 .card > #msg2,#step2 .card > #backBtn{grid-column:1 / -1}
-    #step2 .card > .agree-row{grid-column:1 / -1}
+    #step2 .card > .notice{grid-column:1 / -1;font-size:16px}
     .addr-panel{max-width:720px;border-radius:18px;height:80vh;margin-bottom:5vh}
   }
 </style>
@@ -226,7 +228,7 @@
     </div>
 
     <button class="btn ghost" id="logoutBtn">나가기</button>
-    <footer>bebeknow staff · <span id="ver">v2026.10.14-1</span></footer>
+    <footer>bebeknow staff · <span id="ver">v2026.10.14-2</span></footer>
   </div>
 
   <!-- ===== ② 고객 작성 (배송) ===== -->
@@ -256,10 +258,7 @@
         <label class="t" for="request">배송 요청사항 <small>(선택)</small></label>
         <textarea id="request" placeholder=""></textarea>
       </div>
-      <div class="field agree-row">
-        <input type="checkbox" id="agree">
-        <label for="agree"><b>[필수]</b> 개인정보 수집·이용 동의<small>성함·연락처·주소를 상품 배송 목적으로 수집하며, 배송 완료 후 3개월 뒤 파기합니다.</small></label>
-      </div>
+      <p class="notice" id="privacyNotice">성함·연락처·주소는 <b>상품 배송 목적으로만</b> 사용하며, 배송 완료 후 3개월 뒤 파기합니다.</p>
       <button class="btn" id="submitBtn">주문 접수</button>
       <div class="msg" id="msg2"></div>
       <button class="btn ghost" id="backBtn">← 직원 작성으로 돌아가기</button>
@@ -423,7 +422,7 @@ $("step1Btn").addEventListener("click", function(){
     $("s2Known").hidden = !known; $("s2Edit").hidden = known;
     $("s2Name").textContent = o.name; $("s2Phone").textContent = String(o.phone).replace(/^(\d{3})-(\d{3,4})-/, "$1-****-");
     $("s2NameIn").value = o.name; $("s2PhoneIn").value = o.phone;
-    $("zip").value = ""; $("addr").value = ""; $("addr2").value = ""; $("request").value = ""; $("agree").checked = false; msg($("msg2"), "");
+    $("zip").value = ""; $("addr").value = ""; $("addr2").value = ""; $("request").value = ""; msg($("msg2"), "");
     show("step2");
     return;
   }
@@ -440,7 +439,6 @@ $("submitBtn").addEventListener("click", function(){
   if(!nm) return msg($("msg2"), "받으시는 분 성함을 입력해주세요.", "err");
   if(digits(ph).length < 10) return msg($("msg2"), "연락처를 확인해주세요.", "err");
   if(!$("addr").value.trim()) return msg($("msg2"), "배송 주소를 입력해주세요.", "err");
-  if(!$("agree").checked) return msg($("msg2"), "개인정보 수집·이용에 동의해주세요.", "err");
   var o = Object.assign({}, order, { name: nm, phone: ph, zip: $("zip").value.trim(), address: $("addr").value.trim(), address2: $("addr2").value.trim(), request: $("request").value.trim(), agree: true });
   save(o, $("submitBtn"), $("msg2"));
 });
