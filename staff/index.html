@@ -199,34 +199,20 @@
 
       <!-- 오른쪽: 이벤트 참여자 · 메모 -->
       <div class="colR">
-        <label class="switch on" id="partSwitch">
-          <span><b>🎫 이벤트 참여자</b><small>참여자면 캐럿헤드 증정 · 보증 1년 연장</small></span>
-          <input type="checkbox" id="isPart" checked><span class="tg"></span>
-        </label>
         <div id="partBlock">
           <div class="field">
-            <label class="t" for="last4">참여자 전화번호 <small>뒷자리 4자리 또는 전체 번호</small></label>
+            <label class="t" for="last4">🎫 이벤트 참여자 전화번호 <small>참여자만 · 뒷자리 4자리 또는 전체 번호</small></label>
             <div class="row">
               <input type="tel" id="last4" class="big" inputmode="numeric" maxlength="13" placeholder="0000">
               <button class="btn sec" id="findBtn" style="flex:0 0 96px;margin-top:0">찾기</button>
             </div>
             <div id="matches"></div>
-            <button class="btn sec" id="manualBtn" style="margin-top:10px" hidden>참여자 목록에 없어요 → 직접 입력</button>
+            <p class="hint">참여자로 확인되면 캐럿헤드 증정 · 보증 1년 연장이 자동으로 적용돼요. 참여하지 않은 분은 비워두세요.</p>
           </div>
           <div id="who" class="field" hidden>
             <label class="t">구매자</label>
             <div style="font-size:16px"><b id="whoName"></b> <span id="whoPhone" style="color:var(--ink-soft)"></span><span id="whoTag" class="tag"></span></div>
           </div>
-        </div>
-        <div id="manual" hidden>
-          <div class="row">
-            <div class="field"><label class="t" for="mName">이름 <small id="mNameOpt">(필수)</small></label><input type="text" id="mName" placeholder="이름"></div>
-            <div class="field" style="flex:1.6"><label class="t" for="mPhone">휴대전화번호 <small id="mPhoneOpt">(필수)</small></label><input type="tel" id="mPhone" inputmode="numeric" placeholder="010-0000-0000"></div>
-          </div>
-        </div>
-        <div class="field">
-          <label class="t" for="memo">메모 <small>(선택)</small></label>
-          <input type="text" id="memo" placeholder="">
         </div>
       </div>
 
@@ -235,7 +221,7 @@
     </div>
 
     <button class="btn ghost" id="logoutBtn">나가기</button>
-    <footer>bebeknow staff · <span id="ver">v2026.10.14-5</span></footer>
+    <footer>bebeknow staff · <span id="ver">v2026.10.14-6</span></footer>
   </div>
 
   <!-- ===== ② 고객 작성 (배송) ===== -->
@@ -303,17 +289,10 @@ function autoAmount(){
   var p = PRICES[radio("product")] || 0, q = Math.max(1, parseInt($("qty").value, 10) || 1);
   $("amount").value = p ? (p * q).toLocaleString("ko-KR") : "";
 }
-function isPart(){ return $("isPart").checked; }
+function isPart(){ return !!buyer; }                 /* 참여자 = 전화번호로 조회해 선택된 사람 */
 function applyPartMode(){
-  var on = isPart();
-  $("partSwitch").classList.toggle("on", on);
-  $("partBlock").hidden = !on;
-  // 참여자: 검색으로 찾거나 '직접 입력'(필수) / 미참여: 이름·번호 입력 없음
-  $("manual").hidden = !(on && manualMode);
-  $("mNameOpt").textContent = "(필수)"; $("mPhoneOpt").textContent = "(필수)";
-  // 색상은 콧물흡입기일 때만 (본품 색상). 참여자면 캐럿헤드도 같은 색
   $("colorField").hidden = radio("product") !== "콧물흡입기";
-  $("colorHint").textContent = on ? "(캐럿헤드도 같은 색으로)" : "(본품 색상)";
+  $("colorHint").textContent = isPart() ? "(캐럿헤드도 같은 색으로)" : "(본품 색상)";
 }
 
 function $(id){ return document.getElementById(id); }
@@ -349,7 +328,7 @@ function refreshStats(){ getJSON(GAS_URL + "?staff=today&pin=" + encodeURICompon
 
 /* ---------- 참여자 찾기 ---------- */
 function setBuyer(b, participant){
-  buyer = b; $("who").hidden = !b;
+  buyer = b; $("who").hidden = !b; applyPartMode();
   if(b){ $("whoName").textContent = b.name; $("whoPhone").textContent = b.phone.replace(/^(\d{3})-(\d{3,4})-/, "$1-****-");
     var tag = $("whoTag"); tag.textContent = participant ? "미션 참여자" : "참여 기록 없음"; tag.className = "tag" + (participant ? "" : " no"); }
 }
@@ -360,7 +339,7 @@ function renderMatches(list){
     b.innerHTML = "<b>" + maskName(m.name) + "</b> " + m.masked + "<small>" + m.at + " 참여</small>";
     b.addEventListener("click", function(){
       Array.prototype.forEach.call(box.children, function(c){ c.classList.remove("sel"); });
-      b.classList.add("sel"); manualMode = false; $("manual").hidden = true; setBuyer({ name: m.name, phone: m.phone }, true);
+      b.classList.add("sel"); setBuyer({ name: m.name, phone: m.phone }, true);
     });
     box.appendChild(b);
   });
@@ -368,15 +347,14 @@ function renderMatches(list){
 }
 function find(){
   var q = digits($("last4").value), l4 = q.slice(-4);
-  msg($("msg1"), ""); setBuyer(null); $("matches").innerHTML = ""; $("manualBtn").hidden = true;
+  msg($("msg1"), ""); setBuyer(null); $("matches").innerHTML = "";
   if(q.length !== 4 && q.length < 10) return msg($("msg1"), "뒷자리 4자리 또는 전체 번호를 입력해주세요.", "err");
   $("findBtn").disabled = true; $("findBtn").textContent = "…";
   getJSON(GAS_URL + "?staff=lookup&pin=" + encodeURIComponent(pin) + "&q=" + q).then(function(res){
     $("findBtn").disabled = false; $("findBtn").textContent = "찾기";
     if(res.status === "unauth"){ try{ sessionStorage.removeItem(PIN_KEY); }catch(e){} return location.reload(); }
     if(res.status !== "ok") return msg($("msg1"), "조회에 실패했어요. 다시 시도해주세요.", "err");
-    $("manualBtn").hidden = false;
-    if(!res.matches.length) return msg($("msg1"), (q.length >= 10 ? "이 번호의" : "뒷자리 " + l4) + " 참여자가 없어요. 미션을 안 한 분이면 직접 입력으로 기록할 수 있어요.", "err");
+    if(!res.matches.length) return msg($("msg1"), (q.length >= 10 ? "이 번호의" : "뒷자리 " + l4) + " 참여자가 없어요. 이벤트 미참여 구매로 기록됩니다.", "err");
     renderMatches(res.matches);
   }).catch(function(){ $("findBtn").disabled = false; $("findBtn").textContent = "찾기"; msg($("msg1"), "네트워크 연결을 확인해주세요.", "err"); });
 }
@@ -388,21 +366,11 @@ $("last4").addEventListener("input", function(){
   if(d.length === 11) find(); else if(d.length === 4) findTimer = setTimeout(find, 700);
 });
 $("last4").addEventListener("keydown", function(e){ if(e.key === "Enter") find(); });
-$("manualBtn").addEventListener("click", function(){
-  manualMode = true; applyPartMode(); setBuyer(null);
-  Array.prototype.forEach.call($("matches").children, function(c){ c.classList.remove("sel"); });
-  $("mName").focus();
-});
-$("mPhone").addEventListener("input", function(){ this.value = fmtPhone(this.value); });
 $("amount").addEventListener("input", function(){ var d = digits(this.value); this.value = d ? Number(d).toLocaleString("ko-KR") : ""; });
 Array.prototype.forEach.call(document.querySelectorAll('input[name="product"]'), function(r){ r.addEventListener("change", function(){ applyPartMode(); autoAmount(); }); });
 $("qty").addEventListener("input", autoAmount);
 $("qty").addEventListener("change", autoAmount);
 autoAmount();
-$("isPart").addEventListener("change", function(){
-  if(!isPart()){ buyer = null; $("who").hidden = true; $("matches").innerHTML = ""; $("manualBtn").hidden = true; $("last4").value = ""; }
-  applyPartMode(); msg($("msg1"), "");
-});
 applyPartMode();
 Array.prototype.forEach.call(document.querySelectorAll('input[name="method"]'), function(r){
   r.addEventListener("change", function(){ $("step1Btn").textContent = r.value === "배송" ? "다음 → 고객님께 전달" : "기록하기"; });
@@ -411,15 +379,9 @@ Array.prototype.forEach.call(document.querySelectorAll('input[name="method"]'), 
 /* ---------- ① 스태프 작성 완료 ---------- */
 function collectStep1(){
   var name = "", phone = "", part = isPart();
-  if(part){
-    if(manualMode){
-      name = $("mName").value.trim(); phone = $("mPhone").value.trim();
-      if(!name) return msg($("msg1"), "이름을 입력해주세요.", "err");
-      if(digits(phone).length < 10) return msg($("msg1"), "휴대전화번호를 확인해주세요.", "err");
-    }else{
-      if(!buyer) return msg($("msg1"), "먼저 전화번호로 참여자를 찾아 선택해주세요. (참여자가 아니면 위 스위치를 끄세요)", "err");
-      name = buyer.name; phone = buyer.phone;
-    }
+  if(part){ name = buyer.name; phone = buyer.phone; }
+  else if(digits($("last4").value).length >= 4 && $("matches").children.length){
+    return msg($("msg1"), "검색된 참여자를 선택해주세요. (참여자가 아니면 번호를 지우세요)", "err");
   }
   var product = radio("product"), color = radio("color");
   var needColor = product === "콧물흡입기";
@@ -427,7 +389,7 @@ function collectStep1(){
   if(needColor && !color) return msg($("msg1"), "색상을 선택해주세요.", "err");
   if(!digits($("amount").value)) return msg($("msg1"), "결제 금액을 입력해주세요.", "err");
   return { participant: part, name: name, phone: phone, product: product, color: needColor ? color : "", qty: Math.max(1, parseInt($("qty").value, 10) || 1),
-           amount: digits($("amount").value), memo: $("memo").value.trim(), method: radio("method") };
+           amount: digits($("amount").value), memo: "", method: radio("method") };
 }
 $("step1Btn").addEventListener("click", function(){
   msg($("msg1"), "");
@@ -478,12 +440,12 @@ function save(o, btn, msgEl){
 }
 $("nextBtn").addEventListener("click", function(){
   buyer = null; manualMode = false; order = null;
-  $("manual").hidden = true; $("who").hidden = true; $("matches").innerHTML = ""; $("manualBtn").hidden = true;
-  $("last4").value = ""; $("mName").value = ""; $("mPhone").value = ""; $("memo").value = ""; $("qty").value = 1; $("amount").value = "";
+  $("who").hidden = true; $("matches").innerHTML = "";
+  $("last4").value = ""; $("qty").value = 1; $("amount").value = "";
   var c = document.querySelector('input[name="color"]:checked'); if(c) c.checked = false;
   document.querySelector('input[name="product"][value="콧물흡입기"]').checked = true; $("colorField").hidden = false; autoAmount();
   document.querySelector('input[name="method"][value="현장"]').checked = true; $("step1Btn").textContent = "기록하기";
-  $("isPart").checked = true; applyPartMode();
+  applyPartMode();
   msg($("msg1"), ""); show("step1"); setTimeout(function(){ $("last4").focus(); }, 50);
 });
 
