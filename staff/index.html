@@ -88,6 +88,54 @@
   .switch.on{border-color:var(--ok);background:#f3f8ee}
   [hidden]{display:none!important}
   footer{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:20px}
+
+  /* ===== 아이패드 가로 / 노트북 (900px 이상) ===== */
+  @media (min-width: 900px){
+    body{padding:28px 32px 60px}
+    .wrap{max-width:1040px}
+    h1{font-size:26px}
+    .sub{font-size:15px;margin-bottom:18px}
+    .card{padding:26px 28px;border-radius:20px}
+    label.t{font-size:16px;margin-bottom:10px}
+    input[type=text],input[type=tel],input[type=password],input[type=number],textarea{font-size:20px;padding:16px 18px;border-radius:14px}
+    .big{font-size:34px}
+    .btn{font-size:19px;padding:20px;border-radius:16px}
+    .chip span{font-size:18px;padding:16px 14px;border-radius:14px}
+    .match{font-size:18px;padding:14px 16px}
+    .match b{font-size:19px}
+    .hint{font-size:14px}
+    .msg{font-size:16px}
+    .switch b{font-size:18px}
+    .switch small{font-size:14px}
+    .switch .tg{width:64px;height:36px}
+    .switch .tg::after{width:30px;height:30px}
+    .switch input:checked ~ .tg::after{left:31px}
+    .summary{font-size:17px;padding:16px 18px}
+    .agree-row label{font-size:16px}
+    .agree-row label small{font-size:14px}
+    .agree-row input{width:26px;height:26px}
+    .done-box .big2{font-size:28px}
+    .done-box p{font-size:18px}
+    .done-box .ship{font-size:24px}
+    .done-box .ck{width:96px;height:96px;line-height:96px;font-size:50px}
+    .addr-btn{font-size:17px;padding:0 20px}
+    /* ① 스태프 작성: 2열 */
+    #step1 .card{display:grid;grid-template-columns:1fr 1fr;column-gap:28px;align-items:start}
+    #step1 .card > .switch{grid-column:1 / -1}
+    #step1 .card > #partBlock{grid-column:1;grid-row:2 / span 4}
+    #step1 .card > #manual{grid-column:1}
+    #step1 .card > #who{grid-column:1}
+    #step1 .card > .field{grid-column:2}
+    #step1 .card > .field.wide{grid-column:1 / -1}
+    #step1 .card > .row{grid-column:2}
+    #step1 .card > #step1Btn,#step1 .card > #msg1{grid-column:1 / -1}
+    /* ② 고객 작성: 2열 */
+    #step2 .card{display:grid;grid-template-columns:1fr 1fr;column-gap:28px;align-items:start}
+    #step2 .card > .summary{grid-column:1 / -1}
+    #step2 .card > #submitBtn,#step2 .card > #msg2,#step2 .card > #backBtn{grid-column:1 / -1}
+    #step2 .card > .agree-row{grid-column:1 / -1}
+    .addr-panel{max-width:720px;border-radius:18px;height:80vh;margin-bottom:5vh}
+  }
 </style>
 </head>
 <body>
@@ -96,7 +144,7 @@
   <!-- ===== 로그인 ===== -->
   <div id="login">
     <h1>베베노 스태프</h1>
-    <p class="sub">구매 기록 (현장 수령 · 배송 주문) · 비밀번호는 시트 "집계" 탭 B2</p>
+    <p class="sub">비밀번호는 시트 "집계" 탭 B2</p>
     <div class="card">
       <label class="t" for="pin">비밀번호</label>
       <input type="password" id="pin" class="big" inputmode="numeric" maxlength="6" placeholder="••••">
@@ -107,16 +155,8 @@
 
   <!-- ===== ① 스태프 작성 ===== -->
   <div id="step1" hidden>
-    <h1>구매 기록</h1>
-    <p class="sub">참여자면 번호로 찾기 → 제품·금액 → 현장 수령이면 바로 기록, 배송이면 고객에게 전달</p>
-
-    <div class="stat">
-      <div><b id="stToday">-</b><span>오늘 구매</span></div>
-      <div><b id="stShip">-</b><span>배송</span></div>
-      <div><b id="stPink">-</b><span>핑크</span></div>
-      <div><b id="stBeige">-</b><span>베이지</span></div>
-      <div><b id="stGreen">-</b><span>그린</span></div>
-    </div>
+    <h1>bebeknow 구매 접수</h1>
+    <p class="sub">베베노 부스 · 구매 정보를 확인해 주세요</p>
 
     <div class="card">
       <label class="switch on" id="partSwitch">
@@ -168,12 +208,12 @@
         <div class="field" style="flex:.6"><label class="t" for="qty">수량</label><input type="number" id="qty" value="1" min="1" max="9" inputmode="numeric"></div>
         <div class="field" style="flex:1.4"><label class="t" for="amount">결제 금액 <small>(원)</small></label><input type="tel" id="amount" inputmode="numeric" placeholder=""></div>
       </div>
-      <div class="field">
+      <div class="field wide">
         <label class="t" for="memo">메모 <small>(선택)</small></label>
         <input type="text" id="memo" placeholder="">
       </div>
 
-      <div class="field">
+      <div class="field wide">
         <label class="t">수령 방식</label>
         <div class="chips">
           <label class="chip"><input type="radio" name="method" value="현장" checked><span>🛍️ 현장 수령</span></label>
@@ -186,7 +226,7 @@
     </div>
 
     <button class="btn ghost" id="logoutBtn">나가기</button>
-    <footer>bebeknow staff · <span id="ver">v2026.10.13-6</span></footer>
+    <footer>bebeknow staff · <span id="ver">v2026.10.14-1</span></footer>
   </div>
 
   <!-- ===== ② 고객 작성 (배송) ===== -->
@@ -272,6 +312,7 @@ function fmtPhone(v){ var d = digits(v).slice(0,11); if(d.length>7) return d.sli
 function fmtWon(n){ return n ? Number(n).toLocaleString("ko-KR") + "원" : "-"; }
 function getJSON(url){ return fetch(url, {redirect:"follow"}).then(function(r){ return r.json(); }); }
 function postJSON(body){ return fetch(GAS_URL, {method:"POST", body: JSON.stringify(body), redirect:"follow"}).then(function(r){ return r.json(); }); }
+function maskName(n){ n = String(n || ""); if(n.length <= 1) return n; if(n.length === 2) return n[0] + "*"; return n[0] + "*".repeat(n.length - 2) + n[n.length - 1]; }
 function radio(name){ var r = document.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ""; }
 
 /* ---------- 로그인 ---------- */
@@ -291,24 +332,20 @@ $("pin").addEventListener("keydown", function(e){ if(e.key === "Enter") $("login
 $("logoutBtn").addEventListener("click", function(){ try{ sessionStorage.removeItem(PIN_KEY); }catch(e){} location.reload(); });
 
 /* ---------- 오늘 통계 ---------- */
-function applyStats(res){
-  $("stToday").textContent = res.today; $("stShip").textContent = res.ship;
-  $("stPink").textContent = res.colors["핑크"] || 0; $("stBeige").textContent = res.colors["베이지"] || 0; $("stGreen").textContent = res.colors["그린"] || 0;
-  if(res.shipDate) shipDate = res.shipDate;
-}
+function applyStats(res){ if(res.shipDate) shipDate = res.shipDate; }   /* 통계는 고객 화면에 표시하지 않음 — 집계 탭에서 확인 */
 function refreshStats(){ getJSON(GAS_URL + "?staff=today&pin=" + encodeURIComponent(pin)).then(function(res){ if(res.status === "ok") applyStats(res); }).catch(function(){}); }
 
 /* ---------- 참여자 찾기 ---------- */
 function setBuyer(b, participant){
   buyer = b; $("who").hidden = !b;
-  if(b){ $("whoName").textContent = b.name; $("whoPhone").textContent = b.phone;
+  if(b){ $("whoName").textContent = b.name; $("whoPhone").textContent = b.phone.replace(/^(\d{3})-(\d{3,4})-/, "$1-****-");
     var tag = $("whoTag"); tag.textContent = participant ? "미션 참여자" : "참여 기록 없음"; tag.className = "tag" + (participant ? "" : " no"); }
 }
 function renderMatches(list){
   var box = $("matches"); box.innerHTML = "";
   list.forEach(function(m){
     var b = document.createElement("button"); b.type = "button"; b.className = "match";
-    b.innerHTML = "<b>" + m.name + "</b> " + m.masked + "<small>" + m.at + " 참여</small>";
+    b.innerHTML = "<b>" + maskName(m.name) + "</b> " + m.masked + "<small>" + m.at + " 참여</small>";
     b.addEventListener("click", function(){
       Array.prototype.forEach.call(box.children, function(c){ c.classList.remove("sel"); });
       b.classList.add("sel"); manualMode = false; $("manual").hidden = true; setBuyer({ name: m.name, phone: m.phone }, true);
@@ -384,7 +421,7 @@ $("step1Btn").addEventListener("click", function(){
     $("sum2").innerHTML = "<b>" + o.product + (o.color ? " · " + o.color : "") + "</b> × " + o.qty + " · 결제 " + fmtWon(o.amount) + "<br>" + (shipDate ? "<b>" + shipDate + "</b> 발송 예정" : "");
     var known = !!(o.name && digits(o.phone).length >= 10);
     $("s2Known").hidden = !known; $("s2Edit").hidden = known;
-    $("s2Name").textContent = o.name; $("s2Phone").textContent = o.phone;
+    $("s2Name").textContent = o.name; $("s2Phone").textContent = String(o.phone).replace(/^(\d{3})-(\d{3,4})-/, "$1-****-");
     $("s2NameIn").value = o.name; $("s2PhoneIn").value = o.phone;
     $("zip").value = ""; $("addr").value = ""; $("addr2").value = ""; $("request").value = ""; $("agree").checked = false; msg($("msg2"), "");
     show("step2");
