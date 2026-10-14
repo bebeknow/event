@@ -1,0 +1,65 @@
+/* 베베노 부스 공통 스타일 (직원·고객 화면) — 기존 스태프 페이지 색을 그대로 씀 */
+:root{
+  --bg:#faf6f1;--card:#fff;--ink:#4a3f36;--ink-soft:#8a7c70;--line:#e9dfd5;
+  --accent:#c9a086;--accent-deep:#b08464;--accent-tint:#f6ece3;--ok:#7ba05b;--ok-tint:#e8f3df;--err:#c46a5a;--err-tint:#faeae6;
+  --ship:#4f7fb3;--pink:#e8788f;--beige:#c9a27a;--green:#5fa36a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{word-break:keep-all;overflow-wrap:break-word}
+body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+  background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+h1,h2,h3{text-wrap:balance}
+p{text-wrap:pretty}
+[hidden]{display:none!important}
+button{font-family:inherit;cursor:pointer;color:inherit}
+.brandf{font-family:'Comfortaa',sans-serif;font-weight:700;letter-spacing:-0.045em;text-transform:lowercase}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 2px 12px rgba(74,63,54,.06)}
+label.t{display:block;font-size:15px;font-weight:700;margin-bottom:8px}
+label.t small{font-weight:400;color:var(--ink-soft)}
+input[type=text],input[type=tel],input[type=password],input[type=search],textarea{
+  width:100%;padding:14px 16px;font-size:18px;color:var(--ink);border:1.5px solid var(--line);border-radius:12px;background:#fdfbf8;outline:none;font-family:inherit}
+textarea{min-height:72px;resize:vertical;font-size:16px}
+input:focus,textarea:focus{border-color:var(--accent);background:#fff}
+.field{margin-bottom:16px}
+.row{display:flex;gap:8px}
+.row>*{flex:1;min-width:0}
+
+.btn{display:block;width:100%;padding:16px;font-size:17px;font-weight:800;color:#fff;background:var(--accent-deep);border:none;border-radius:14px}
+.btn.sec{background:#fff;color:var(--accent-deep);border:1.5px solid var(--accent)}
+.btn.ghost{background:none;color:var(--ink-soft);border:1.5px solid var(--line)}
+.btn.danger{background:#fff;color:var(--err);border:1.5px solid #e8c3bb}
+.btn:disabled{opacity:.5;cursor:default}
+
+.msg{display:none;margin-top:10px;padding:12px 14px;border-radius:12px;font-size:15px;line-height:1.5;font-weight:600}
+.msg.err{display:block;background:var(--err-tint);color:var(--err)}
+.msg.ok{display:block;background:var(--ok-tint);color:#3f6b2a}
+.msg.info{display:block;background:var(--accent-tint);color:var(--accent-deep)}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative;flex:1}
+.chip input{position:absolute;opacity:0;inset:0}
+.chip span{display:block;text-align:center;padding:13px 10px;font-size:16px;font-weight:700;border-radius:12px;border:1.5px solid var(--line);background:#fdfbf8;color:var(--ink-soft);white-space:nowrap}
+.chip input:checked+span{background:var(--accent-deep);border-color:var(--accent-deep);color:#fff}
+.chip.ship input:checked+span{background:var(--ship);border-color:var(--ship)}
+
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;vertical-align:.05em;margin-right:.3em}
+.dot.핑크{background:var(--pink)}.dot.베이지{background:var(--beige)}.dot.그린{background:var(--green)}
+
+.notice{font-size:14px;line-height:1.6;color:var(--ink-soft);background:#fdfbf8;border:1px dashed var(--line);border-radius:12px;padding:12px 14px}
+.notice b{color:var(--ink)}
+.spin{display:inline-block;width:1em;height:1em;border:2.5px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite;vertical-align:-.15em}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 주소 검색 레이어 */
+.addr-row{display:flex;gap:8px}
+.addr-row input{flex:1;min-width:0}
+.addr-btn{flex:0 0 auto;padding:0 18px;font-size:16px;font-weight:700;color:#fff;background:var(--accent-deep);border:none;border-radius:12px;white-space:nowrap}
+.addr-layer{position:fixed;inset:0;z-index:1000;background:rgba(74,63,54,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.addr-panel{width:100%;max-width:720px;height:80vh;height:80dvh;background:#fff;border-radius:18px;display:flex;flex-direction:column;overflow:hidden}
+.addr-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);flex-shrink:0}
+.addr-close{width:36px;height:36px;border-radius:50%;border:none;background:var(--bg);font-size:16px}
+.addr-embed{flex:1;min-height:0}
+.addr-embed iframe{width:100%!important;height:100%!important}
+
+footer{text-align:center;font-size:12px;color:var(--ink-soft);margin-top:18px}

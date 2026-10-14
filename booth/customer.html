@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="bebeknow">
+<meta name="theme-color" content="#faf6f1">
+<title>bebeknow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap">
+<link rel="stylesheet" href="booth.css?v=1">
+<style>
+  body{padding:24px 24px calc(28px + env(safe-area-inset-bottom))}
+  .wrap{max-width:760px;margin:0 auto}
+  label.t{font-size:18px}
+  input[type=text],input[type=tel],input[type=password],textarea{font-size:21px;padding:17px 18px;border-radius:14px}
+  .btn{font-size:20px;padding:20px;border-radius:16px}
+  .msg{font-size:17px}
+  .notice{font-size:15.5px}
+
+  /* 대기 화면 */
+  #idle{min-height:calc(100vh - 60px);min-height:calc(100dvh - 60px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px}
+  #idle .logo{font-size:clamp(56px,11vw,96px);color:var(--accent-deep);line-height:1}
+  #idle .slogan{font-size:20px;color:var(--ink-soft)}
+  #idle .wait{margin-top:28px;font-size:16px;color:var(--ink-soft)}
+  #idle .note{font-size:16px;color:var(--accent-deep);font-weight:700;min-height:1.5em}
+
+  /* 입력 */
+  .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .head .logo{font-size:30px;color:var(--accent-deep)}
+  .head h1{font-size:22px;font-weight:800}
+  .sum{background:var(--accent-tint);border-radius:16px;padding:16px 18px;margin-bottom:16px}
+  .sum .it{display:flex;justify-content:space-between;gap:12px;font-size:18px;padding:5px 0}
+  .sum .it span:last-child{white-space:nowrap;font-weight:700}
+  .sum .tot{display:flex;justify-content:space-between;align-items:baseline;border-top:1.5px solid rgba(176,132,100,.35);margin-top:8px;padding-top:10px}
+  .sum .tot b{font-size:26px;font-weight:900}
+  .sum .meth{font-size:16px;font-weight:700;color:var(--accent-deep);margin-bottom:6px}
+  .sum .meth.ship{color:var(--ship)}
+  .fl .notice{margin-bottom:16px}
+  /* 아이패드 가로: 왼쪽 주문 내역, 오른쪽 입력 → 확정 버튼이 한 화면에 보이게 */
+  @media (min-width: 1000px){
+    .wrap{max-width:1080px}
+    .fcols{display:grid;grid-template-columns:.9fr 1.1fr;gap:26px;align-items:start}
+    .fl{position:sticky;top:16px}
+    .fl .sum{margin-bottom:14px}
+    #shipFields .field{margin-bottom:12px}
+    #form .head{margin-bottom:10px}
+  }
+
+  /* 완료 */
+  .done{text-align:center;padding:26px 6px 6px}
+  .done .ck{width:96px;height:96px;border-radius:50%;background:var(--ok);color:#fff;font-size:52px;line-height:96px;margin:0 auto 18px}
+  .done h1{font-size:30px;font-weight:800;margin-bottom:8px}
+  .done .no{font-size:18px;color:var(--ink-soft)}
+  .done .ship{font-size:24px;font-weight:800;color:var(--accent-deep);margin:14px 0 2px}
+  .done .perk{display:inline-block;margin-top:14px;padding:10px 16px;border-radius:12px;background:var(--ok-tint);color:#3f6b2a;font-size:17px;font-weight:700}
+  .done .mine{margin:22px auto 0;max-width:560px;text-align:left;background:#fdfbf8;border:1px solid var(--line);border-radius:14px;padding:14px 18px;font-size:18px;line-height:1.7}
+  .done .mine small{display:block;font-size:14px;color:var(--ink-soft);margin-bottom:2px}
+  .done .btns{display:flex;gap:10px;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 처음 한 번: 직원이 비밀번호 입력 (이 아이패드에 저장) -->
+  <div id="login" hidden style="max-width:440px;margin:14vh auto 0">
+    <div class="card">
+      <div class="brandf" style="font-size:34px;color:var(--accent-deep);text-align:center;margin-bottom:6px">bebeknow</div>
+      <p style="text-align:center;color:var(--ink-soft);margin-bottom:18px">고객 화면 · 직원이 처음 한 번만 설정</p>
+      <label class="t" for="pin">비밀번호</label>
+      <input type="password" id="pin" inputmode="numeric" maxlength="8" autocomplete="off" style="font-size:28px;letter-spacing:.2em;text-align:center">
+      <button class="btn" id="loginBtn" style="margin-top:12px">시작</button>
+      <div class="msg" id="loginMsg"></div>
+    </div>
+  </div>
+
+  <!-- 대기 -->
+  <div id="idle" hidden>
+    <div class="logo brandf">bebeknow</div>
+    <div class="slogan">Easy care, Easy life</div>
+    <div class="note" id="idleNote"></div>
+    <div class="wait">직원이 주문을 준비하면 이 화면에 표시됩니다</div>
+  </div>
+
+  <!-- 주문 확인 + 정보 입력 -->
+  <div id="form" hidden>
+    <div class="head"><h1 id="formTitle">주문 확인 · 정보 입력</h1><span class="logo brandf">bebeknow</span></div>
+    <div class="card fcols">
+      <div class="fl">
+      <div class="sum" id="sum"></div>
+      <p class="notice" id="privacy"></p>
+      </div>
+      <div class="fr">
+      <div class="field">
+        <label class="t" for="name">성함</label>
+        <input type="text" id="name" autocomplete="off" autocapitalize="off">
+      </div>
+      <div class="field">
+        <label class="t" for="phone">연락처</label>
+        <input type="tel" id="phone" inputmode="numeric" placeholder="010-0000-0000" autocomplete="off">
+      </div>
+      <div id="shipFields">
+        <div class="field">
+          <label class="t">배송 주소</label>
+          <div class="addr-row">
+            <input type="text" id="zip" inputmode="numeric" placeholder="우편번호">
+            <button type="button" class="addr-btn" id="addrBtn">🔍 주소 검색</button>
+          </div>
+          <input type="text" id="address" placeholder="주소 검색을 눌러주세요" style="margin-top:8px">
+          <input type="text" id="address2" placeholder="상세주소 (동 · 호수)" style="margin-top:8px">
+        </div>
+        <div class="field">
+          <label class="t" for="request">배송 요청사항 <small>(선택)</small></label>
+          <input type="text" id="request" placeholder="예: 문 앞에 놓아주세요">
+        </div>
+      </div>
+      <button class="btn" id="submitBtn" style="margin-top:4px">주문 확정</button>
+      <div class="msg" id="formMsg"></div>
+      <button class="btn ghost" id="formBack" style="margin-top:10px" hidden>수정하지 않고 돌아가기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 완료 -->
+  <div id="done" hidden>
+    <div class="card done">
+      <div class="ck">✓</div>
+      <h1 id="doneTitle">주문이 접수되었습니다</h1>
+      <div class="no" id="doneNo"></div>
+      <div class="ship" id="doneShip"></div>
+      <div id="donePerk"></div>
+      <div class="mine" id="doneMine"></div>
+      <div class="btns">
+        <button class="btn sec" id="editBtn">정보 수정</button>
+        <button class="btn" id="okBtn">확인</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="common.js?v=1"></script>
+<script>
+/* 이 아이패드는 직원 비밀번호를 저장하지 않음: 처음에 비밀번호로 "기기 토큰"을 받아 그것만 저장 (지금 진행 중인 주문만 다룰 수 있음) */
+var TOKEN_KEY = "bebeknow_booth_token_" + STATION;
+var token = "", view = "", cur = null, order = null, curRev = 0, skipId = "", pollT = null, idleT = null, editT = null, shipDate = "";
+var editing = false, busy = false, gen = 0, misses = 0;
+try { localStorage.removeItem("bebeknow_booth_pin_ipad"); } catch (e) {}     // 예전 시험판이 남긴 비밀번호 삭제
+
+function show(id) {
+  view = id; gen++;
+  var layer = $("addrLayer");                                // 열려 있던 주소 검색 창이 다음 화면에 남지 않게
+  if (layer && !layer.hidden) { layer.hidden = true; layer.querySelector(".addr-embed").innerHTML = ""; }
+  ["login", "idle", "form", "done"].forEach(function (k) { $(k).hidden = k !== id; });
+  window.scrollTo(0, 0);
+}
+
+/* ---------- 처음 한 번: 직원이 비밀번호 입력 → 기기 토큰 ---------- */
+$("loginBtn").addEventListener("click", function () {
+  var p = $("pin").value.trim();
+  if (!p) return msg($("loginMsg"), "비밀번호를 입력해주세요.");
+  $("loginBtn").disabled = true; msg($("loginMsg"), "확인 중…", "info");
+  apiPost({ action: "device", pin: p, station: STATION }).then(function (res) {
+    $("loginBtn").disabled = false; $("pin").value = "";
+    if (res.status === "unauth") return msg($("loginMsg"), "비밀번호가 맞지 않아요.");
+    if (res.status === "locked") return msg($("loginMsg"), "비밀번호를 여러 번 틀려 10분간 잠겼어요.");
+    if (res.status !== "ok" || !res.token) return msg($("loginMsg"), "연결에 문제가 있어요.");
+    msg($("loginMsg"), "");
+    token = res.token;
+    try { localStorage.setItem(TOKEN_KEY, token); } catch (e) {}
+    begin();
+  }).catch(function () { $("loginBtn").disabled = false; msg($("loginMsg"), "네트워크 연결을 확인해주세요."); });
+});
+$("pin").addEventListener("keydown", function (e) { if (e.key === "Enter") $("loginBtn").click(); });
+function needLogin() { try { localStorage.removeItem(TOKEN_KEY); } catch (e) {} token = ""; clearTimeout(pollT); clearTimers(); show("login"); }
+
+function getSession() { return apiGet({ cust: "session", token: token, station: STATION }); }
+function begin() {
+  getSession().then(function (res) {
+    if (res.status === "unauth") return needLogin();
+    if (res.session && res.session.state === "done") skipId = res.session.id;   // 이미 끝난 주문은 다시 열지 않음
+    toIdle(""); poll();
+  }).catch(function () { toIdle("인터넷 연결을 기다리는 중…"); poll(); });
+}
+
+/* ---------- 대기 ---------- */
+function clearTimers() { clearTimeout(idleT); clearTimeout(editT); }
+function toIdle(note, keepSkip) {
+  clearTimers(); editing = false;
+  if (cur && !keepSkip) skipId = cur.id;
+  cur = null; order = null; curRev = 0;
+  ["name", "phone", "zip", "address", "address2", "request"].forEach(function (k) { $(k).value = ""; });   // 개인정보를 화면에 남기지 않음
+  $("doneMine").textContent = "";
+  $("idleNote").textContent = note || "";
+  show("idle");
+}
+
+/* ---------- 직원이 보낸 주문 확인 (1.5초 간격) ---------- */
+function poll() {
+  clearTimeout(pollT);
+  getSession().then(function (res) {
+    if (res.status === "unauth") return needLogin();
+    if (res.status !== "ok") return;
+    if (res.shipDate) shipDate = res.shipDate;
+    var s = res.session;
+    misses = s ? 0 : misses + 1;
+    if (busy) return;                                       // 저장 중에는 화면을 바꾸지 않음
+    var fresh = s && s.state === "waiting" && s.id !== skipId && (!cur || s.id !== cur.id);
+    if (view === "idle" || view === "done") {
+      if (fresh) return openForm(s);
+      if (view === "done" && cur && s && s.id === cur.id && s.state === "done" && s.order && (s.rev || 0) > curRev) {   // 직원이 고친 내용 반영
+        order = s.order; curRev = s.rev; renderDone();
+      }
+    } else if (view === "form") {
+      if (editing) { if (fresh) openForm(s); return; }       // 수정 중에 다음 고객 주문이 오면 수정은 버리고 새 주문
+      if (!cur) return;
+      if (s && s.id === cur.id && s.state === "cancelled") return toIdle("직원이 주문을 취소했어요. 잠시만 기다려 주세요.");
+      if (s && s.id === cur.id && s.state === "done" && s.order) { order = s.order; curRev = s.rev || 1; return showDone(); }   // 저장은 됐는데 응답만 끊긴 경우
+      if (s && s.id !== cur.id) return fresh ? openForm(s) : toIdle("직원이 주문을 바꿨어요. 잠시만 기다려 주세요.");
+      if (!s && misses >= 3) toIdle("연결이 끊겼어요. 직원에게 말씀해 주세요.", true);   // 한두 번 비어도 입력 중인 화면은 유지
+    }
+  }).catch(function () {}).then(function () { if (view !== "login") pollT = setTimeout(poll, 1500); });
+}
+
+/* ---------- 입력 화면 ---------- */
+function fillSummary(method, items, total) {
+  var isShip = method === "배송";
+  $("sum").innerHTML =
+    '<div class="meth' + (isShip ? " ship" : "") + '">' + (isShip ? "🚚 배송 주문" + (shipDate ? " · " + esc(shipDate) + " 발송 예정" : "") : "🛍️ 현장 수령") + "</div>" +
+    items.map(function (it) {
+      return '<div class="it"><span>' + (it.color ? '<span class="dot ' + esc(it.color) + '"></span>' : "") + esc(itemLabel(it)) + " × " + esc(it.qty) + "</span><span>" + won(it.amount) + "</span></div>";
+    }).join("") +
+    '<div class="tot"><span>합계</span><b>' + won(total) + "</b></div>";
+  $("shipFields").hidden = !isShip;
+  $("privacy").innerHTML = isShip
+    ? "성함·연락처·주소는 <b>주문 확인과 상품 배송 목적으로만</b> 사용하며, 배송 완료 후 3개월 뒤 파기합니다."
+    : "성함·연락처는 <b>주문 확인과 보증·A/S 안내 목적으로만</b> 사용합니다.";
+}
+function openForm(s) {
+  clearTimers();
+  cur = s; order = null; curRev = 0; editing = false;
+  fillSummary(s.method, s.items, s.total);
+  ["name", "phone", "zip", "address", "address2", "request"].forEach(function (k) { $(k).value = ""; });
+  $("formTitle").textContent = "주문 확인 · 정보 입력";
+  $("submitBtn").textContent = "주문 확정";
+  $("formBack").hidden = true;
+  msg($("formMsg"), "");
+  show("form");
+}
+$("phone").addEventListener("input", function () { this.value = fmtPhone(this.value); });
+$("addrBtn").addEventListener("click", function () {
+  var ok = openAddrSearch(function (r) { $("zip").value = r.zip; $("address").value = r.address; $("address2").focus(); armEdit(); });
+  if (!ok) { msg($("formMsg"), "주소 검색을 불러오지 못했어요. 직접 입력해주세요."); $("address").focus(); }
+});
+
+$("submitBtn").addEventListener("click", function () {
+  if (busy) return;
+  msg($("formMsg"), "");
+  var wasEditing = editing, myGen = gen, mySess = cur, myOrder = order;
+  var method = wasEditing ? myOrder.method : mySess.method;
+  var body = { token: token, station: STATION, name: $("name").value.trim(), phone: $("phone").value.trim(),
+               zip: $("zip").value.trim(), address: $("address").value.trim(), address2: $("address2").value.trim(), request: $("request").value.trim() };
+  if (!body.name) return msg($("formMsg"), "성함을 입력해주세요.");
+  if (digits(body.phone).length < 10) return msg($("formMsg"), "연락처를 확인해주세요.");
+  if (method === "배송" && !body.address) return msg($("formMsg"), "배송 주소를 입력해주세요.");
+  var btn = $("submitBtn"), label = btn.textContent;
+  busy = true; clearTimeout(editT);
+  btn.disabled = true; $("formBack").disabled = true; btn.innerHTML = '<span class="spin"></span> 저장 중…';
+  if (wasEditing) { body.action = "update"; body.orderNo = myOrder.orderNo; }
+  else { body.action = "order"; body.sessionId = mySess.id; }
+  apiPost(body).then(function (res) {
+    busy = false; btn.disabled = false; $("formBack").disabled = false; btn.textContent = label;
+    if (gen !== myGen) return;                              // 그 사이 화면이 바뀜(다음 고객 등) — 이 응답은 화면에 쓰지 않음
+    if (res.status === "unauth") return wasEditing ? msg($("formMsg"), "이제는 직원에게 수정을 요청해 주세요.") : needLogin();
+    if (res.status === "cancelled") return toIdle("직원이 주문을 취소했어요. 잠시만 기다려 주세요.");
+    if (res.status === "shipped") return msg($("formMsg"), "이미 발송된 주문이라 고칠 수 없어요. 직원에게 말씀해 주세요.");
+    if (res.status !== "ok") { if (wasEditing) armEdit(); return msg($("formMsg"), "저장하지 못했어요. 다시 눌러주세요." + (res.message ? " [" + res.message + "]" : "")); }
+    order = wasEditing ? res.order : res;
+    curRev = wasEditing ? (res.rev || curRev + 1) : 1;
+    editing = false;
+    showDone();
+  }).catch(function () {
+    busy = false; btn.disabled = false; $("formBack").disabled = false; btn.textContent = label;
+    if (gen !== myGen) return;
+    if (wasEditing) armEdit();
+    msg($("formMsg"), "인터넷 연결이 불안정해요. 다시 눌러주세요. (두 번 눌러도 한 번만 접수됩니다)");
+  });
+});
+
+/* ---------- 완료 ---------- */
+function renderDone() {
+  var o = order, isShip = o.method === "배송";
+  $("doneTitle").textContent = o.edited ? "정보를 고쳤습니다" : "주문이 접수되었습니다";
+  $("doneNo").textContent = "주문번호 " + o.orderNo;
+  $("doneShip").textContent = isShip ? (o.shipDate || shipDate) + " 발송 예정" : "직원에게 제품을 받아 가세요";
+  var warranty = (o.items || []).some(function (it) { return it.warranty; });
+  $("donePerk").innerHTML = warranty ? '<span class="perk">🎁 캐럿헤드 증정 · 🛡️ 보증 기간 1년 → 2년</span>' : "";
+  $("doneMine").innerHTML = "<small>입력하신 정보</small>" + esc(o.name) + " · " + esc(o.phone) +
+    (isShip ? "<br>" + esc((o.zip ? "(" + o.zip + ") " : "") + o.address + " " + (o.address2 || "")) + (o.request ? "<br>요청: " + esc(o.request) : "") : "");
+}
+function showDone() {
+  renderDone();
+  show("done");
+  clearTimers();
+  idleT = setTimeout(function () { if (view === "done") toIdle(""); }, 30000);   // 다음 고객이 보지 않게 30초 뒤 대기 화면 (만져도 늘어나지 않음)
+}
+/* 수정 화면은 1분 동안 아무 입력이 없으면 닫음 (고객이 열어둔 채 떠난 경우) */
+/* 주소 검색 창 안의 입력은 여기서 감지되지 않으므로, 검색 창이 열려 있으면 1분씩 최대 3번까지 늘려 줌 */
+var editExt = 0;
+function armEdit(keepExt) {
+  clearTimeout(editT);
+  if (!keepExt) editExt = 0;
+  if (!editing) return;
+  editT = setTimeout(function () {
+    if (view !== "form" || !editing || busy) return;
+    var layer = $("addrLayer");
+    if (layer && !layer.hidden && editExt < 3) { editExt++; return armEdit(true); }
+    toIdle("");
+  }, 60000);
+}
+$("form").addEventListener("input", function () { if (editing) armEdit(); });
+$("okBtn").addEventListener("click", function () { toIdle(""); });
+$("editBtn").addEventListener("click", function () {
+  clearTimers();
+  editing = true;
+  var o = order;
+  fillSummary(o.method, o.items, o.total);
+  $("name").value = o.name || ""; $("phone").value = o.phone || "";
+  $("zip").value = o.zip || ""; $("address").value = o.address || ""; $("address2").value = o.address2 || ""; $("request").value = o.request || "";
+  $("formTitle").textContent = "정보 수정";
+  $("submitBtn").textContent = "수정 완료";
+  $("formBack").hidden = false;
+  msg($("formMsg"), "");
+  show("form");
+  armEdit();
+});
+$("formBack").addEventListener("click", function () { if (busy) return; editing = false; showDone(); });
+
+/* ---------- 시작 ---------- */
+(function () {
+  try { token = localStorage.getItem(TOKEN_KEY) || ""; } catch (e) {}
+  if (!token) return show("login");
+  begin();
+})();
+</script>
+</body>
+</html>
