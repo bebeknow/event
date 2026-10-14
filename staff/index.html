@@ -184,6 +184,8 @@
             <label class="chip green"><input type="radio" name="color" value="그린"><span>그린</span></label>
           </div>
         </div>
+      </div>
+      <div class="colR">
         <div class="row">
           <div class="field" style="flex:.6"><label class="t" for="qty">수량</label><input type="number" id="qty" value="1" min="1" max="9" inputmode="numeric"></div>
           <div class="field" style="flex:1.4"><label class="t" for="amount">결제 금액 <small>(원)</small></label><input type="tel" id="amount" inputmode="numeric" placeholder=""></div>
@@ -197,31 +199,13 @@
         </div>
       </div>
 
-      <!-- 오른쪽: 이벤트 참여자 · 메모 -->
-      <div class="colR">
-        <div id="partBlock">
-          <div class="field">
-            <label class="t" for="last4">🎫 이벤트 참여자 전화번호 <small>참여자만 · 뒷자리 4자리 또는 전체 번호</small></label>
-            <div class="row">
-              <input type="tel" id="last4" class="big" inputmode="numeric" maxlength="13" placeholder="0000">
-              <button class="btn sec" id="findBtn" style="flex:0 0 96px;margin-top:0">찾기</button>
-            </div>
-            <div id="matches"></div>
-            <p class="hint">참여자로 확인되면 캐럿헤드 증정 · 보증 1년 연장이 자동으로 적용돼요. 참여하지 않은 분은 비워두세요.</p>
-          </div>
-          <div id="who" class="field" hidden>
-            <label class="t">구매자</label>
-            <div style="font-size:16px"><b id="whoName"></b> <span id="whoPhone" style="color:var(--ink-soft)"></span><span id="whoTag" class="tag"></span></div>
-          </div>
-        </div>
-      </div>
 
       <button class="btn" id="step1Btn">기록하기</button>
       <div class="msg" id="msg1"></div>
     </div>
 
     <button class="btn ghost" id="logoutBtn">나가기</button>
-    <footer>bebeknow staff · <span id="ver">v2026.10.14-6</span></footer>
+    <footer>bebeknow staff · <span id="ver">v2026.10.14-7</span></footer>
   </div>
 
   <!-- ===== ② 고객 작성 (배송) ===== -->
@@ -289,11 +273,7 @@ function autoAmount(){
   var p = PRICES[radio("product")] || 0, q = Math.max(1, parseInt($("qty").value, 10) || 1);
   $("amount").value = p ? (p * q).toLocaleString("ko-KR") : "";
 }
-function isPart(){ return !!buyer; }                 /* 참여자 = 전화번호로 조회해 선택된 사람 */
-function applyPartMode(){
-  $("colorField").hidden = radio("product") !== "콧물흡입기";
-  $("colorHint").textContent = isPart() ? "(캐럿헤드도 같은 색으로)" : "(본품 색상)";
-}
+function applyPartMode(){ $("colorField").hidden = radio("product") !== "콧물흡입기"; }
 
 function $(id){ return document.getElementById(id); }
 function show(id){ ["login","step1","step2","done"].forEach(function(k){ $(k).hidden = (k !== id); }); window.scrollTo(0,0); }
@@ -303,11 +283,10 @@ function fmtPhone(v){ var d = digits(v).slice(0,11); if(d.length>7) return d.sli
 function fmtWon(n){ return n ? Number(n).toLocaleString("ko-KR") + "원" : "-"; }
 function getJSON(url){ return fetch(url, {redirect:"follow"}).then(function(r){ return r.json(); }); }
 function postJSON(body){ return fetch(GAS_URL, {method:"POST", body: JSON.stringify(body), redirect:"follow"}).then(function(r){ return r.json(); }); }
-function maskName(n){ n = String(n || ""); if(n.length <= 1) return n; if(n.length === 2) return n[0] + "*"; return n[0] + "*".repeat(n.length - 2) + n[n.length - 1]; }
 function radio(name){ var r = document.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ""; }
 
 /* ---------- 로그인 ---------- */
-function enter(p){ pin = p; try{ sessionStorage.setItem(PIN_KEY, p); }catch(e){} show("step1"); refreshStats(); setTimeout(function(){ $("last4").focus(); }, 50); }
+function enter(p){ pin = p; try{ sessionStorage.setItem(PIN_KEY, p); }catch(e){} show("step1"); refreshStats(); }
 $("loginBtn").addEventListener("click", function(){
   var p = $("pin").value.trim();
   if(!p) return msg($("loginMsg"), "비밀번호를 입력해주세요.", "err");
@@ -326,46 +305,6 @@ $("logoutBtn").addEventListener("click", function(){ try{ sessionStorage.removeI
 function applyStats(res){ if(res.shipDate) shipDate = res.shipDate; }   /* 통계는 고객 화면에 표시하지 않음 — 집계 탭에서 확인 */
 function refreshStats(){ getJSON(GAS_URL + "?staff=today&pin=" + encodeURIComponent(pin)).then(function(res){ if(res.status === "ok") applyStats(res); }).catch(function(){}); }
 
-/* ---------- 참여자 찾기 ---------- */
-function setBuyer(b, participant){
-  buyer = b; $("who").hidden = !b; applyPartMode();
-  if(b){ $("whoName").textContent = b.name; $("whoPhone").textContent = b.phone.replace(/^(\d{3})-(\d{3,4})-/, "$1-****-");
-    var tag = $("whoTag"); tag.textContent = participant ? "미션 참여자" : "참여 기록 없음"; tag.className = "tag" + (participant ? "" : " no"); }
-}
-function renderMatches(list){
-  var box = $("matches"); box.innerHTML = "";
-  list.forEach(function(m){
-    var b = document.createElement("button"); b.type = "button"; b.className = "match";
-    b.innerHTML = "<b>" + maskName(m.name) + "</b> " + m.masked + "<small>" + m.at + " 참여</small>";
-    b.addEventListener("click", function(){
-      Array.prototype.forEach.call(box.children, function(c){ c.classList.remove("sel"); });
-      b.classList.add("sel"); setBuyer({ name: m.name, phone: m.phone }, true);
-    });
-    box.appendChild(b);
-  });
-  if(list.length === 1) box.firstChild.click();
-}
-function find(){
-  var q = digits($("last4").value), l4 = q.slice(-4);
-  msg($("msg1"), ""); setBuyer(null); $("matches").innerHTML = "";
-  if(q.length !== 4 && q.length < 10) return msg($("msg1"), "뒷자리 4자리 또는 전체 번호를 입력해주세요.", "err");
-  $("findBtn").disabled = true; $("findBtn").textContent = "…";
-  getJSON(GAS_URL + "?staff=lookup&pin=" + encodeURIComponent(pin) + "&q=" + q).then(function(res){
-    $("findBtn").disabled = false; $("findBtn").textContent = "찾기";
-    if(res.status === "unauth"){ try{ sessionStorage.removeItem(PIN_KEY); }catch(e){} return location.reload(); }
-    if(res.status !== "ok") return msg($("msg1"), "조회에 실패했어요. 다시 시도해주세요.", "err");
-    if(!res.matches.length) return msg($("msg1"), (q.length >= 10 ? "이 번호의" : "뒷자리 " + l4) + " 참여자가 없어요. 이벤트 미참여 구매로 기록됩니다.", "err");
-    renderMatches(res.matches);
-  }).catch(function(){ $("findBtn").disabled = false; $("findBtn").textContent = "찾기"; msg($("msg1"), "네트워크 연결을 확인해주세요.", "err"); });
-}
-$("findBtn").addEventListener("click", find);
-var findTimer = null;
-$("last4").addEventListener("input", function(){
-  var d = digits(this.value).slice(0,11); this.value = d.length > 4 ? fmtPhone(d) : d;
-  clearTimeout(findTimer);
-  if(d.length === 11) find(); else if(d.length === 4) findTimer = setTimeout(find, 700);
-});
-$("last4").addEventListener("keydown", function(e){ if(e.key === "Enter") find(); });
 $("amount").addEventListener("input", function(){ var d = digits(this.value); this.value = d ? Number(d).toLocaleString("ko-KR") : ""; });
 Array.prototype.forEach.call(document.querySelectorAll('input[name="product"]'), function(r){ r.addEventListener("change", function(){ applyPartMode(); autoAmount(); }); });
 $("qty").addEventListener("input", autoAmount);
@@ -378,17 +317,13 @@ Array.prototype.forEach.call(document.querySelectorAll('input[name="method"]'), 
 
 /* ---------- ① 스태프 작성 완료 ---------- */
 function collectStep1(){
-  var name = "", phone = "", part = isPart();
-  if(part){ name = buyer.name; phone = buyer.phone; }
-  else if(digits($("last4").value).length >= 4 && $("matches").children.length){
-    return msg($("msg1"), "검색된 참여자를 선택해주세요. (참여자가 아니면 번호를 지우세요)", "err");
-  }
+  var name = "", phone = "";   /* 참여 여부는 배송 시 입력된 번호로 서버가 판단 */
   var product = radio("product"), color = radio("color");
   var needColor = product === "콧물흡입기";
   if(!product) return msg($("msg1"), "제품을 선택해주세요.", "err");
   if(needColor && !color) return msg($("msg1"), "색상을 선택해주세요.", "err");
   if(!digits($("amount").value)) return msg($("msg1"), "결제 금액을 입력해주세요.", "err");
-  return { participant: part, name: name, phone: phone, product: product, color: needColor ? color : "", qty: Math.max(1, parseInt($("qty").value, 10) || 1),
+  return { name: name, phone: phone, product: product, color: needColor ? color : "", qty: Math.max(1, parseInt($("qty").value, 10) || 1),
            amount: digits($("amount").value), memo: "", method: radio("method") };
 }
 $("step1Btn").addEventListener("click", function(){
@@ -433,20 +368,19 @@ function save(o, btn, msgEl){
     $("doneTitle").textContent = isShip ? "주문이 접수되었습니다" : "기록되었습니다";
     $("doneShip").hidden = !isShip; $("doneShip").textContent = isShip ? (res.shipDate || shipDate) + " 발송 예정" : "";
     $("doneText").innerHTML = (o.name ? o.name + "님 · " : "") + o.product + (o.color ? " " + o.color : "") + " × " + o.qty + (o.amount ? " · " + fmtWon(o.amount) : "")
-      + (res.warranty ? "<br>🎁 캐럿헤드(" + o.color + ") 증정 · 🛡️ 보증 1년 연장" : (o.participant ? "" : "<br><span style='color:var(--ink-soft)'>이벤트 미참여 구매 (증정·보증 연장 없음)</span>"))
+      + (res.warranty ? "<br>🎁 캐럿헤드(" + o.color + ") 증정 · 🛡️ 보증 1년 연장" : "")
       + (isShip ? "<br>주문번호 " + res.orderNo + (res.shipLogged ? "" : "<br><span style='color:var(--err)'>⚠ 택배 업로드 시트 기록 실패 — 시트에서 직접 확인</span>") : "");
     show("done"); refreshStats();
   }).catch(function(){ btn.disabled = false; btn.textContent = label; msg(msgEl, "네트워크 연결을 확인해주세요.", "err"); });
 }
 $("nextBtn").addEventListener("click", function(){
   buyer = null; manualMode = false; order = null;
-  $("who").hidden = true; $("matches").innerHTML = "";
-  $("last4").value = ""; $("qty").value = 1; $("amount").value = "";
+  $("qty").value = 1; $("amount").value = "";
   var c = document.querySelector('input[name="color"]:checked'); if(c) c.checked = false;
   document.querySelector('input[name="product"][value="콧물흡입기"]').checked = true; $("colorField").hidden = false; autoAmount();
   document.querySelector('input[name="method"][value="현장"]').checked = true; $("step1Btn").textContent = "기록하기";
   applyPartMode();
-  msg($("msg1"), ""); show("step1"); setTimeout(function(){ $("last4").focus(); }, 50);
+  msg($("msg1"), ""); show("step1");
 });
 
 /* ---------- 주소 검색 (카카오 우편번호) ---------- */
