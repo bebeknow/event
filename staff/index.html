@@ -121,16 +121,20 @@
     .done-box .ship{font-size:24px}
     .done-box .ck{width:96px;height:96px;line-height:96px;font-size:50px}
     .addr-btn{font-size:17px;padding:0 20px}
-    /* ① 스태프 작성: 2열 */
-    #step1 .card{display:grid;grid-template-columns:1fr 1fr;column-gap:28px;align-items:start}
-    #step1 .card > .switch{grid-column:1 / -1}
-    #step1 .card > #partBlock{grid-column:1;grid-row:2 / span 4}
-    #step1 .card > #manual{grid-column:1}
-    #step1 .card > #who{grid-column:1}
-    #step1 .card > .field{grid-column:2}
-    #step1 .card > .field.wide{grid-column:1 / -1}
-    #step1 .card > .row{grid-column:2}
-    #step1 .card > #step1Btn,#step1 .card > #msg1{grid-column:1 / -1}
+    /* ① 스태프 작성: 2열, 한 화면(맥북 14" / 아이패드 가로)에 맞게 여백 축소 */
+    #step1 h1{font-size:22px;margin:0 0 2px}
+    #step1 .sub{margin-bottom:10px}
+    #step1Card{display:grid;grid-template-columns:1.15fr 1fr;column-gap:28px;align-items:start;padding:22px 26px}
+    #step1Card .field{margin-bottom:14px}
+    #step1Card .switch{padding:10px 14px;margin-bottom:12px}
+    #step1Card label.t{margin-bottom:7px}
+    #step1Card .chip span{padding:13px 10px;font-size:17px}
+    #step1Card input[type=text],#step1Card input[type=tel],#step1Card input[type=number]{padding:13px 16px;font-size:19px}
+    #step1Card .big{font-size:28px;padding:10px 16px}
+    #step1Card > #step1Btn{grid-column:1 / -1;margin-top:4px;padding:17px}
+    #step1Card > #msg1{grid-column:1 / -1}
+    #step1 .btn.ghost{padding:10px;font-size:14px;margin-top:4px}
+    #step1 footer{margin-top:8px}
     /* ② 고객 작성: 2열 */
     #step2 .card{display:grid;grid-template-columns:1fr 1fr;column-gap:28px;align-items:start}
     #step2 .card > .summary{grid-column:1 / -1}
@@ -160,66 +164,69 @@
     <h1>bebeknow 구매 접수</h1>
     <p class="sub">베베노 부스 · 구매 정보를 확인해 주세요</p>
 
-    <div class="card">
-      <label class="switch on" id="partSwitch">
-        <span><b>🎫 이벤트 참여자</b><small>켜짐: 참여자 검색 → 캐럿헤드 증정 · 보증 1년 연장 / 꺼짐: 일반 구매 (연락처 없음)</small></span>
-        <input type="checkbox" id="isPart" checked><span class="tg"></span>
-      </label>
-
-      <div id="partBlock">
-      <div class="field">
-        <label class="t" for="last4">참여자 전화번호 <small>뒷자리 4자리 또는 전체 번호</small></label>
+    <div class="card" id="step1Card">
+      <!-- 왼쪽: 제품 · 색상 · 수량/금액 -->
+      <div class="colL">
+        <div class="field">
+          <label class="t">제품</label>
+          <div class="chips">
+            <label class="chip"><input type="radio" name="product" value="콧물흡입기" checked><span>콧물흡입기</span></label>
+            <label class="chip"><input type="radio" name="product" value="아기비데"><span>아기비데</span></label>
+            <label class="chip"><input type="radio" name="product" value="실리콘약병 3개입"><span>실리콘약병 3개입</span></label>
+            <label class="chip"><input type="radio" name="product" value="실리콘약병 1개입"><span>실리콘약병 1개입</span></label>
+          </div>
+        </div>
+        <div class="field" id="colorField">
+          <label class="t">색상 <small id="colorHint">(캐럿헤드도 같은 색으로)</small></label>
+          <div class="chips">
+            <label class="chip pink"><input type="radio" name="color" value="핑크"><span>핑크</span></label>
+            <label class="chip beige"><input type="radio" name="color" value="베이지"><span>베이지</span></label>
+            <label class="chip green"><input type="radio" name="color" value="그린"><span>그린</span></label>
+          </div>
+        </div>
         <div class="row">
-          <input type="tel" id="last4" class="big" inputmode="numeric" maxlength="13" placeholder="0000">
-          <button class="btn sec" id="findBtn" style="flex:0 0 96px;margin-top:0">찾기</button>
+          <div class="field" style="flex:.6"><label class="t" for="qty">수량</label><input type="number" id="qty" value="1" min="1" max="9" inputmode="numeric"></div>
+          <div class="field" style="flex:1.4"><label class="t" for="amount">결제 금액 <small>(원)</small></label><input type="tel" id="amount" inputmode="numeric" placeholder=""></div>
         </div>
-        <div id="matches"></div>
-        <button class="btn sec" id="manualBtn" style="margin-top:10px" hidden>참여자 목록에 없어요 → 직접 입력</button>
-      </div>
-      <div id="who" class="field" hidden>
-        <label class="t">구매자</label>
-        <div style="font-size:16px"><b id="whoName"></b> <span id="whoPhone" style="color:var(--ink-soft)"></span><span id="whoTag" class="tag"></span></div>
-      </div>
-      </div>
-
-      <div id="manual" hidden>
-        <div class="row">
-          <div class="field"><label class="t" for="mName">이름 <small id="mNameOpt">(선택)</small></label><input type="text" id="mName" placeholder="이름"></div>
-          <div class="field" style="flex:1.6"><label class="t" for="mPhone">휴대전화번호 <small id="mPhoneOpt">(선택)</small></label><input type="tel" id="mPhone" inputmode="numeric" placeholder="010-0000-0000"></div>
+        <div class="field">
+          <label class="t">수령 방식</label>
+          <div class="chips">
+            <label class="chip"><input type="radio" name="method" value="현장" checked><span>🛍️ 현장 수령</span></label>
+            <label class="chip ship"><input type="radio" name="method" value="배송"><span>🚚 배송</span></label>
+          </div>
         </div>
       </div>
 
-      <div class="field">
-        <label class="t">제품</label>
-        <div class="chips">
-          <label class="chip"><input type="radio" name="product" value="콧물흡입기" checked><span>콧물흡입기</span></label>
-          <label class="chip"><input type="radio" name="product" value="아기비데"><span>아기비데</span></label>
-          <label class="chip"><input type="radio" name="product" value="실리콘약병 3개입"><span>실리콘약병 3개입</span></label>
-          <label class="chip"><input type="radio" name="product" value="실리콘약병 1개입"><span>실리콘약병 1개입</span></label>
+      <!-- 오른쪽: 이벤트 참여자 · 메모 -->
+      <div class="colR">
+        <label class="switch on" id="partSwitch">
+          <span><b>🎫 이벤트 참여자</b><small>참여자면 캐럿헤드 증정 · 보증 1년 연장</small></span>
+          <input type="checkbox" id="isPart" checked><span class="tg"></span>
+        </label>
+        <div id="partBlock">
+          <div class="field">
+            <label class="t" for="last4">참여자 전화번호 <small>뒷자리 4자리 또는 전체 번호</small></label>
+            <div class="row">
+              <input type="tel" id="last4" class="big" inputmode="numeric" maxlength="13" placeholder="0000">
+              <button class="btn sec" id="findBtn" style="flex:0 0 96px;margin-top:0">찾기</button>
+            </div>
+            <div id="matches"></div>
+            <button class="btn sec" id="manualBtn" style="margin-top:10px" hidden>참여자 목록에 없어요 → 직접 입력</button>
+          </div>
+          <div id="who" class="field" hidden>
+            <label class="t">구매자</label>
+            <div style="font-size:16px"><b id="whoName"></b> <span id="whoPhone" style="color:var(--ink-soft)"></span><span id="whoTag" class="tag"></span></div>
+          </div>
         </div>
-      </div>
-      <div class="field" id="colorField">
-        <label class="t">색상 <small id="colorHint">(캐럿헤드도 같은 색으로)</small></label>
-        <div class="chips">
-          <label class="chip pink"><input type="radio" name="color" value="핑크"><span>핑크</span></label>
-          <label class="chip beige"><input type="radio" name="color" value="베이지"><span>베이지</span></label>
-          <label class="chip green"><input type="radio" name="color" value="그린"><span>그린</span></label>
+        <div id="manual" hidden>
+          <div class="row">
+            <div class="field"><label class="t" for="mName">이름 <small id="mNameOpt">(필수)</small></label><input type="text" id="mName" placeholder="이름"></div>
+            <div class="field" style="flex:1.6"><label class="t" for="mPhone">휴대전화번호 <small id="mPhoneOpt">(필수)</small></label><input type="tel" id="mPhone" inputmode="numeric" placeholder="010-0000-0000"></div>
+          </div>
         </div>
-      </div>
-      <div class="row">
-        <div class="field" style="flex:.6"><label class="t" for="qty">수량</label><input type="number" id="qty" value="1" min="1" max="9" inputmode="numeric"></div>
-        <div class="field" style="flex:1.4"><label class="t" for="amount">결제 금액 <small>(원 · 제품×수량 자동, 수정 가능)</small></label><input type="tel" id="amount" inputmode="numeric" placeholder=""></div>
-      </div>
-      <div class="field wide">
-        <label class="t" for="memo">메모 <small>(선택)</small></label>
-        <input type="text" id="memo" placeholder="">
-      </div>
-
-      <div class="field wide">
-        <label class="t">수령 방식</label>
-        <div class="chips">
-          <label class="chip"><input type="radio" name="method" value="현장" checked><span>🛍️ 현장 수령</span></label>
-          <label class="chip ship"><input type="radio" name="method" value="배송"><span>🚚 배송</span></label>
+        <div class="field">
+          <label class="t" for="memo">메모 <small>(선택)</small></label>
+          <input type="text" id="memo" placeholder="">
         </div>
       </div>
 
@@ -228,7 +235,7 @@
     </div>
 
     <button class="btn ghost" id="logoutBtn">나가기</button>
-    <footer>bebeknow staff · <span id="ver">v2026.10.14-4</span></footer>
+    <footer>bebeknow staff · <span id="ver">v2026.10.14-5</span></footer>
   </div>
 
   <!-- ===== ② 고객 작성 (배송) ===== -->
