@@ -208,7 +208,7 @@
       </div>
       <div class="row">
         <div class="field" style="flex:.6"><label class="t" for="qty">수량</label><input type="number" id="qty" value="1" min="1" max="9" inputmode="numeric"></div>
-        <div class="field" style="flex:1.4"><label class="t" for="amount">결제 금액 <small>(원)</small></label><input type="tel" id="amount" inputmode="numeric" placeholder=""></div>
+        <div class="field" style="flex:1.4"><label class="t" for="amount">결제 금액 <small>(원)</small><span class="req" style="color:var(--err)"> *</span></label><input type="tel" id="amount" inputmode="numeric" placeholder=""></div>
       </div>
       <div class="field wide">
         <label class="t" for="memo">메모 <small>(선택)</small></label>
@@ -228,7 +228,7 @@
     </div>
 
     <button class="btn ghost" id="logoutBtn">나가기</button>
-    <footer>bebeknow staff · <span id="ver">v2026.10.14-2</span></footer>
+    <footer>bebeknow staff · <span id="ver">v2026.10.14-3</span></footer>
   </div>
 
   <!-- ===== ② 고객 작성 (배송) ===== -->
@@ -409,6 +409,7 @@ function collectStep1(){
   var needColor = product === "콧물흡입기";
   if(!product) return msg($("msg1"), "제품을 선택해주세요.", "err");
   if(needColor && !color) return msg($("msg1"), "색상을 선택해주세요.", "err");
+  if(!digits($("amount").value)) return msg($("msg1"), "결제 금액을 입력해주세요.", "err");
   return { participant: part, name: name, phone: phone, product: product, color: needColor ? color : "", qty: Math.max(1, parseInt($("qty").value, 10) || 1),
            amount: digits($("amount").value), memo: $("memo").value.trim(), method: radio("method") };
 }
