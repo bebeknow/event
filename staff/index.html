@@ -200,12 +200,12 @@
       </div>
 
 
-      <button class="btn" id="step1Btn">기록하기</button>
+      <button class="btn" id="step1Btn">구매 접수</button>
       <div class="msg" id="msg1"></div>
     </div>
 
     <button class="btn ghost" id="logoutBtn">나가기</button>
-    <footer>bebeknow staff · <span id="ver">v2026.10.14-7</span></footer>
+    <footer>bebeknow staff · <span id="ver">v2026.10.14-8</span></footer>
   </div>
 
   <!-- ===== ② 고객 작성 (배송) ===== -->
@@ -312,7 +312,7 @@ $("qty").addEventListener("change", autoAmount);
 autoAmount();
 applyPartMode();
 Array.prototype.forEach.call(document.querySelectorAll('input[name="method"]'), function(r){
-  r.addEventListener("change", function(){ $("step1Btn").textContent = r.value === "배송" ? "다음 → 고객님께 전달" : "기록하기"; });
+  r.addEventListener("change", function(){ $("step1Btn").textContent = r.value === "배송" ? "다음 → 고객님께 전달" : "구매 접수"; });
 });
 
 /* ---------- ① 스태프 작성 완료 ---------- */
@@ -365,7 +365,7 @@ function save(o, btn, msgEl){
     if(res.status === "unauth"){ try{ sessionStorage.removeItem(PIN_KEY); }catch(e){} return location.reload(); }
     if(res.status !== "ok") return msg(msgEl, "저장에 실패했어요. 다시 시도해주세요." + (res.message ? " [" + res.message + "]" : ""), "err");
     var isShip = res.method === "배송";
-    $("doneTitle").textContent = isShip ? "주문이 접수되었습니다" : "기록되었습니다";
+    $("doneTitle").textContent = isShip ? "주문이 접수되었습니다" : "구매가 접수되었습니다";
     $("doneShip").hidden = !isShip; $("doneShip").textContent = isShip ? (res.shipDate || shipDate) + " 발송 예정" : "";
     $("doneText").innerHTML = (o.name ? o.name + "님 · " : "") + o.product + (o.color ? " " + o.color : "") + " × " + o.qty + (o.amount ? " · " + fmtWon(o.amount) : "")
       + (res.warranty ? "<br>🎁 캐럿헤드(" + o.color + ") 증정 · 🛡️ 보증 1년 연장" : "")
@@ -378,7 +378,7 @@ $("nextBtn").addEventListener("click", function(){
   $("qty").value = 1; $("amount").value = "";
   var c = document.querySelector('input[name="color"]:checked'); if(c) c.checked = false;
   document.querySelector('input[name="product"][value="콧물흡입기"]').checked = true; $("colorField").hidden = false; autoAmount();
-  document.querySelector('input[name="method"][value="현장"]').checked = true; $("step1Btn").textContent = "기록하기";
+  document.querySelector('input[name="method"][value="현장"]').checked = true; $("step1Btn").textContent = "구매 접수";
   applyPartMode();
   msg($("msg1"), ""); show("step1");
 });
