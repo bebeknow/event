@@ -7,10 +7,10 @@
 <title>베베노 부스 · 직원</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap">
-<link rel="stylesheet" href="booth.css?v=1">
+<link rel="stylesheet" href="booth.css?v=2">
 <style>
   body{padding:16px 22px 28px}
-  .wrap{max-width:1180px;margin:0 auto}
+  .wrap{max-width:1460px;margin:0 auto}
   .top{display:flex;align-items:center;gap:14px;margin-bottom:14px}
   .top .logo{font-size:26px;color:var(--accent-deep)}
   .top .title{font-size:15px;font-weight:700;color:var(--ink-soft)}
@@ -22,7 +22,14 @@
   .top .out{padding:8px 14px;font-size:13px;border-radius:999px;border:1.5px solid var(--line);background:none;color:var(--ink-soft)}
 
   /* 접수 */
-  .grid{display:grid;grid-template-columns:1fr 1.08fr;gap:16px;align-items:start}
+  /* 제품 담기 | 주문 내역 | 고객 정보 — 맥북 14"(1512px) 한 화면 */
+  .grid{display:grid;grid-template-columns:.92fr 1fr 1fr;gap:14px;align-items:start}
+  .cust .field{margin-bottom:12px}
+  .cust label.t{font-size:14px;margin-bottom:6px}
+  .cust input[type=text],.cust input[type=tel]{padding:12px 14px;font-size:17px}
+  .cust .addr-btn{font-size:15px;padding:0 14px}
+  .cust input:disabled{background:#fff;color:var(--ink);border-color:transparent;padding-left:2px}
+  .cust .addr-btn:disabled{display:none}
   .card h2{font-size:17px;font-weight:800;margin-bottom:14px;color:var(--accent-deep)}
   .prods{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .prod{border:1.5px solid var(--line);border-radius:16px;background:#fdfbf8;padding:14px;text-align:left;display:flex;flex-direction:column;gap:4px;min-height:96px}
@@ -39,7 +46,7 @@
 
   .cart{min-height:120px}
   .empty{padding:30px 10px;text-align:center;color:var(--ink-soft);font-size:15px;border:1.5px dashed var(--line);border-radius:14px}
-  .line{display:grid;grid-template-columns:1fr auto 132px 34px;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+  .line{display:grid;grid-template-columns:1fr auto 112px 30px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
   .line .nm{font-size:16px;font-weight:700}
   .qty{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
   .qty button{width:38px;height:40px;border:none;background:#fdfbf8;font-size:20px;font-weight:700}
@@ -115,13 +122,31 @@
         <h2>주문 내역</h2>
         <div class="cart" id="cart"></div>
         <div class="total"><span>합계</span><strong id="total">0원</strong></div>
-        <div id="sendBox">
-          <div class="chips method">
-            <label class="chip"><input type="radio" name="method" value="현장" checked><span>🛍️ 현장 수령</span></label>
-            <label class="chip ship"><input type="radio" name="method" value="배송"><span>🚚 배송</span></label>
+        <div class="chips method">
+          <label class="chip"><input type="radio" name="method" value="현장" checked><span>🛍️ 현장 수령</span></label>
+          <label class="chip ship"><input type="radio" name="method" value="배송"><span>🚚 배송</span></label>
+        </div>
+      </div>
+
+      <div class="card cust" id="custCard">
+        <h2>고객 정보</h2>
+        <div class="row">
+          <div class="field"><label class="t" for="cName">성함</label><input type="text" id="cName" autocomplete="off"></div>
+          <div class="field"><label class="t" for="cPhone">연락처</label><input type="tel" id="cPhone" inputmode="numeric" placeholder="010-0000-0000" autocomplete="off"></div>
+        </div>
+        <div id="cShip" hidden>
+          <div class="field">
+            <label class="t">배송 주소</label>
+            <div class="addr-row"><input type="text" id="cZip" inputmode="numeric" placeholder="우편번호"><button type="button" class="addr-btn" id="cAddrBtn">🔍 주소 검색</button></div>
+            <input type="text" id="cAddr" placeholder="주소 검색을 누르거나 직접 입력" style="margin-top:8px">
+            <input type="text" id="cAddr2" placeholder="상세주소 (동 · 호수)" style="margin-top:8px">
           </div>
-          <button class="btn" id="sendBtn" style="margin-top:12px">아이패드로 보내기</button>
+          <div class="field"><label class="t" for="cReq">배송 요청사항 <small>(선택)</small></label><input type="text" id="cReq"></div>
+        </div>
+        <div id="sendBox">
+          <button class="btn" id="sendBtn">아이패드로 확인 보내기</button>
           <div class="msg" id="takeMsg"></div>
+          <button class="btn ghost" id="clearBtn" style="margin-top:8px;padding:10px;font-size:14px">새 고객으로 비우기</button>
         </div>
         <div id="statusBox" class="status" hidden></div>
       </div>
@@ -139,13 +164,13 @@
       <div id="results"></div>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.14-1</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.15-1</span></footer>
   </div>
 </div>
 
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="common.js?v=1"></script>
-<script src="po.js?v=1"></script>
+<script src="common.js?v=2"></script>
+<script src="po.js?v=2"></script>
 <script>
 /* 비밀번호는 로그인 때 한 번만 쓰고, 이후에는 직원용 토큰(1일)으로 요청 — 비밀번호 잠금이 걸려도 이미 로그인한 화면은 동작 */
 var TOKEN_KEY = "bebeknow_booth_staff_token", ACK_KEY = "bebeknow_booth_ack";
@@ -156,9 +181,29 @@ var phase = "edit";       // edit → sending → waiting(아이패드 입력 �
 var sessId = "", order = null, lastRev = 0, pollT = null, shipDate = "";
 var lastSend = null;      // {id, sig}: 보내기가 응답 없이 끝났을 때 같은 내용이면 같은 번호로 다시 보냄(중복 주문 방지)
 var editing = 0;          // 직원이 주문을 고치는 중이면 상태 확인이 그 변경을 "고객 수정"으로 오인하지 않게
-function cartSig() { return JSON.stringify([radio("method"), cart.map(function (l) { return [l.product, l.color, l.qty, l.amount]; })]); }
+var reviseId = "";        // 고객이 "고칠 부분이 있어요"를 누른 세션 (비우기 때 확인 처리)
+function cartSig() { return JSON.stringify([radio("method"), cart.map(function (l) { return [l.product, l.color, l.qty, l.amount]; }), custData()]); }
 
 function radio(name) { var r = document.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ""; }
+
+/* ---------- 고객 정보 (직원이 입력, 아이패드는 확인만) ---------- */
+var CUST = { name: "cName", phone: "cPhone", zip: "cZip", address: "cAddr", address2: "cAddr2", request: "cReq" };
+function custData() {
+  var d = {}, ship = radio("method") === "배송";
+  Object.keys(CUST).forEach(function (k) { d[k] = (k === "name" || k === "phone" || ship) ? $(CUST[k]).value.trim() : ""; });
+  return d;
+}
+function fillCust(c) { Object.keys(CUST).forEach(function (k) { $(CUST[k]).value = (c && c[k]) || ""; }); }
+function syncShip() { $("cShip").hidden = radio("method") !== "배송"; }
+Array.prototype.forEach.call(document.querySelectorAll('input[name="method"]'), function (r) { r.addEventListener("change", syncShip); });
+$("cPhone").addEventListener("input", function () { this.value = fmtPhone(this.value); });
+$("cAddrBtn").addEventListener("click", function () {
+  var ok = openAddrSearch(function (r) { $("cZip").value = r.zip; $("cAddr").value = r.address; $("cAddr2").focus(); });
+  if (!ok) { msg($("takeMsg"), "주소 검색을 불러오지 못했어요. 직접 입력해주세요."); $("cAddr").focus(); }
+});
+/* 입력 중인 주문과 고객 정보를 모두 비움 (다른 고객으로 넘어갈 때) */
+$("clearBtn").addEventListener("click", function () { if (phase === "edit") nextCustomer(); });
+function setMethod(m) { var r = document.querySelector('input[name="method"][value="' + m + '"]'); if (r) r.checked = true; syncShip(); }
 
 /* ---------- 로그인 ---------- */
 function enter(t) {
@@ -166,15 +211,17 @@ function enter(t) {
   try { sessionStorage.setItem(TOKEN_KEY, t); } catch (e) {}
   $("login").hidden = true; $("app").hidden = false;
   $("stationLbl").textContent = "스테이션 " + STATION;
-  renderProducts(); renderCart();
+  renderProducts(); renderCart(); syncShip();
 }
 /* 새로고침해도 진행 중이던 주문을 이어감 (입력 중이면 계속 기다리고, 끝난 주문은 인쇄 없이 보여줌) */
 function restore(s) {
   if (!s) return;
   var ack = ""; try { ack = sessionStorage.getItem(ACK_KEY) || ""; } catch (e) {}
-  if (s.id === ack || (s.state !== "waiting" && s.state !== "done")) return;
+  if (s.id === ack || (s.state !== "waiting" && s.state !== "done" && s.state !== "revise")) return;
+  if (s.state === "revise" && Date.now() - (s.at || 0) > 10 * 60000) return;   // 오래된 수정 요청은 다시 불러오지 않음 (이전 고객 정보가 남지 않게)
   cart = s.items.map(function (it) { return { product: it.product, color: it.color, qty: it.qty, amount: it.amount, manual: it.amount !== priceOf(it.product) * it.qty }; });
-  var m = document.querySelector('input[name="method"][value="' + s.method + '"]'); if (m) m.checked = true;
+  setMethod(s.method); fillCust(s.customer);
+  if (s.state === "revise") { reviseId = s.id; renderCart(); return msg($("takeMsg"), "고객이 고칠 부분이 있다고 했던 주문이에요. 고친 뒤 다시 보내거나, 다른 고객이면 [새 고객으로 비우기]를 눌러주세요.", "info"); }
   sessId = s.id; lastSend = { id: s.id, sig: cartSig() };
   if (s.state === "waiting") { setPhase("waiting"); poll(); return; }
   order = s.order; lastRev = s.rev || 1; setPhase("done");
@@ -207,7 +254,7 @@ $("loginBtn").addEventListener("click", function () {
 });
 $("pin").addEventListener("keydown", function (e) { if (e.key === "Enter") $("loginBtn").click(); });
 $("logoutBtn").addEventListener("click", function () {
-  if (phase === "waiting" && !confirm("아이패드에서 고객이 입력 중입니다. 나갈까요?")) return;
+  if (phase === "waiting" && !confirm("아이패드에서 고객이 확인 중입니다. 나갈까요?")) return;
   logout();
 });
 
@@ -282,25 +329,33 @@ $("cart").addEventListener("input", function (e) {
 $("sendBtn").addEventListener("click", function () {
   msg($("takeMsg"), "");
   if (!cart.length) return msg($("takeMsg"), "제품을 먼저 담아주세요.");
+  var cd = custData();
+  if (!cd.name) { $("cName").focus(); return msg($("takeMsg"), "고객 성함을 입력해주세요."); }
+  if (digits(cd.phone).length < 10 || digits(cd.phone).length > 11) { $("cPhone").focus(); return msg($("takeMsg"), "연락처를 확인해주세요."); }
+  if (radio("method") === "배송" && !cd.address) { $("cAddr").focus(); return msg($("takeMsg"), "배송 주소를 입력해주세요."); }
   var sig = cartSig();
   var id = lastSend && lastSend.sig === sig ? lastSend.id : uid();      // 같은 내용으로 다시 누르면 같은 번호
   lastSend = { id: id, sig: sig };
   var btn = $("sendBtn");
   btn.textContent = "보내는 중…"; setPhase("sending");
   var ack = ""; try { ack = sessionStorage.getItem(ACK_KEY) || ""; } catch (e) {}
-  apiPost({ action: "push", token: tok, station: STATION, id: id, ack: ack, method: radio("method"),
-            items: cart.map(function (l) { return { product: l.product, color: l.color, qty: l.qty, amount: l.amount }; }) })
+  apiPost(Object.assign({ action: "push", token: tok, station: STATION, id: id, ack: ack, method: radio("method"),
+            items: cart.map(function (l) { return { product: l.product, color: l.color, qty: l.qty, amount: l.amount }; }) }, cd))
     .then(function (res) {
       if (res.status === "conflict" && res.session && res.session.order) {   // 응답이 끊긴 사이 고객이 접수를 끝낸 주문이 있음 → 그 주문부터 처리
-        btn.textContent = "아이패드로 보내기";
+        btn.textContent = "아이패드로 확인 보내기";
         var s0 = res.session; sessId = s0.id; order = s0.order; lastRev = s0.rev || 1; lastSend = null;
         cart = s0.items.map(function (it) { return { product: it.product, color: it.color, qty: it.qty, amount: it.amount, manual: true }; });
-        var m0 = document.querySelector('input[name="method"][value="' + s0.method + '"]'); if (m0) m0.checked = true;
+        setMethod(s0.method); fillCust(s0.customer);
         setPhase("done");
         renderStatus("⚠ 연결이 끊긴 사이 아이패드에서 접수된 주문이에요. 아직 출력되지 않았을 수 있으니 [다시 인쇄]로 확인한 뒤 다음 고객을 눌러주세요.");
         poll(); return;
       }
-      btn.textContent = "아이패드로 보내기";
+      btn.textContent = "아이패드로 확인 보내기";
+      if (res.status === "revise") {                         // 응답이 끊긴 사이 고객이 수정을 요청했던 주문
+        reviseId = id; sessId = ""; lastSend = null; setPhase("edit");
+        return msg($("takeMsg"), "고객이 고칠 부분이 있다고 했어요. 고객에게 확인해 고친 뒤 다시 보내주세요.", "info");
+      }
       if (res.status === "unauth") return logout();
       if (res.status === "locked") { setPhase("edit"); return lockedMsg($("takeMsg")); }
       if (res.status !== "ok") { lastSend = null; setPhase("edit"); return msg($("takeMsg"), "보내지 못했어요." + (res.message ? " [" + res.message + "]" : "")); }
@@ -310,7 +365,7 @@ $("sendBtn").addEventListener("click", function () {
       else setPhase("waiting");
       poll();
     }).catch(function () {
-      btn.textContent = "아이패드로 보내기"; setPhase("edit");
+      btn.textContent = "아이패드로 확인 보내기"; setPhase("edit");
       msg($("takeMsg"), "응답이 없어요. 인터넷을 확인하고 다시 눌러주세요. (같은 주문은 한 번만 보내집니다)");
     });
 });
@@ -320,6 +375,8 @@ function setPhase(p) {
   $("sendBox").hidden = p !== "edit" && p !== "sending";
   $("sendBtn").disabled = p === "sending";
   Array.prototype.forEach.call(document.querySelectorAll('input[name="method"]'), function (r) { r.disabled = p !== "edit"; });
+  Object.keys(CUST).forEach(function (k) { $(CUST[k]).disabled = p !== "edit"; });
+  $("cAddrBtn").disabled = p !== "edit";
   renderCart(); renderStatus();
 }
 function renderStatus(note) {
@@ -328,8 +385,8 @@ function renderStatus(note) {
   box.hidden = false;
   if (phase === "waiting") {
     box.className = "status";
-    box.innerHTML = '<div class="big"><span class="spin"></span> 아이패드에서 고객이 입력 중</div>' +
-      "<p>" + (radio("method") === "배송" ? "🚚 배송" : "🛍️ 현장 수령") + " · 성함·연락처" + (radio("method") === "배송" ? "·주소" : "") + "를 적고 있어요.</p>" +
+    box.innerHTML = '<div class="big"><span class="spin"></span> 아이패드에서 고객이 확인 중</div>' +
+      "<p>" + (radio("method") === "배송" ? "🚚 배송" : "🛍️ 현장 수령") + " · 고객이 주문 내용과 입력한 정보를 확인하고 있어요.</p>" +
       '<div class="btns"><button class="btn danger" id="cancelBtn">보내기 취소하고 고치기</button></div>';
     $("cancelBtn").addEventListener("click", cancelSend);
     return;
@@ -339,7 +396,7 @@ function renderStatus(note) {
   box.innerHTML = '<div class="big">✓ 접수 완료 · ' + esc(o.orderNo) + "</div>" +
     "<p>" + (note || "Purchase Order를 출력했어요.") + "</p>" +
     '<div class="who"><b>' + esc(o.name) + "</b> · " + esc(o.phone) +
-      (o.method === "배송" ? "<br>" + esc((o.zip ? "(" + o.zip + ") " : "") + o.address + " " + (o.address2 || "")) + (o.request ? "<br>요청: " + esc(o.request) : "") + "<br>📦 " + esc(o.shipDate || shipDate) + " 발송 예정" : "<br>🛍️ 현장 수령") +
+      (o.method === "배송" ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") + "<br>📦 " + esc(o.shipDate || shipDate) + " 발송 예정" : "<br>🛍️ 현장 수령") +
       (o.participant ? "<br>🎁 이벤트 참여자" + (o.items.some(function (it) { return it.warranty; }) ? " · 캐럿헤드 증정 · 보증 1년 연장" : "") : "") +
       (o.shipLogged === false && o.method === "배송" ? '<br><span style="color:var(--err)">⚠ 토글업로드 탭 기록 실패 — 시트에서 직접 확인</span>' : "") +
     "</div>" +
@@ -362,9 +419,9 @@ function cancelSend() {
 }
 function nextCustomer() {
   clearTimeout(pollT);
-  try { sessionStorage.setItem(ACK_KEY, sessId); } catch (e) {}
-  cart = []; sessId = ""; order = null; lastRev = 0; lastSend = null;
-  document.querySelector('input[name="method"][value="현장"]').checked = true;
+  try { if (sessId || reviseId) sessionStorage.setItem(ACK_KEY, sessId || reviseId); } catch (e) {}
+  cart = []; sessId = ""; reviseId = ""; order = null; lastRev = 0; lastSend = null;
+  setMethod("현장"); fillCust(null);
   msg($("takeMsg"), ""); setPhase("edit");
 }
 
@@ -380,8 +437,11 @@ function poll() {
     if (s.state === "done") {
       if (phase === "waiting") { order = s.order; lastRev = s.rev; setPhase("done"); printPO(order); }
       else if (!editing && s.rev > lastRev) {             // 고객이 아이패드에서 정보를 고침 → 다시 출력
-        order = s.order; lastRev = s.rev; renderStatus("고객이 정보를 고쳤어요. 고친 내용으로 다시 출력했어요."); printPO(order);
+        order = s.order; lastRev = s.rev; renderStatus("주문 정보가 바뀌어서 바뀐 내용으로 다시 출력했어요."); printPO(order);
       }
+    } else if (s.state === "revise" && phase === "waiting") {      // 고객이 "고칠 부분이 있어요" → 입력 그대로 둔 채 고칠 수 있게
+      reviseId = sessId; sessId = ""; lastSend = null; setPhase("edit");
+      msg($("takeMsg"), "고객이 고칠 부분이 있다고 했어요. 고객에게 확인해 고친 뒤 다시 보내주세요.", "info");
     } else if (s.state === "cancelled" && phase === "waiting") { sessId = ""; lastSend = null; setPhase("edit"); msg($("takeMsg"), "보내기가 취소됐어요. 다시 보내주세요.", "info"); }
   }).catch(function () {}).then(function () {
     if (phase !== "edit" && mine === sessId) pollT = setTimeout(poll, phase === "waiting" ? 1500 : 3000);
@@ -412,7 +472,7 @@ function orderCard(o, i) {
     '<div class="h"><b>' + esc(o.name) + '</b><span class="no">' + esc(o.orderNo) + " · " + esc(o.at) + "</span>" +
       '<span class="badge' + (isShip ? " ship" : "") + '">' + (isShip ? "배송" : "현장 수령") + "</span>" +
       (o.shipped ? '<span class="badge done">발송 완료</span>' : "") + "</div>" +
-    '<div class="info">' + esc(o.phone) + (isShip ? "<br>" + esc((o.zip ? "(" + o.zip + ") " : "") + o.address + " " + (o.address2 || "")) + (o.request ? "<br>요청: " + esc(o.request) : "") : "") + "</div>" +
+    '<div class="info">' + esc(o.phone) + (isShip ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") : "") + "</div>" +
     '<div class="items">' + o.items.map(function (it) { return esc(itemLabel(it)) + " × " + it.qty + " · " + won(it.amount); }).join("<br>") + "<br><b>합계 " + won(o.total) + "</b></div>" +
     '<div class="acts">' + (o.shipped ? "" : '<button class="btn sec" data-a="edit">정보 수정</button>') + '<button class="btn ghost" data-a="print">인쇄</button></div>' +
     '<div class="edit" hidden></div><div class="msg"></div></div>';

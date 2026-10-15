@@ -31,6 +31,12 @@ function fmtPhone(v) {
 }
 function won(n) { return Number(n || 0).toLocaleString("ko-KR") + "원"; }
 function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+/* 주소 HTML: 상세주소("A-A513호" 등)는 중간에서 줄이 갈리지 않게 한 덩어리로 묶음 */
+function addrHtml(o) {
+  var a2 = String(o.address2 || "").trim();
+  return esc((o.zip ? "(" + o.zip + ") " : "") + (o.address || "")) +
+    (a2 ? " " + (a2.length <= 24 ? '<span style="white-space:nowrap">' + esc(a2) + "</span>" : esc(a2)) : "");
+}
 function itemLabel(it) { return it.product + (it.color ? " · " + it.color : ""); }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function msg(el, text, cls) { el.className = "msg" + (text ? " " + (cls || "err") : ""); el.textContent = text || ""; }
