@@ -256,7 +256,7 @@ $("reviseBtn").addEventListener("click", function () {
   }).catch(function () { setBusy(false); if (gen === myGen) msg($("formMsg"), "직원에게 알리지 못했어요. 직원에게 직접 말씀해 주세요."); });
 });
 
-/* ---------- 완료 (30초 뒤 대기 화면) ---------- */
+/* ---------- 완료 (15초 뒤 대기 화면) ---------- */
 function showDone() {
   var o = order, isShip = o.method === "배송";
   $("doneNo").textContent = "주문번호 " + o.orderNo;
@@ -265,7 +265,7 @@ function showDone() {
   $("donePerk").innerHTML = warranty ? '<span class="perk">🎁 캐럿헤드 증정 · 🛡️ 보증 기간 1년 → 2년</span>' : "";
   show("done");
   clearTimeout(idleT);
-  idleT = setTimeout(function () { if (view === "done") toIdle(""); }, 30000);
+  idleT = setTimeout(function () { if (view === "done") toIdle(""); }, 15000);
 }
 $("okBtn").addEventListener("click", function () { toIdle(""); });
 
