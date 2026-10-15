@@ -34,6 +34,7 @@ var PO_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAksAAABcCAYAAAB+8fE
     ".po thead th{font-size:.9em;font-weight:900;text-align:left;border-top:.35mm solid #000;border-bottom:.35mm solid #000;padding:1mm 0}",
     ".po th.q,.po td.q{width:11mm;text-align:center}.po th.a,.po td.a{width:23mm;text-align:right}",
     ".po tbody td{padding:1.3mm 0;border-bottom:.2mm dashed #000;vertical-align:top}",
+    ".po td.n .pk{font-size:.85em;font-weight:700;margin-top:.5mm}",
     ".po td.n .opt{font-weight:700}.po td.a,.po td.q{font-variant-numeric:tabular-nums;font-weight:700}",
     ".po .total{display:flex;justify-content:space-between;align-items:baseline;border-top:1mm solid #000;margin-top:1.6mm;padding-top:1.6mm}",
     ".po .total span{font-weight:900;font-size:1.05em;color:#000}.po .total strong{font-size:1.6em;font-weight:900;font-variant-numeric:tabular-nums}",
@@ -55,6 +56,7 @@ function renderPO(o) {
   var addr = isShip ? addrHtml(o) : "현장 수령";
   var rows = items.map(function (it) {
     return "<tr><td class=\"n\">" + esc(FULL_NAMES[it.product] || it.product) + (it.color ? " <span class=\"opt\">(" + esc(it.color) + ")</span>" : "") +
+      (pickupText(it, o.method) ? "<div class=\"pk\">└ " + esc(pickupText(it, o.method)) + "</div>" : "") +
       "</td><td class=\"q\">" + esc(it.qty) + "</td><td class=\"a\">" + won(it.amount) + "</td></tr>";
   }).join("");
   $("poSheet").innerHTML =

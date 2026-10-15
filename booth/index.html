@@ -7,7 +7,7 @@
 <title>베베노 부스 · 직원</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap">
-<link rel="stylesheet" href="booth.css?v=3">
+<link rel="stylesheet" href="booth.css?v=4">
 <style>
   body{padding:16px 22px 28px}
   .wrap{max-width:1460px;margin:0 auto}
@@ -38,6 +38,11 @@
   .prod b{font-size:18px}
   .prod small{font-size:14px;color:var(--ink-soft)}
   .prod.wide{grid-column:1 / -1}
+  .prod.set{border-color:var(--accent);background:var(--accent-tint)}
+  .prod .tag{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:var(--accent-deep);color:#fff;font-size:12px;font-weight:800;vertical-align:2px}
+  .pick{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:14px;font-weight:700;color:var(--ship);cursor:pointer;width:fit-content}
+  .pick input{width:18px;height:18px;accent-color:var(--ship)}
+  .pick.on{color:var(--ship)}
   .colors{display:flex;gap:8px;margin-top:8px}
   .colors button{flex:1;padding:12px 6px;font-size:16px;font-weight:800;color:#fff;border:none;border-radius:12px}
   .colors button:active{transform:scale(.97)}
@@ -165,13 +170,13 @@
       <div id="results"></div>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.15-2</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.15-3</span></footer>
   </div>
 </div>
 
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="common.js?v=3"></script>
-<script src="po.js?v=3"></script>
+<script src="common.js?v=4"></script>
+<script src="po.js?v=4"></script>
 <script>
 /* 비밀번호는 로그인 때 한 번만 쓰고, 이후에는 직원용 토큰(1일)으로 요청 — 비밀번호 잠금이 걸려도 이미 로그인한 화면은 동작 */
 var TOKEN_KEY = "bebeknow_booth_staff_token", ACK_KEY = "bebeknow_booth_ack";
@@ -183,7 +188,7 @@ var sessId = "", order = null, lastRev = 0, pollT = null, shipDate = "";
 var lastSend = null;      // {id, sig}: 보내기가 응답 없이 끝났을 때 같은 내용이면 같은 번호로 다시 보냄(중복 주문 방지)
 var editing = 0;          // 직원이 주문을 고치는 중이면 상태 확인이 그 변경을 "고객 수정"으로 오인하지 않게
 var reviseId = "";        // 고객이 "고칠 부분이 있어요"를 누른 세션 (비우기 때 확인 처리)
-function cartSig() { return JSON.stringify([radio("method"), cart.map(function (l) { return [l.product, l.color, l.qty, l.amount]; }), custData()]); }
+function cartSig() { return JSON.stringify([radio("method"), cart.map(function (l) { return [l.product, l.color, l.qty, l.amount, !!l.pickup]; }), custData()]); }
 
 function radio(name) { var r = document.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ""; }
 
@@ -195,7 +200,7 @@ function custData() {
   return d;
 }
 function fillCust(c) { Object.keys(CUST).forEach(function (k) { $(CUST[k]).value = (c && c[k]) || ""; }); }
-function syncShip() { $("cShip").hidden = radio("method") !== "배송"; }
+function syncShip() { $("cShip").hidden = radio("method") !== "배송"; if ($("cart")) renderCart(); }
 Array.prototype.forEach.call(document.querySelectorAll('input[name="method"]'), function (r) { r.addEventListener("change", syncShip); });
 $("cPhone").addEventListener("input", function () { this.value = fmtPhone(this.value); });
 $("cAddrBtn").addEventListener("click", function () {
@@ -220,7 +225,7 @@ function restore(s) {
   var ack = ""; try { ack = sessionStorage.getItem(ACK_KEY) || ""; } catch (e) {}
   if (s.id === ack || (s.state !== "waiting" && s.state !== "done" && s.state !== "revise")) return;
   if (s.state === "revise" && Date.now() - (s.at || 0) > 10 * 60000) return;   // 오래된 수정 요청은 다시 불러오지 않음 (이전 고객 정보가 남지 않게)
-  cart = s.items.map(function (it) { return { product: it.product, color: it.color, qty: it.qty, amount: it.amount, manual: it.amount !== priceOf(it.product) * it.qty }; });
+  cart = s.items.map(function (it) { return { product: it.product, color: it.color, qty: it.qty, amount: it.amount, pickup: !!it.pickup, manual: it.amount !== priceOf(it.product) * it.qty }; });
   setMethod(s.method); fillCust(s.customer);
   if (s.state === "revise") { reviseId = s.id; renderCart(); return msg($("takeMsg"), "고객이 고칠 부분이 있다고 했던 주문이에요. 고친 뒤 다시 보내거나, 다른 고객이면 [새 고객으로 비우기]를 눌러주세요.", "info"); }
   sessId = s.id; lastSend = { id: s.id, sig: cartSig() };
@@ -271,13 +276,15 @@ $("tabFind").addEventListener("click", function () { setTab("find"); });
 /* ---------- 제품 담기 ---------- */
 function renderProducts() {
   $("prods").innerHTML = PRODUCTS.map(function (p) {
+    var name = esc(p.label || p.key) + (p.set ? '<span class="tag">세트</span>' : "");
     if (p.colors) {                                         // 색상이 있는 제품: 색상 버튼을 눌러야 담김
-      return '<div class="prod wide"><b>' + esc(p.key) + "</b><small>" + won(p.price) + " · 색상을 눌러 담기</small>" +
+      return '<div class="prod wide' + (p.set ? " set" : "") + '"><b>' + name + "</b><small>" + won(p.price) + " · " +
+        (p.set ? "콧물흡입기 색상을 눌러 담기" : "색상을 눌러 담기") + "</small>" +
         '<div class="colors">' + p.colors.map(function (c) {
           return '<button type="button" class="' + esc(c) + '" data-p="' + esc(p.key) + '" data-c="' + esc(c) + '">' + esc(c) + "</button>";
         }).join("") + "</div></div>";
     }
-    return '<button type="button" class="prod" data-p="' + esc(p.key) + '"><b>' + esc(p.key) + "</b><small>" + won(p.price) + "</small></button>";
+    return '<button type="button" class="prod" data-p="' + esc(p.key) + '"><b>' + name + "</b><small>" + won(p.price) + "</small></button>";
   }).join("");
 }
 $("prods").addEventListener("click", function (e) {
@@ -299,8 +306,11 @@ function renderCart() {
   box.classList.toggle("locked", phase !== "edit");
   if (!cart.length) box.innerHTML = '<div class="empty">왼쪽에서 제품을 누르면 여기에 담깁니다.</div>';
   else box.innerHTML = cart.map(function (l, i) {
+    /* 세트 + 배송: 콧물흡입기만 지금 가져가면 체크 → 택배에는 아기비데만 */
+    var pick = l.product === SET_KEY && radio("method") === "배송"
+      ? '<label class="pick"><input type="checkbox" data-a="pick"' + (l.pickup ? " checked" : "") + (phase !== "edit" ? " disabled" : "") + "> " + PICKUP_NOTE + "</label>" : "";
     return '<div class="line" data-i="' + i + '">' +
-      '<div class="nm">' + (l.color ? '<span class="dot ' + l.color + '"></span>' : "") + esc(itemLabel(l)) + "</div>" +
+      '<div class="nm">' + (l.color ? '<span class="dot ' + esc(l.color) + '"></span>' : "") + esc(itemLabel(l)) + pick + "</div>" +
       '<div class="qty"><button type="button" data-a="minus" aria-label="수량 줄이기">−</button><b>' + l.qty + '</b><button type="button" data-a="plus" aria-label="수량 늘리기">+</button></div>' +
       '<input type="text" class="amt" inputmode="numeric" value="' + Number(l.amount).toLocaleString("ko-KR") + '" aria-label="금액">' +
       '<button type="button" class="x" data-a="del" aria-label="빼기">✕</button></div>';
@@ -316,6 +326,10 @@ $("cart").addEventListener("click", function (e) {
     if (!l.manual) l.amount = priceOf(l.product) * l.qty;
   }
   renderCart();
+});
+$("cart").addEventListener("change", function (e) {
+  if (e.target.dataset.a !== "pick" || phase !== "edit") return;
+  cart[+e.target.closest(".line").dataset.i].pickup = e.target.checked;
 });
 /* 금액을 직접 고치면 그 줄은 자동 계산을 멈춤 */
 $("cart").addEventListener("input", function (e) {
@@ -341,12 +355,12 @@ $("sendBtn").addEventListener("click", function () {
   btn.textContent = "보내는 중…"; setPhase("sending");
   var ack = ""; try { ack = sessionStorage.getItem(ACK_KEY) || ""; } catch (e) {}
   apiPost(Object.assign({ action: "push", token: tok, station: STATION, id: id, ack: ack, method: radio("method"),
-            items: cart.map(function (l) { return { product: l.product, color: l.color, qty: l.qty, amount: l.amount }; }) }, cd))
+            items: cart.map(function (l) { return { product: l.product, color: l.color, qty: l.qty, amount: l.amount, pickup: radio("method") === "배송" && !!l.pickup }; }) }, cd))
     .then(function (res) {
       if (res.status === "conflict" && res.session && res.session.order) {   // 응답이 끊긴 사이 고객이 접수를 끝낸 주문이 있음 → 그 주문부터 처리
         btn.textContent = "아이패드로 확인 보내기";
         var s0 = res.session; sessId = s0.id; order = s0.order; lastRev = s0.rev || 1; lastSend = null;
-        cart = s0.items.map(function (it) { return { product: it.product, color: it.color, qty: it.qty, amount: it.amount, manual: true }; });
+        cart = s0.items.map(function (it) { return { product: it.product, color: it.color, qty: it.qty, amount: it.amount, pickup: !!it.pickup, manual: true }; });
         setMethod(s0.method); fillCust(s0.customer);
         setPhase("done");
         renderStatus("⚠ 연결이 끊긴 사이 아이패드에서 접수된 주문이에요. 아직 출력되지 않았을 수 있으니 [다시 인쇄]로 확인한 뒤 다음 고객을 눌러주세요.");
@@ -398,6 +412,7 @@ function renderStatus(note) {
     "<p>" + (note || "Purchase Order를 출력했어요.") + "</p>" +
     '<div class="who"><b>' + esc(o.name) + "</b> · " + esc(o.phone) +
       (o.method === "배송" ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") + "<br>📦 " + esc(o.shipDate || shipDate) + " 발송 예정" : "<br>🛍️ 현장 수령") +
+      (o.items.some(function (it) { return pickupText(it, o.method); }) ? "<br><b style=\"color:var(--ship)\">🛍️ 세트의 콧물흡입기는 지금 전달 — 택배는 아기비데만</b>" : "") +
       (o.participant ? "<br>🎁 이벤트 참여자" + (o.items.some(function (it) { return it.warranty; }) ? " · 캐럿헤드 증정 · 보증 1년 연장" : "") : "") +
       (o.shipLogged === false && o.method === "배송" ? '<br><span style="color:var(--err)">⚠ 토글업로드 탭 기록 실패 — 시트에서 직접 확인</span>' : "") +
     "</div>" +
@@ -474,7 +489,7 @@ function orderCard(o, i) {
       '<span class="badge' + (isShip ? " ship" : "") + '">' + (isShip ? "배송" : "현장 수령") + "</span>" +
       (o.shipped ? '<span class="badge done">발송 완료</span>' : "") + "</div>" +
     '<div class="info">' + esc(o.phone) + (isShip ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") : "") + "</div>" +
-    '<div class="items">' + o.items.map(function (it) { return esc(itemLabel(it)) + " × " + it.qty + " · " + won(it.amount); }).join("<br>") + "<br><b>합계 " + won(o.total) + "</b></div>" +
+    '<div class="items">' + o.items.map(function (it) { var pk = pickupText(it, o.method); return esc(itemLabel(it)) + " × " + it.qty + " · " + won(it.amount) + (pk ? " <b>(" + esc(pk) + ")</b>" : ""); }).join("<br>") + "<br><b>합계 " + won(o.total) + "</b></div>" +
     '<div class="acts">' + (o.shipped ? "" : '<button class="btn sec" data-a="edit">정보 수정</button>') + '<button class="btn ghost" data-a="print">인쇄</button></div>' +
     '<div class="edit" hidden></div><div class="msg"></div></div>';
 }

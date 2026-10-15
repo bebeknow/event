@@ -5,8 +5,11 @@ var GAS_URL = "https://script.google.com/macros/s/AKfycbwOrp74H1BYqzJ-8Wv7jv4q5q
 var STATION = (new URLSearchParams(location.search).get("s") || "1").replace(/[^\w-]/g, "").slice(0, 20) || "1";
 
 /* 제품·단가·색상 (여기서 수정) — 백엔드 BUY_PRODUCTS·PRODUCT_COLORS 와 이름이 같아야 함 */
+/* 화면 순서 = 이 순서. set: 세트(콧물흡입기 색상 선택 + 배송일 때 "콧물흡입기 현장 수령" 체크) */
+var SET_KEY = "아기비데+콧물흡입기";
 var PRODUCTS = [
   { key: "콧물흡입기",       price: 189000, colors: ["핑크", "베이지", "그린"] },
+  { key: SET_KEY,            price: 259000, colors: ["핑크", "베이지", "그린"], set: true, label: "아기비데 + 콧물흡입기 세트" },
   { key: "아기비데",         price: 84800 },
   { key: "실리콘약병 3개입", price: 14800 },
   { key: "실리콘약병 1개입", price: 8000,   colors: ["핑크", "옐로우", "베이지"] }
@@ -16,8 +19,10 @@ var FULL_NAMES = {
   "콧물흡입기": "베베노 무선 전동식 아기 콧물흡입기",
   "아기비데": "베베노 아기비데",
   "실리콘약병 3개입": "베베노 실리콘 약병 3개입",
-  "실리콘약병 1개입": "베베노 실리콘 약병 1개입"
+  "실리콘약병 1개입": "베베노 실리콘 약병 1개입",
+  "아기비데+콧물흡입기": "베베노 아기비데 + 콧물흡입기 세트"
 };
+var PICKUP_NOTE = "콧물흡입기 현장 수령";
 
 function $(id) { return document.getElementById(id); }
 function priceOf(product) { for (var i = 0; i < PRODUCTS.length; i++) if (PRODUCTS[i].key === product) return PRODUCTS[i].price; return 0; }
@@ -36,7 +41,10 @@ function addrHtml(o) {
   return esc((o.zip ? "(" + o.zip + ") " : "") + (o.address || "")) +
     (a2 ? " " + (a2.length <= 24 ? '<span style="white-space:nowrap">' + esc(a2) + "</span>" : esc(a2)) : "");
 }
-function itemLabel(it) { return it.product + (it.color ? " · " + it.color : ""); }
+function productLabel(key) { for (var i = 0; i < PRODUCTS.length; i++) if (PRODUCTS[i].key === key) return PRODUCTS[i].label || key; return key; }
+function itemLabel(it) { return productLabel(it.product) + (it.color ? " · " + it.color : ""); }
+/* 세트에서 콧물흡입기만 현장에서 가져간 경우 표시 (배송 주문에서만 의미 있음) */
+function pickupText(it, method) { return it.pickup && it.product === SET_KEY && method === "배송" ? PICKUP_NOTE : ""; }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function msg(el, text, cls) { el.className = "msg" + (text ? " " + (cls || "err") : ""); el.textContent = text || ""; }
 
