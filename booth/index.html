@@ -7,7 +7,7 @@
 <title>베베노 부스 · 직원</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap">
-<link rel="stylesheet" href="booth.css?v=4">
+<link rel="stylesheet" href="booth.css?v=5">
 <style>
   body{padding:16px 22px 28px}
   .wrap{max-width:1460px;margin:0 auto}
@@ -170,13 +170,13 @@
       <div id="results"></div>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.15-3</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.15-4</span></footer>
   </div>
 </div>
 
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="common.js?v=4"></script>
-<script src="po.js?v=4"></script>
+<script src="common.js?v=5"></script>
+<script src="po.js?v=5"></script>
 <script>
 /* 비밀번호는 로그인 때 한 번만 쓰고, 이후에는 직원용 토큰(1일)으로 요청 — 비밀번호 잠금이 걸려도 이미 로그인한 화면은 동작 */
 var TOKEN_KEY = "bebeknow_booth_staff_token", ACK_KEY = "bebeknow_booth_ack";
@@ -293,7 +293,8 @@ $("prods").addEventListener("click", function (e) {
   addItem(b.dataset.p, b.dataset.c || "");
 });
 function addItem(product, color) {
-  var line = cart.filter(function (l) { return l.product === product && l.color === color; })[0];
+  /* 같은 제품·색상이면 수량만 늘림. 단 "콧물흡입기 현장 수령" 체크된 세트 줄에는 합치지 않음 (새로 담는 건 전부 배송) */
+  var line = cart.filter(function (l) { return l.product === product && l.color === color && !l.pickup; })[0];
   if (line) { line.qty = Math.min(99, line.qty + 1); if (!line.manual) line.amount = priceOf(product) * line.qty; }
   else cart.push({ product: product, color: color, qty: 1, amount: priceOf(product), manual: false });
   msg($("takeMsg"), ""); renderCart();
@@ -376,7 +377,7 @@ $("sendBtn").addEventListener("click", function () {
       if (res.status !== "ok") { lastSend = null; setPhase("edit"); return msg($("takeMsg"), "보내지 못했어요." + (res.message ? " [" + res.message + "]" : "")); }
       sessId = id; order = null; lastRev = 0;
       var s = res.session;
-      if (s && s.state === "done") { order = s.order; lastRev = s.rev; setPhase("done"); printPO(order); }   // 응답이 늦는 사이 고객이 이미 끝낸 경우
+      if (s && s.state === "done") { order = s.order; lastRev = s.rev; setPhase("done"); printBoth(order); }   // 응답이 늦는 사이 고객이 이미 끝낸 경우
       else setPhase("waiting");
       poll();
     }).catch(function () {
@@ -409,15 +410,19 @@ function renderStatus(note) {
   var o = order;
   box.className = "status done";
   box.innerHTML = '<div class="big">✓ 접수 완료 · ' + esc(o.orderNo) + "</div>" +
-    "<p>" + (note || "Purchase Order를 출력했어요.") + "</p>" +
+    "<p>" + (note || "Purchase Order 고객용·보관용 두 장을 출력했어요.") + "</p>" +
     '<div class="who"><b>' + esc(o.name) + "</b> · " + esc(o.phone) +
       (o.method === "배송" ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") + "<br>📦 " + esc(o.shipDate || shipDate) + " 발송 예정" : "<br>🛍️ 현장 수령") +
-      (o.items.some(function (it) { return pickupText(it, o.method); }) ? "<br><b style=\"color:var(--ship)\">🛍️ 세트의 콧물흡입기는 지금 전달 — 택배는 아기비데만</b>" : "") +
+      (function () {                                          // 지금 전달할 콧물흡입기를 줄별로 (색상·수량)
+        var picks = o.items.filter(function (it) { return pickupText(it, o.method); });
+        return picks.length ? "<br><b style=\"color:var(--ship)\">🛍️ 지금 전달: " + picks.map(function (it) { return "콧물흡입기(" + esc(it.color) + ") × " + esc(it.qty); }).join(", ") + "</b> — 이 세트는 택배에 아기비데만" : "";
+      })() +
       (o.participant ? "<br>🎁 이벤트 참여자" + (o.items.some(function (it) { return it.warranty; }) ? " · 캐럿헤드 증정 · 보증 1년 연장" : "") : "") +
       (o.shipLogged === false && o.method === "배송" ? '<br><span style="color:var(--err)">⚠ 토글업로드 탭 기록 실패 — 시트에서 직접 확인</span>' : "") +
     "</div>" +
-    '<div class="btns"><button class="btn sec" id="reprintBtn">다시 인쇄</button><button class="btn" id="nextBtn">다음 고객</button></div>';
-  $("reprintBtn").addEventListener("click", function () { printPO(order); });
+    '<div class="btns"><button class="btn sec" id="reprintC">고객용 인쇄</button><button class="btn sec" id="reprintK">보관용 인쇄</button><button class="btn" id="nextBtn">다음 고객</button></div>';
+  $("reprintC").addEventListener("click", function () { printPO(order, "customer"); });
+  $("reprintK").addEventListener("click", function () { printPO(order, "company"); });
   $("nextBtn").addEventListener("click", nextCustomer);
 }
 function cancelSend() {
@@ -428,7 +433,7 @@ function cancelSend() {
     if (res.status === "unauth") return logout();
     if (res.status !== "ok") return fail("취소하지 못했어요. 다시 눌러주세요.");
     var s = res.session;
-    if (s && s.id === sessId && s.state === "done") { order = s.order; lastRev = s.rev; setPhase("done"); printPO(order); return; }   // 그 사이 고객이 끝낸 경우
+    if (s && s.id === sessId && s.state === "done") { order = s.order; lastRev = s.rev; setPhase("done"); printBoth(order); return; }   // 그 사이 고객이 끝낸 경우
     if (s && s.id === sessId && s.state === "waiting") return fail("취소하지 못했어요. 다시 눌러주세요.");
     sessId = ""; lastSend = null; setPhase("edit"); msg($("takeMsg"), "보내기를 취소했어요. 고친 뒤 다시 보내주세요.", "info");
   }).catch(function () { fail("취소하지 못했어요. 인터넷을 확인하고 다시 눌러주세요."); });
@@ -451,9 +456,9 @@ function poll() {
     var s = res.session;
     if (res.status !== "ok" || mine !== sessId || !s || s.id !== sessId) return;
     if (s.state === "done") {
-      if (phase === "waiting") { order = s.order; lastRev = s.rev; setPhase("done"); printPO(order); }
+      if (phase === "waiting") { order = s.order; lastRev = s.rev; setPhase("done"); printBoth(order); }
       else if (!editing && s.rev > lastRev) {             // 고객이 아이패드에서 정보를 고침 → 다시 출력
-        order = s.order; lastRev = s.rev; renderStatus("주문 정보가 바뀌어서 바뀐 내용으로 다시 출력했어요."); printPO(order);
+        order = s.order; lastRev = s.rev; renderStatus("주문 정보가 바뀌어서 바뀐 내용으로 다시 출력했어요."); printBoth(order);
       }
     } else if (s.state === "revise" && phase === "waiting") {      // 고객이 "고칠 부분이 있어요" → 입력 그대로 둔 채 고칠 수 있게
       reviseId = sessId; sessId = ""; lastSend = null; setPhase("edit");
@@ -490,14 +495,15 @@ function orderCard(o, i) {
       (o.shipped ? '<span class="badge done">발송 완료</span>' : "") + "</div>" +
     '<div class="info">' + esc(o.phone) + (isShip ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") : "") + "</div>" +
     '<div class="items">' + o.items.map(function (it) { var pk = pickupText(it, o.method); return esc(itemLabel(it)) + " × " + it.qty + " · " + won(it.amount) + (pk ? " <b>(" + esc(pk) + ")</b>" : ""); }).join("<br>") + "<br><b>합계 " + won(o.total) + "</b></div>" +
-    '<div class="acts">' + (o.shipped ? "" : '<button class="btn sec" data-a="edit">정보 수정</button>') + '<button class="btn ghost" data-a="print">인쇄</button></div>' +
+    '<div class="acts">' + (o.shipped ? "" : '<button class="btn sec" data-a="edit">정보 수정</button>') + '<button class="btn ghost" data-a="printC">고객용 인쇄</button><button class="btn ghost" data-a="printK">보관용 인쇄</button></div>' +
     '<div class="edit" hidden></div><div class="msg"></div></div>';
 }
 function renderResults() { $("results").innerHTML = found.map(orderCard).join(""); }
 $("results").addEventListener("click", function (e) {
   var b = e.target.closest("button[data-a]"); if (!b) return;
   var card = b.closest(".order"), i = +card.dataset.i, o = found[i];
-  if (b.dataset.a === "print") return printPO(o);
+  if (b.dataset.a === "printC") return printPO(o, "customer");
+  if (b.dataset.a === "printK") return printPO(o, "company");
   if (b.dataset.a === "edit") return openEdit(card, o);
   if (b.dataset.a === "addr") {
     var ok = openAddrSearch(function (r) { card.querySelector('[name="zip"]').value = r.zip; card.querySelector('[name="address"]').value = r.address; card.querySelector('[name="address2"]').focus(); });
@@ -548,7 +554,7 @@ function saveEdit(card, i) {
       renderResults();
       var nc = $("results").querySelector('.order[data-i="' + i + '"]');
       msg(nc.querySelector(".msg"), "저장했어요. 고친 내용으로 다시 출력합니다.", "ok");
-      printPO(res.order);
+      printBoth(res.order);
     }).catch(function () { done(); b.disabled = false; b.textContent = "저장하고 다시 인쇄"; msg(m, "네트워크 연결을 확인해주세요."); });
 }
 

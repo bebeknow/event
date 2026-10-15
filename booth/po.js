@@ -39,6 +39,12 @@ var PO_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAksAAABcCAYAAAB+8fE
     ".po .total{display:flex;justify-content:space-between;align-items:baseline;border-top:1mm solid #000;margin-top:1.6mm;padding-top:1.6mm}",
     ".po .total span{font-weight:900;font-size:1.05em;color:#000}.po .total strong{font-size:1.6em;font-weight:900;font-variant-numeric:tabular-nums}",
     ".po .spacer{flex:1}",
+    /* 고객용 / 회사 보관용 구분 */
+    ".po .copy{margin-top:1.2mm;text-align:right;font-size:.85em;font-weight:900;letter-spacing:.02em}",
+    ".po .copy.co{text-align:center;background:#000;color:#fff;padding:.9mm 0;font-size:1em;letter-spacing:.08em}",
+    ".po .mg{margin-top:2mm;border:.35mm solid #000;padding:1.4mm 2mm}",
+    ".po .mg .kv{border-bottom:none;padding:0;row-gap:.6mm}",
+    ".po .mg .ttl{font-weight:900;font-size:.9em;margin-bottom:1mm}",
     ".po .foot{border-top:.35mm solid #000;padding-top:1.6mm;font-size:.85em;text-align:center}"
   ].join("\n");
   document.head.appendChild(css);
@@ -49,7 +55,9 @@ var PO_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAksAAABcCAYAAAB+8fE
   document.body.appendChild(box);
 })();
 
-function renderPO(o) {
+/* copy: "customer"(고객용, 기본) | "company"(회사 보관용 — 주문 수집용 관리 정보 추가) */
+function renderPO(o, copy) {
+  var company = copy === "company";
   var items = o.items || [];
   var total = items.reduce(function (s, it) { return s + (Number(it.amount) || 0); }, 0);
   var isShip = o.method === "배송";
@@ -59,8 +67,27 @@ function renderPO(o) {
       (pickupText(it, o.method) ? "<div class=\"pk\">└ " + esc(pickupText(it, o.method)) + "</div>" : "") +
       "</td><td class=\"q\">" + esc(it.qty) + "</td><td class=\"a\">" + won(it.amount) + "</td></tr>";
   }).join("");
+  /* 회사 보관용: 주문 수집 때 필요한 관리 정보 */
+  var mg = "";
+  if (company) {
+    var gifts = items.filter(function (it) { return it.gift && it.gift !== "없음"; })
+      .map(function (it) { return esc(it.gift) + " × " + esc(it.qty); });
+    var warr = items.filter(function (it) { return it.warranty; })
+      .map(function (it) { return esc(productLabel(it.product)) + (it.color ? "(" + esc(it.color) + ")" : ""); });
+    var picks = items.filter(function (it) { return pickupText(it, o.method); })
+      .map(function (it) { return "콧물흡입기(" + esc(it.color) + ") × " + esc(it.qty); });
+    mg = '<div class="mg"><div class="ttl">관리 정보</div><dl class="kv">' +
+      "<dt>수령 방식</dt><dd class=\"strong\">" + (isShip ? "배송" : "현장 수령") + "</dd>" +
+      "<dt>이벤트 참여</dt><dd>" + (o.participant ? "O" : "X") + "</dd>" +
+      "<dt>증정품</dt><dd>" + (gifts.length ? gifts.join("<br>") : "없음") + "</dd>" +
+      "<dt>보증 연장</dt><dd>" + (warr.length ? warr.join("<br>") + " (1년 → 2년)" : "해당 없음") + "</dd>" +
+      (picks.length ? "<dt>현장 전달</dt><dd class=\"strong\">" + picks.join("<br>") + " · 택배는 아기비데만</dd>" : "") +
+      (o.request ? "<dt>배송 요청</dt><dd>" + esc(o.request) + "</dd>" : "") +
+    "</dl></div>";
+  }
   $("poSheet").innerHTML =
     '<div class="head"><h1 class="brandf">Purchase Order</h1><img src="' + PO_LOGO + '" alt="bebeknow"></div>' +
+    (company ? '<div class="copy co">회사 보관용 · COMPANY COPY</div>' : '<div class="copy">고객용 · CUSTOMER COPY</div>') +
     '<dl class="kv">' +
       "<dt>사업자명</dt><dd class=\"strong\">" + SELLER.name + "</dd>" +
       "<dt>사업자번호</dt><dd>" + SELLER.bizNo + "</dd>" +
@@ -76,8 +103,9 @@ function renderPO(o) {
     '<div class="sec brandf">Order Items</div>' +
     '<table><thead><tr><th>제품</th><th class="q">수량</th><th class="a">금액</th></tr></thead><tbody>' + rows + "</tbody></table>" +
     '<div class="total"><span>합계</span><strong>' + won(total) + "</strong></div>" +
+    mg +
     '<div class="spacer"></div>' +
-    '<div class="foot">Easy breath, Easy life · bebeknow.com</div>';
+    (company ? '<div class="foot">회사 보관용 · ' + esc(o.orderNo) + "</div>" : '<div class="foot">Easy breath, Easy life · bebeknow.com</div>');
 }
 
 /* 품목이 많아 라벨을 넘치면 글자를 0.25pt씩 줄여 한 장에 맞춤 (최소 6.5pt) */
@@ -89,9 +117,9 @@ function fitPO() {
 
 /* 인쇄는 한 장씩 차례로 (폰트를 기다리는 사이 다른 인쇄가 끼어들어 같은 내용이 두 번 나가지 않게) */
 var poQueue = Promise.resolve();
-function printPO(o) {
+function printPO(o, copy) {
   poQueue = poQueue.then(function () {
-    renderPO(o);
+    renderPO(o, copy);
     var img = $("poSheet").querySelector("img");
     var waits = [img && img.decode ? img.decode().catch(function () {}) : null];
     if (document.fonts && document.fonts.load) waits.push(document.fonts.load("700 16px Comfortaa").catch(function () {}));
@@ -100,4 +128,6 @@ function printPO(o) {
   }).catch(function () {});
   return poQueue;
 }
+/* 접수 완료: 고객용 먼저, 이어서 회사 보관용 */
+function printBoth(o) { printPO(o, "customer"); return printPO(o, "company"); }
 window.addEventListener("beforeprint", function () { if ($("poSheet").innerHTML) fitPO(); });
