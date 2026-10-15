@@ -1,4 +1,4 @@
-/* Purchase Order — HPRT N41 4×6인치(101.6×152.4mm) 감열 라벨용. common.js 다음, body 맨 끝에서 불러옴
+/* Purchase Order — HPRT N41 100×150mm 감열 라벨용. common.js 다음, body 맨 끝에서 불러옴
  * printPO(order) : 주문 결과(백엔드 order/update 응답)를 받아 라벨 한 장을 인쇄 */
 var SELLER = { name: "(주)라이프비기닝", bizNo: "411-87-02761", tel: "02-788-7456" };   /* 본점 사업자번호 + 본점 대표전화 */
 /* 베베노 글자 로고(심볼 B 제외)를 감열 인쇄용 순흑색으로 바꾼 것 */
@@ -12,12 +12,12 @@ var PO_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAksAAABcCAYAAAB+8fE
 
   var css = document.createElement("style");
   css.textContent = [
-    "@page{size:101.6mm 152.4mm;margin:0}",
+    "@page{size:100mm 150mm;margin:0}",
     /* 화면에서는 밖으로 빼 두고(크기 측정은 가능), 인쇄할 때만 라벨 하나만 보이게 */
     "#poPrint{position:fixed;left:-400mm;top:0;pointer-events:none}",
     "@media print{html,body{background:#fff!important;margin:0!important;padding:0!important;min-height:0!important;display:block!important}",
     "body>*{display:none!important}body>#poPrint{display:block!important;position:static}}",
-    ".po{width:101.6mm;height:152.4mm;background:#fff;color:#000;padding:5mm 5.5mm 4.5mm;display:flex;flex-direction:column;",
+    ".po{width:100mm;height:150mm;background:#fff;color:#000;padding:5mm 5.5mm 4.5mm;display:flex;flex-direction:column;",
     "font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;font-size:var(--fs,9.5pt);line-height:1.35;overflow:hidden;",
     "word-break:keep-all;overflow-wrap:break-word;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}",
     /* 직원 화면 스타일(소문자 브랜드 글꼴, 회색 글자 등)이 라벨에 섞이지 않게 막음 */
