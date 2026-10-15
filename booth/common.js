@@ -4,14 +4,13 @@ var GAS_URL = "https://script.google.com/macros/s/AKfycbwOrp74H1BYqzJ-8Wv7jv4q5q
 /* 맥북·아이패드 한 쌍 = 스테이션. 부스가 둘이면 주소 뒤에 ?s=2 를 양쪽에 똑같이 붙임 */
 var STATION = (new URLSearchParams(location.search).get("s") || "1").replace(/[^\w-]/g, "").slice(0, 20) || "1";
 
-/* 제품·단가 (여기서 수정) — 백엔드 BUY_PRODUCTS 와 이름이 같아야 함 */
+/* 제품·단가·색상 (여기서 수정) — 백엔드 BUY_PRODUCTS·PRODUCT_COLORS 와 이름이 같아야 함 */
 var PRODUCTS = [
-  { key: "콧물흡입기",       price: 189000, color: true },
+  { key: "콧물흡입기",       price: 189000, colors: ["핑크", "베이지", "그린"] },
   { key: "아기비데",         price: 84800 },
   { key: "실리콘약병 3개입", price: 14800 },
-  { key: "실리콘약병 1개입", price: 8000 }
+  { key: "실리콘약병 1개입", price: 8000,   colors: ["핑크", "옐로우", "베이지"] }
 ];
-var COLORS = ["핑크", "베이지", "그린"];
 /* Purchase Order 에 찍는 정식 상품명 (백엔드 SHIP_NAMES 와 같게) */
 var FULL_NAMES = {
   "콧물흡입기": "베베노 무선 전동식 아기 콧물흡입기",

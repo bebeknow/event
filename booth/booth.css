@@ -2,7 +2,7 @@
 :root{
   --bg:#faf6f1;--card:#fff;--ink:#4a3f36;--ink-soft:#8a7c70;--line:#e9dfd5;
   --accent:#c9a086;--accent-deep:#b08464;--accent-tint:#f6ece3;--ok:#7ba05b;--ok-tint:#e8f3df;--err:#c46a5a;--err-tint:#faeae6;
-  --ship:#4f7fb3;--pink:#e8788f;--beige:#c9a27a;--green:#5fa36a;
+  --ship:#4f7fb3;--pink:#e8788f;--beige:#c9a27a;--green:#5fa36a;--yellow:#efc94c;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{word-break:keep-all;overflow-wrap:break-word}
@@ -44,7 +44,7 @@ input:focus,textarea:focus{border-color:var(--accent);background:#fff}
 .chip.ship input:checked+span{background:var(--ship);border-color:var(--ship)}
 
 .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;vertical-align:.05em;margin-right:.3em}
-.dot.핑크{background:var(--pink)}.dot.베이지{background:var(--beige)}.dot.그린{background:var(--green)}
+.dot.핑크{background:var(--pink)}.dot.베이지{background:var(--beige)}.dot.그린{background:var(--green)}.dot.옐로우{background:var(--yellow)}
 
 .notice{font-size:14px;line-height:1.6;color:var(--ink-soft);background:#fdfbf8;border:1px dashed var(--line);border-radius:12px;padding:12px 14px}
 .notice b{color:var(--ink)}

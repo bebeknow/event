@@ -7,7 +7,7 @@
 <title>베베노 부스 · 직원</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap">
-<link rel="stylesheet" href="booth.css?v=2">
+<link rel="stylesheet" href="booth.css?v=3">
 <style>
   body{padding:16px 22px 28px}
   .wrap{max-width:1460px;margin:0 auto}
@@ -42,6 +42,7 @@
   .colors button{flex:1;padding:12px 6px;font-size:16px;font-weight:800;color:#fff;border:none;border-radius:12px}
   .colors button:active{transform:scale(.97)}
   .colors .핑크{background:var(--pink)}.colors .베이지{background:var(--beige)}.colors .그린{background:var(--green)}
+  .colors .옐로우{background:var(--yellow);color:#5a4a1a}
   .hint{font-size:13px;color:var(--ink-soft);margin-top:12px;line-height:1.5}
 
   .cart{min-height:120px}
@@ -164,13 +165,13 @@
       <div id="results"></div>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.15-1</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.15-2</span></footer>
   </div>
 </div>
 
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="common.js?v=2"></script>
-<script src="po.js?v=2"></script>
+<script src="common.js?v=3"></script>
+<script src="po.js?v=3"></script>
 <script>
 /* 비밀번호는 로그인 때 한 번만 쓰고, 이후에는 직원용 토큰(1일)으로 요청 — 비밀번호 잠금이 걸려도 이미 로그인한 화면은 동작 */
 var TOKEN_KEY = "bebeknow_booth_staff_token", ACK_KEY = "bebeknow_booth_ack";
@@ -270,10 +271,10 @@ $("tabFind").addEventListener("click", function () { setTab("find"); });
 /* ---------- 제품 담기 ---------- */
 function renderProducts() {
   $("prods").innerHTML = PRODUCTS.map(function (p) {
-    if (p.color) {
+    if (p.colors) {                                         // 색상이 있는 제품: 색상 버튼을 눌러야 담김
       return '<div class="prod wide"><b>' + esc(p.key) + "</b><small>" + won(p.price) + " · 색상을 눌러 담기</small>" +
-        '<div class="colors">' + COLORS.map(function (c) {
-          return '<button type="button" class="' + c + '" data-p="' + esc(p.key) + '" data-c="' + c + '">' + c + "</button>";
+        '<div class="colors">' + p.colors.map(function (c) {
+          return '<button type="button" class="' + esc(c) + '" data-p="' + esc(p.key) + '" data-c="' + esc(c) + '">' + esc(c) + "</button>";
         }).join("") + "</div></div>";
     }
     return '<button type="button" class="prod" data-p="' + esc(p.key) + '"><b>' + esc(p.key) + "</b><small>" + won(p.price) + "</small></button>";

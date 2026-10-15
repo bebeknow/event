@@ -20,8 +20,9 @@ var PO_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAksAAABcCAYAAAB+8fE
     ".po{width:101.6mm;height:152.4mm;background:#fff;color:#000;padding:5mm 5.5mm 4.5mm;display:flex;flex-direction:column;",
     "font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;font-size:var(--fs,9.5pt);line-height:1.35;overflow:hidden;",
     "word-break:keep-all;overflow-wrap:break-word;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}",
-    ".po *{box-sizing:border-box;margin:0;padding:0}",
-    ".po .brandf{font-family:'Comfortaa',sans-serif;font-weight:700;letter-spacing:-0.045em}",
+    /* 직원 화면 스타일(소문자 브랜드 글꼴, 회색 글자 등)이 라벨에 섞이지 않게 막음 */
+    ".po *{box-sizing:border-box;margin:0;padding:0;color:#000;text-transform:none}",
+    ".po .brandf{font-family:'Comfortaa',sans-serif;font-weight:700;letter-spacing:-0.045em;text-transform:none}",
     /* 머리말: 왼쪽 크게 Purchase Order, 오른쪽 작게 bebeknow 글자 로고 (심볼 없음) */
     ".po .head{display:flex;justify-content:space-between;align-items:flex-end;gap:2mm;border-bottom:1.2mm solid #000;padding-bottom:.6em}",
     ".po .head h1{font-size:2.15em;line-height:1;white-space:nowrap}",
@@ -35,7 +36,7 @@ var PO_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAksAAABcCAYAAAB+8fE
     ".po tbody td{padding:1.3mm 0;border-bottom:.2mm dashed #000;vertical-align:top}",
     ".po td.n .opt{font-weight:700}.po td.a,.po td.q{font-variant-numeric:tabular-nums;font-weight:700}",
     ".po .total{display:flex;justify-content:space-between;align-items:baseline;border-top:1mm solid #000;margin-top:1.6mm;padding-top:1.6mm}",
-    ".po .total span{font-weight:900;font-size:1.05em}.po .total strong{font-size:1.6em;font-weight:900;font-variant-numeric:tabular-nums}",
+    ".po .total span{font-weight:900;font-size:1.05em;color:#000}.po .total strong{font-size:1.6em;font-weight:900;font-variant-numeric:tabular-nums}",
     ".po .spacer{flex:1}",
     ".po .foot{border-top:.35mm solid #000;padding-top:1.6mm;font-size:.85em;text-align:center}"
   ].join("\n");
