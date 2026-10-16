@@ -46,6 +46,15 @@
   .state.won{background:#e8f3df;color:var(--ok);font-size:20px}
   .state.lost{background:#f1ede8;color:var(--ink-soft)}
   footer{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:18px}
+  /* 발표 카운트다운 */
+  .cd{background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:16px 14px;text-align:center;margin-bottom:14px;box-shadow:0 2px 12px rgba(74,63,54,.06)}
+  .cd .cdl{font-size:15px;font-weight:800;color:var(--accent-deep)}
+  .cd .cdt{font-size:20px;font-weight:800;margin:6px 0 4px;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .cd .cdt b{font-size:40px;font-weight:900;letter-spacing:.02em;margin:0 2px 0 6px}
+  .cd .cdt b:first-child{margin-left:0}
+  .cd .cdt.now{font-size:28px;font-weight:900;color:var(--accent-deep)}
+  .cd .cds{font-size:13.5px;color:var(--ink-soft)}
+  .state .left{display:block;font-size:15px;font-weight:800;margin-top:6px;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -53,6 +62,12 @@
   <div class="brand"><div class="logo">bebeknow</div><div class="slogan">Easy breath, Easy life</div></div>
   <h1>내 응모번호 확인</h1>
   <p class="sub">이벤트에 참여할 때 넣은 휴대폰 번호를 입력하면 회차와 응모번호, 발표 시각을 알려 드려요.</p>
+
+  <div class="cd" id="cd" hidden>
+    <div class="cdl" id="cdLbl">발표까지</div>
+    <div class="cdt" id="cdTime"></div>
+    <div class="cds" id="cdSub"></div>
+  </div>
 
   <div class="card">
     <label for="phone">휴대폰 번호</label>
@@ -69,7 +84,7 @@
     </div>
   </div>
   <p class="note">입력한 번호는 확인에만 쓰이고, 이 화면에는 이름 같은 개인정보가 나오지 않아요.</p>
-  <footer>bebeknow · v2026.10.16-2</footer>
+  <footer>bebeknow · v2026.10.16-3</footer>
 </div>
 
 <script>
@@ -95,7 +110,7 @@ var busy = false;
 function check(){
   var d = digits($("phone").value);
   if(!/^01[016789]\d{7,8}$/.test(d)){ $("result").hidden = true; showMsg("휴대폰 번호를 다시 확인해 주세요."); return; }
-  if(busy) return; busy = true; showMsg(""); $("result").hidden = true;   // 다른 번호의 예전 결과가 남지 않게
+  if(busy) return; busy = true; showMsg(""); $("result").hidden = true; resultHM = "";   // 다른 번호의 예전 결과가 남지 않게
   $("go").disabled = true; $("again").disabled = true; $("go").textContent = "확인하는 중…";
   var ctl = new AbortController(), t = setTimeout(function(){ ctl.abort(); }, 25000);
   fetch(GAS_URL + "?my=" + encodeURIComponent(d), { redirect: "follow", signal: ctl.signal })
@@ -112,6 +127,8 @@ function render(res){
   if(res.status === "bad"){ showMsg("휴대폰 번호를 다시 확인해 주세요."); return; }
   if(res.status === "none"){ box.hidden = true; showMsg("참여 기록을 찾지 못했어요. 이벤트에 참여할 때 넣은 번호인지 확인해 주세요."); return; }
   if(res.status !== "ok"){ showMsg("확인하지 못했어요. 부스 직원에게 물어봐 주세요."); return; }
+  if(res.now) skew = res.now - Date.now();
+  resultHM = "";
   box.hidden = false;
   if(!res.no){
     $("rlbl").textContent = "이벤트 참여 확인";
@@ -127,14 +144,82 @@ function render(res){
   else if(res.finished) setState("lost", "아쉽게도 이번에는 당첨되지 않았어요", "참여해 주셔서 고맙습니다.");
   else if(res.drawnCount > 0) setState("wait", "추첨이 진행 중이에요", "지금까지 " + res.drawnCount + "명 발표" + (res.quota ? " (모두 " + res.quota + "명)" : "") + " · 아직 이 번호는 나오지 않았어요. 조금 뒤에 다시 확인해 주세요.");
   else if(res.time && passed(res.time)) setState("wait", "곧 발표해요", "조금 뒤에 여기서 다시 확인해 주세요.");
-  else setState("wait", "아직 발표 전이에요", res.time ? korTime(res.time) + "에 부스에서 발표해요. 그 뒤에 여기서 결과를 확인할 수 있어요." : "발표 뒤에 여기서 결과를 확인할 수 있어요.");
+  else {
+    setState("wait", "아직 발표 전이에요", res.time ? korTime(res.time) + "에 부스에서 발표해요. 그 뒤에 여기서 결과를 확인할 수 있어요." : "발표 뒤에 여기서 결과를 확인할 수 있어요.");
+    if(res.time){ resultHM = res.time; resultRound = res.round; tick(); }   // 이 고객 회차의 남은 시간도 칸 안에서 줄어듦
+  }
 }
+
+/* ───── 발표 카운트다운: 서버 시각 기준(휴대폰 시계가 틀려도 맞게), 한국 시각으로 오늘 HH:MM ───── */
+var skew = 0, cdRound = 0, cdHM = "", resultHM = "", resultRound = 0, infoSeq = 0;
+function nowMs(){ return Date.now() + skew; }
+function targetMs(hm){
+  var k = new Date(nowMs() + 9 * 3600000), p = String(hm).split(":");
+  return Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate(), (+p[0]) - 9, +p[1]);
+}
+/* 남은 시간을 "1시간 23분 45초" 로 (숫자는 크게) */
+function fillLeft(el, ms){
+  var s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
+  var parts = [];
+  if(h) parts.push([h, "시간"]);
+  if(h || m) parts.push([m, "분"]);
+  parts.push([sec, "초"]);
+  el.textContent = "";
+  parts.forEach(function(x){ var b = document.createElement("b"); b.textContent = x[0]; el.appendChild(b); el.appendChild(document.createTextNode(x[1])); });
+}
+function leftText(ms){
+  var s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
+  return (h ? h + "시간 " : "") + (h || m ? m + "분 " : "") + sec + "초";
+}
+function tick(){
+  if(cdRound && cdHM){
+    var left = targetMs(cdHM) - nowMs(), t = $("cdTime");
+    $("cd").hidden = false;
+    if(left > 0){
+      $("cdLbl").textContent = cdRound + "회차 발표까지";
+      t.className = "cdt"; fillLeft(t, left);
+      $("cdSub").textContent = korTime(cdHM) + "에 부스에서 추첨해요";
+    } else {
+      $("cdLbl").textContent = cdRound + "회차 발표 시간이에요";
+      t.className = "cdt now"; t.textContent = "지금 발표 중";
+      $("cdSub").textContent = "아래에 휴대폰 번호를 넣고 결과를 확인해 보세요";
+    }
+  } else $("cd").hidden = true;
+  if(resultHM){
+    var rl = targetMs(resultHM) - nowMs();
+    var el = $("state").querySelector(".left");
+    if(!el){ el = document.createElement("span"); el.className = "left"; $("state").appendChild(el); }
+    if(rl > 0) el.textContent = "발표까지 " + leftText(rl);
+    else { el.textContent = "곧 발표해요 · 조금 뒤에 다시 확인해 주세요"; resultHM = ""; }
+  }
+}
+function loadInfo(){
+  var seq = ++infoSeq, sent = Date.now(), ctl = new AbortController(), to = setTimeout(function(){ ctl.abort(); }, 15000);
+  fetch(GAS_URL + "?drawinfo=1", { redirect: "follow", signal: ctl.signal }).then(function(r){ return r.json(); }).then(function(res){
+    clearTimeout(to);
+    if(seq !== infoSeq || res.status !== "ok") return;            // 늦게 도착한 예전 응답은 버림
+    var rtt = Date.now() - sent;
+    if(res.now && rtt < 5000) skew = res.now + rtt / 2 - Date.now();   // 오래 걸린 응답으로는 시각을 맞추지 않음
+    cdRound = res.round || 0;
+    var plan = res.plan || [];
+    var pl = plan.filter(function(x){ return x.round === cdRound; })[0];
+    cdHM = pl && pl.time ? pl.time : "";
+    if(resultHM && resultRound){                                    // 발표 시각을 바꿨으면 결과 칸 카운트다운도 맞춤
+      var mine = plan.filter(function(x){ return x.round === resultRound; })[0];
+      if(mine && mine.time) resultHM = mine.time;
+    }
+    tick();
+  }).catch(function(){ clearTimeout(to); });
+}
+loadInfo();
+setInterval(loadInfo, 60000);     // 회차가 넘어가거나 발표 시각을 바꾸면 1분 안에 반영
+setInterval(tick, 1000);
 /* "13:05" → "오후 1시 5분" */
 function korTime(hm){
   var p = String(hm).split(":"), h = +p[0], m = +p[1];
   return (h < 12 ? "오전 " : "오후 ") + (h % 12 || 12) + "시" + (m ? " " + m + "분" : "");
 }
-function passed(hm){ var p = String(hm).split(":"), now = new Date(); return now.getHours() * 60 + now.getMinutes() >= (+p[0]) * 60 + (+p[1]); }
+function passed(hm){ return targetMs(hm) <= nowMs(); }
 function setState(cls, title, sub){
   var s = $("state"); s.className = "state " + cls;
   s.textContent = title;
