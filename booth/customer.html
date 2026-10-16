@@ -11,7 +11,7 @@
 <title>bebeknow</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap">
-<link rel="stylesheet" href="booth.css?v=7">
+<link rel="stylesheet" href="booth.css?v=8">
 <style>
   body{padding:24px 24px calc(28px + env(safe-area-inset-bottom))}
   .wrap{max-width:760px;margin:0 auto}
@@ -145,13 +145,15 @@
 
 </div>
 
-<script src="common.js?v=7"></script>
+<script src="common.js?v=8"></script>
 <script>
 /* 이 아이패드는 직원 비밀번호를 저장하지 않음: 처음에 비밀번호로 "기기 토큰"을 받아 그것만 저장 (지금 진행 중인 주문만 다룰 수 있음) */
 var TOKEN_KEY = "bebeknow_booth_token_" + STATION;
 var token = "", view = "", cur = null, order = null, skipId = "", pollT = null, idleT = null, shipDate = "";
 var busy = false, gen = 0, misses = 0;
 var seenDraw = "", drawT = null, rollT = null;   // 마지막으로 보여준 추첨 결과
+var drawPhase = "";   // "" | "rolling"(추첨 창 열림, 숫자 도는 중) | "reveal"(당첨 번호 보여주는 중)
+var drawOn = false;   // 맥북에서 추첨 창이 열려 있는지
 try { localStorage.removeItem("bebeknow_booth_pin_ipad"); } catch (e) {}     // 예전 시험판이 남긴 비밀번호 삭제
 
 function show(id) { view = id; gen++; ["login", "idle", "form", "done", "draw"].forEach(function (k) { $(k).hidden = k !== id; }); window.scrollTo(0, 0); }
@@ -187,7 +189,7 @@ function begin() {
 
 /* ---------- 대기 (화면의 개인정보를 지움) ---------- */
 function toIdle(note, keepSkip) {
-  clearTimeout(idleT); clearTimeout(drawT); clearInterval(rollT);
+  clearTimeout(idleT); clearTimeout(drawT); clearInterval(rollT); drawPhase = "";
   if (cur && !keepSkip) skipId = cur.id;
   cur = null; order = null;
   $("who").innerHTML = ""; $("sum").innerHTML = ""; $("doneNo").textContent = "";
@@ -209,7 +211,10 @@ function poll() {
     if (view === "idle" || view === "done" || view === "draw") {
       if (fresh) return openConfirm(s);                     // 주문 확인 요청이 추첨 표시보다 먼저
       var d = res.draw;
-      if ((view === "idle" || view === "draw") && d && d.id !== seenDraw) return showDraw(d);
+      drawOn = !!(res.drawMode && res.drawMode.on);
+      if ((view === "idle" || view === "draw") && d && d.id !== seenDraw) return revealDraw(d);   // 새로 뽑힌 번호 공개
+      if (view === "idle" && drawOn) return startRolling(res.drawMode.round);                     // 맥북에서 추첨 창을 열면 숫자 돌리기 시작
+      if (view === "draw" && drawPhase === "rolling" && !drawOn) return toIdle("");              // 추첨 창을 닫으면 대기 화면
     } else if (view === "form" && cur) {
       if (s && s.id === cur.id && (s.state === "cancelled" || s.state === "revise")) return toIdle("직원이 내용을 고치고 있어요. 잠시만 기다려 주세요.");
       if (s && s.id === cur.id && s.state === "done" && s.order) { order = s.order; return showDone(); }   // 저장은 됐는데 응답만 끊긴 경우
@@ -219,24 +224,44 @@ function poll() {
   }).catch(function () {}).then(function () { if (view !== "login") pollT = setTimeout(poll, 1500); });
 }
 
-/* ---------- 이벤트 추첨 결과: 2초 동안 숫자가 돌다가 공개, 20초 뒤 대기 화면 ---------- */
+/* ---------- 이벤트 추첨 ----------
+ * 맥북에서 추첨 창을 열면 숫자가 계속 돌고(rolling), 번호가 뽑히면 1초 더 돌다가 공개(reveal).
+ * 공개 20초 뒤: 추첨 창이 아직 열려 있으면 다시 돌리고, 닫혔으면 대기 화면 */
 function pad3(n) { return ("00" + n).slice(-3); }
-function showDraw(d) {
-  seenDraw = d.id;
-  clearTimeout(drawT); clearInterval(rollT);
+function spin() {
   var num = $("drawNum");
+  clearInterval(rollT);
+  num.classList.remove("pop"); num.classList.add("rolling");
+  rollT = setInterval(function () { num.textContent = pad3(1 + Math.floor(Math.random() * 999)); }, 60);
+}
+function startRolling(round) {
+  clearTimeout(drawT);
+  drawPhase = "rolling";
+  $("drawLbl").textContent = (round ? round + "회차 " : "") + "럭키드로우 추첨 중…";
+  $("drawWho").textContent = "";
+  if (view !== "draw") show("draw");
+  spin();
+}
+function revealDraw(d) {
+  seenDraw = d.id;
+  clearTimeout(drawT);
+  var wasRolling = view === "draw" && drawPhase === "rolling";
+  drawPhase = "reveal";
+  if (view !== "draw") show("draw");
+  if (!wasRolling) spin();
   $("drawLbl").textContent = d.round + "회차 럭키드로우 추첨 중…";
   $("drawWho").textContent = "";
-  num.classList.remove("pop"); num.classList.add("rolling");
-  show("draw");
-  rollT = setInterval(function () { num.textContent = pad3(1 + Math.floor(Math.random() * 999)); }, 60);
-  drawT = setTimeout(function () {
+  drawT = setTimeout(function () {                         // 이미 돌고 있었으면 1초, 아니면 2초 더 돌리고 공개
     clearInterval(rollT);
+    var num = $("drawNum");
     num.classList.remove("rolling"); num.textContent = pad3(d.no); void num.offsetWidth; num.classList.add("pop");
     $("drawLbl").textContent = d.round + "회차 " + d.order + "번째 당첨 번호";
     $("drawWho").textContent = d.name ? d.name + "님" : "";
-    drawT = setTimeout(function () { if (view === "draw") toIdle(""); }, 20000);
-  }, 2200);
+    drawT = setTimeout(function () {
+      if (view !== "draw") return;
+      if (drawOn) startRolling(d.round); else toIdle("");
+    }, 20000);
+  }, wasRolling ? 1000 : 2200);
 }
 
 /* ---------- 확인 화면 ---------- */

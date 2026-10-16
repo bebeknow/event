@@ -7,7 +7,7 @@
 <title>베베노 부스 · 직원</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap">
-<link rel="stylesheet" href="booth.css?v=7">
+<link rel="stylesheet" href="booth.css?v=8">
 <style>
   body{padding:16px 22px 28px}
   .wrap{max-width:1460px;margin:0 auto}
@@ -181,17 +181,17 @@
 
     <!-- 이벤트 추첨 (같은 화면 안에서, 직원 로그인 그대로) — 뽑으면 대기 중인 아이패드에도 크게 나옴 -->
     <div class="draw-layer" id="drawLayer" hidden>
-      <div class="bar"><div><b>🎲 이벤트 추첨</b> <span>번호를 뽑으면 아이패드(대기 화면)에도 크게 표시됩니다</span></div><button type="button" id="closeDraw">← 접수로 돌아가기</button></div>
+      <div class="bar"><div><b>🎲 이벤트 추첨</b> <span>이 창이 열려 있는 동안 아이패드(대기 화면)에서 숫자가 돌고, 뽑으면 당첨 번호가 크게 나옵니다</span></div><button type="button" id="closeDraw">← 접수로 돌아가기</button></div>
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.16-1</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.16-2</span></footer>
   </div>
 </div>
 
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="common.js?v=7"></script>
-<script src="po.js?v=7"></script>
+<script src="common.js?v=8"></script>
+<script src="po.js?v=8"></script>
 <script>
 /* 비밀번호는 로그인 때 한 번만 쓰고, 이후에는 직원용 토큰(1일)으로 요청 — 비밀번호 잠금이 걸려도 이미 로그인한 화면은 동작 */
 var TOKEN_KEY = "bebeknow_booth_staff_token", ACK_KEY = "bebeknow_booth_ack";
@@ -280,12 +280,20 @@ $("logoutBtn").addEventListener("click", function () {
 });
 
 /* ---------- 이벤트 추첨 (같은 화면 안에서 열기) ---------- */
+/* 추첨 창을 열면 대기 중인 아이패드가 숫자를 돌리기 시작하고, 닫으면 대기 화면으로 (10분마다 다시 알림) */
+var drawKeep = null;
+function setDrawMode(on) {
+  clearInterval(drawKeep);
+  apiPost({ action: "drawMode", token: tok, on: on }).catch(function () {});
+  if (on) drawKeep = setInterval(function () { apiPost({ action: "drawMode", token: tok, on: true }).catch(function () {}); }, 600000);
+}
 $("openDraw").addEventListener("click", function () {
   var fr = $("drawFrame");
   if (!fr.src) fr.src = "../draw/?embed=1";
   $("drawLayer").hidden = false;
+  setDrawMode(true);
 });
-$("closeDraw").addEventListener("click", function () { $("drawLayer").hidden = true; });
+$("closeDraw").addEventListener("click", function () { $("drawLayer").hidden = true; setDrawMode(false); });
 
 /* ---------- 탭 ---------- */
 function setTab(t) {
