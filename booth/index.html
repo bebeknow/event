@@ -7,7 +7,7 @@
 <title>베베노 부스 · 직원</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap">
-<link rel="stylesheet" href="booth.css?v=6">
+<link rel="stylesheet" href="booth.css?v=7">
 <style>
   body{padding:16px 22px 28px}
   .wrap{max-width:1460px;margin:0 auto}
@@ -19,6 +19,14 @@
   .tabs button.on{background:var(--ink);border-color:var(--ink);color:#fff}
   .top .sp{flex:1}
   .top .st{font-size:13px;color:var(--ink-soft)}
+  .top .draw{padding:9px 16px;font-size:15px;font-weight:800;border-radius:999px;border:1.5px solid var(--accent);background:#fff;color:var(--accent-deep)}
+  .top .draw:active{transform:scale(.97)}
+  .draw-layer{position:fixed;inset:0;z-index:2000;background:var(--bg);display:flex;flex-direction:column}
+  .draw-layer .bar{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid var(--line);background:#fff;flex-shrink:0}
+  .draw-layer .bar b{font-size:16px}
+  .draw-layer .bar span{font-size:13px;color:var(--ink-soft)}
+  .draw-layer .bar button{padding:9px 16px;border-radius:12px;border:1.5px solid var(--line);background:#fff;font-size:14px;font-weight:700;color:var(--ink)}
+  .draw-layer iframe{flex:1;width:100%;border:0}
   .top .out{padding:8px 14px;font-size:13px;border-radius:999px;border:1.5px solid var(--line);background:none;color:var(--ink-soft)}
 
   /* 접수 */
@@ -112,6 +120,7 @@
       <span class="title">부스 직원</span>
       <div class="tabs"><button id="tabTake" class="on">접수</button><button id="tabFind">주문 찾기 · 수정</button></div>
       <span class="sp"></span>
+      <button class="draw" id="openDraw" type="button">🎲 이벤트 추첨</button>
       <span class="st" id="stationLbl"></span>
       <button class="out" id="logoutBtn">나가기</button>
     </div>
@@ -170,13 +179,19 @@
       <div id="results"></div>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.15-5</span></footer>
+    <!-- 이벤트 추첨 (같은 화면 안에서, 직원 로그인 그대로) — 뽑으면 대기 중인 아이패드에도 크게 나옴 -->
+    <div class="draw-layer" id="drawLayer" hidden>
+      <div class="bar"><div><b>🎲 이벤트 추첨</b> <span>번호를 뽑으면 아이패드(대기 화면)에도 크게 표시됩니다</span></div><button type="button" id="closeDraw">← 접수로 돌아가기</button></div>
+      <iframe id="drawFrame" title="이벤트 추첨"></iframe>
+    </div>
+
+    <footer>bebeknow booth · <span id="ver">v2026.10.16-1</span></footer>
   </div>
 </div>
 
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="common.js?v=6"></script>
-<script src="po.js?v=6"></script>
+<script src="common.js?v=7"></script>
+<script src="po.js?v=7"></script>
 <script>
 /* 비밀번호는 로그인 때 한 번만 쓰고, 이후에는 직원용 토큰(1일)으로 요청 — 비밀번호 잠금이 걸려도 이미 로그인한 화면은 동작 */
 var TOKEN_KEY = "bebeknow_booth_staff_token", ACK_KEY = "bebeknow_booth_ack";
@@ -263,6 +278,14 @@ $("logoutBtn").addEventListener("click", function () {
   if (phase === "waiting" && !confirm("아이패드에서 고객이 확인 중입니다. 나갈까요?")) return;
   logout();
 });
+
+/* ---------- 이벤트 추첨 (같은 화면 안에서 열기) ---------- */
+$("openDraw").addEventListener("click", function () {
+  var fr = $("drawFrame");
+  if (!fr.src) fr.src = "../draw/?embed=1";
+  $("drawLayer").hidden = false;
+});
+$("closeDraw").addEventListener("click", function () { $("drawLayer").hidden = true; });
 
 /* ---------- 탭 ---------- */
 function setTab(t) {
