@@ -28,6 +28,26 @@
   .plan .row .btn{width:auto;flex:1;min-width:140px;margin-top:0;padding:13px;font-size:16px}
   .plan .qr{font-size:13px;color:var(--ink-soft);margin-top:12px;line-height:1.5}
   .plan .qr b{color:var(--ink)}
+  /* 탭: 추첨 | 당첨자 확인 */
+  .tabs{display:flex;gap:8px;margin-bottom:14px}
+  .tabs button{flex:1;padding:12px;font-size:16px;font-weight:800;border-radius:14px;border:1.5px solid var(--line);background:#fff;color:var(--ink-soft);font-family:inherit;cursor:pointer}
+  .tabs button.on{border-color:var(--accent-deep);background:var(--accent-deep);color:#fff}
+  .wtop{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .wtop input{flex:1;min-width:220px;padding:13px 14px;font-size:17px;font-weight:700;border:1.5px solid var(--line);border-radius:12px;background:#fff;font-family:inherit;color:var(--ink)}
+  .wtop .wsum{font-size:14px;color:var(--ink-soft)}
+  .wtop .wsum b{color:var(--ink);font-size:16px}
+  .wround{margin-top:14px}
+  .wround h3{font-size:15px;font-weight:800;color:var(--accent-deep);margin-bottom:6px}
+  .wrow{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:6px}
+  .wrow .o{width:26px;height:26px;border-radius:50%;background:var(--accent-deep);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .wrow .n{font-weight:900;font-size:22px;font-variant-numeric:tabular-nums;width:56px;flex-shrink:0}
+  .wrow .who{flex:1;min-width:0}
+  .wrow .who b{display:block;font-size:18px}
+  .wrow .who span{font-size:15px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  .wrow .give{flex-shrink:0;padding:10px 14px;font-size:15px;font-weight:800;border-radius:12px;border:1.5px solid var(--accent-deep);background:#fff;color:var(--accent-deep);font-family:inherit;cursor:pointer}
+  .wrow .give.done{border-color:#cfe3c3;background:#e8f3df;color:#3f6b2a}
+  .wrow.given{background:#fbfaf7}
+  .wempty{color:var(--ink-soft);font-size:15px;padding:20px 0;text-align:center}
   h1{font-size:22px;font-weight:800}
   .sub{font-size:14px;color:var(--ink-soft);margin:2px 0 16px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 24px;box-shadow:0 2px 12px rgba(74,63,54,.06)}
@@ -95,6 +115,20 @@
       <div class="count">응모 <b id="entrants">0</b>명 · 당첨 <b id="winCount">0</b><span id="quotaLbl"></span>명</div>
     </div>
 
+    <div class="tabs">
+      <button type="button" id="tabDraw" class="on">🎲 추첨</button>
+      <button type="button" id="tabWin">🎁 당첨자 확인 · 사은품</button>
+    </div>
+
+    <div id="paneWin" hidden>
+      <div class="wtop">
+        <input type="search" id="wq" placeholder="이름, 전화번호 끝 4자리, 응모번호로 찾기" autocomplete="off">
+        <div class="wsum" id="wsum"></div>
+      </div>
+      <div id="wlist"><div class="wempty">불러오는 중…</div></div>
+    </div>
+
+    <div id="paneDraw">
     <div class="grid">
       <div class="stage">
         <div class="lbl" id="stageLbl">추첨을 시작해 주세요</div>
@@ -126,9 +160,10 @@
       </div>
       <p class="qr">고객용 번호 확인 주소: <b>bebeknow.github.io/event/my/</b> (부스에 QR로 붙여 두세요)</p>
     </div>
+    </div>
     <div class="msg" id="msg"></div>
     <button class="btn ghost" id="logoutBtn" style="margin-top:14px">나가기</button>
-    <footer>bebeknow draw · v2026.10.16-5</footer>
+    <footer>bebeknow draw · v2026.10.16-6</footer>
   </div>
 
 </div>
@@ -331,6 +366,76 @@ $("planSave").addEventListener("click", function(){
     else msg(res.message || "저장하지 못했어요. 다시 시도해 주세요.", "err");
   }).catch(function(){ $("planSave").disabled = false; msg("네트워크 연결을 확인해 주세요.", "err"); });
 });
+
+/* ───── 당첨자 확인 · 사은품 지급 ───── */
+var winners = [], wBusy = {}, winSeq = 0;   // winSeq: 지급 중·지급 뒤에 도착한 예전 목록은 버림
+function showTab(win){
+  $("tabDraw").classList.toggle("on", !win); $("tabWin").classList.toggle("on", win);
+  $("paneDraw").hidden = win; $("paneWin").hidden = !win;
+  if(win){ loadWinners(); setTimeout(function(){ $("wq").focus(); }, 50); }
+}
+$("tabDraw").addEventListener("click", function(){ showTab(false); });
+$("tabWin").addEventListener("click", function(){ showTab(true); });
+function loadWinners(){
+  var seq = ++winSeq;
+  return getJSON(GAS_URL + "?draw=winners&" + authQS()).then(function(res){
+    if(seq !== winSeq || Object.keys(wBusy).some(function(k){ return wBusy[k]; })) return;
+    if(res.status !== "ok") return;
+    winners = res.winners || []; renderWinners();
+  }).catch(function(){});
+}
+function renderWinners(){
+  var q = $("wq").value.trim(), qd = q.replace(/\D/g, "");
+  var list = winners.filter(function(w){
+    if(!q) return true;
+    if(qd.length >= 3 && w.phone.replace(/\D/g, "").slice(-qd.length) === qd) return true;
+    if(qd && pad3(w.no) === pad3(qd) && qd.length <= 3) return true;
+    return /[^\d\s-]/.test(q) && w.name.indexOf(q) >= 0;
+  });
+  var given = winners.filter(function(w){ return w.given; }).length;
+  $("wsum").innerHTML = "";
+  [["당첨 ", winners.length, "명 · "], ["지급 ", given, "명 · "], ["남은 ", winners.length - given, "명"]].forEach(function(x){
+    $("wsum").appendChild(document.createTextNode(x[0])); var b = document.createElement("b"); b.textContent = x[1]; $("wsum").appendChild(b); $("wsum").appendChild(document.createTextNode(x[2]));
+  });
+  var box = $("wlist"); box.innerHTML = "";
+  if(!list.length){ var e = document.createElement("div"); e.className = "wempty"; e.textContent = winners.length ? "찾는 당첨자가 없어요. 이름이나 번호를 다시 확인해 주세요." : "아직 당첨자가 없어요."; box.appendChild(e); return; }
+  var cur = null, sec = null;
+  list.forEach(function(w){
+    if(w.round !== cur){
+      cur = w.round; sec = document.createElement("div"); sec.className = "wround";
+      var h = document.createElement("h3"); h.textContent = w.round + "회차"; sec.appendChild(h); box.appendChild(sec);
+    }
+    var row = document.createElement("div"); row.className = "wrow" + (w.given ? " given" : "");
+    var o = document.createElement("span"); o.className = "o"; o.textContent = w.order;
+    var n = document.createElement("span"); n.className = "n"; n.textContent = pad3(w.no);
+    var who = document.createElement("div"); who.className = "who";
+    var nb = document.createElement("b"); nb.textContent = w.name || "(이름 없음)";
+    var ph = document.createElement("span"); ph.textContent = w.phone;
+    who.appendChild(nb); who.appendChild(ph);
+    var g = document.createElement("button"); g.type = "button"; g.className = "give" + (w.given ? " done" : "");
+    g.textContent = w.given ? "✓ " + w.given.replace(/^지급\s*/, "지급함 ") : "사은품 지급";
+    g.disabled = !!wBusy[w.row];
+    g.addEventListener("click", function(){ giveToggle(w); });
+    row.appendChild(o); row.appendChild(n); row.appendChild(who); row.appendChild(g);
+    sec.appendChild(row);
+  });
+}
+function giveToggle(w){
+  if(wBusy[w.row]) return;
+  var on = !w.given;
+  if(!on && !confirm(w.round + "회차 " + pad3(w.no) + "번 " + w.name + "님의 지급 표시를 취소할까요?")) return;
+  wBusy[w.row] = true; winSeq++; renderWinners();
+  postJSON(authBody({ action: "drawGive", row: w.row, no: w.no, round: w.round, phone: w.phone, given: on })).then(function(res){
+    wBusy[w.row] = false;
+    var cur = winners.filter(function(x){ return x.row === w.row && x.no === w.no; })[0] || w;   // 그사이 목록이 바뀌었어도 지금 목록의 같은 줄에 반영
+    if(res.status === "ok"){ cur.given = res.given; msg(on ? w.name + "님 사은품 지급을 표시했어요." : "지급 표시를 취소했어요.", "ok"); }
+    else if(res.status === "already"){ cur.given = res.given; msg("이미 지급한 분이에요 (" + res.given + ").", "err"); }
+    else msg("목록이 바뀌었어요. 다시 불러올게요.", "err");
+    renderWinners(); loadWinners();
+  }).catch(function(){ wBusy[w.row] = false; renderWinners(); msg("네트워크 연결을 확인해 주세요. 지급 여부는 목록을 다시 불러와 확인해 주세요.", "err"); loadWinners(); });
+}
+$("wq").addEventListener("input", renderWinners);
+setInterval(function(){ if(!$("paneWin").hidden && (pin || token)) loadWinners(); }, 15000);
 
 /* 응모 인원 자동 갱신 (10초) */
 setInterval(function(){ if((pin || token) && !busy) load().catch(function(){}); }, 10000);
