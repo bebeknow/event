@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>bebeknow 럭키드로우</title>
+<style>
+  :root{
+    --bg:#faf6f1;--card:#fff;--ink:#4a3f36;--ink-soft:#8a7c70;--line:#e9dfd5;
+    --accent:#c9a086;--accent-deep:#b08464;--accent-tint:#f6ece3;--ok:#7ba05b;--err:#c46a5a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+    background:var(--bg);color:var(--ink);min-height:100vh;padding:24px 20px 40px;display:flex;justify-content:center;-webkit-font-smoothing:antialiased}
+  .wrap{width:100%;max-width:980px}
+  h1{font-size:22px;font-weight:800}
+  .sub{font-size:14px;color:var(--ink-soft);margin:2px 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 24px;box-shadow:0 2px 12px rgba(74,63,54,.06)}
+  label.t{display:block;font-size:14px;font-weight:700;margin-bottom:8px}
+  input[type=password]{width:100%;padding:14px;font-size:26px;letter-spacing:.2em;text-align:center;font-weight:800;color:var(--ink);
+    border:1.5px solid var(--line);border-radius:12px;background:#fdfbf8;outline:none;font-family:inherit}
+  .btn{width:100%;padding:18px;font-size:19px;font-weight:800;color:#fff;background:var(--accent-deep);border:none;border-radius:16px;cursor:pointer;font-family:inherit;margin-top:10px}
+  .btn.sec{background:#fff;color:var(--accent-deep);border:1.5px solid var(--accent)}
+  .btn.ghost{background:none;color:var(--ink-soft);border:1.5px solid var(--line);font-size:14px;padding:10px}
+  .btn:disabled{opacity:.5;cursor:default}
+  .msg{display:none;margin-top:10px;padding:12px 14px;border-radius:12px;font-size:15px;font-weight:600;line-height:1.5}
+  .msg.err{display:block;background:#faeae6;color:var(--err)}
+  .msg.ok{display:block;background:#e8f3df;color:#3f6b2a}
+  [hidden]{display:none!important}
+
+  .head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .round{font-size:15px;font-weight:800;color:var(--accent-deep);letter-spacing:.04em}
+  .count{font-size:14px;color:var(--ink-soft)}
+  .count b{color:var(--ink);font-size:18px}
+  .grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:stretch}
+  .stage{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+    background:linear-gradient(135deg,#fff7ec,#fdeede);border:2px solid var(--accent);border-radius:22px;padding:26px 16px;min-height:330px}
+  .stage .lbl{font-size:16px;font-weight:800;color:var(--accent-deep)}
+  .stage .num{font-size:150px;font-weight:900;line-height:1;letter-spacing:.04em;font-variant-numeric:tabular-nums;margin:10px 0}
+  .stage .num.rolling{color:#c9b5a3}
+  .stage .num.pop{animation:pop .5s ease}
+  @keyframes pop{0%{transform:scale(.7)}60%{transform:scale(1.08)}100%{transform:scale(1)}}
+  .stage .who{font-size:22px;font-weight:800;min-height:30px}
+  .side{display:flex;flex-direction:column;gap:12px}
+  .list{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 18px;flex:1}
+  .list h2{font-size:15px;font-weight:800;margin-bottom:10px}
+  .list ol{list-style:none}
+  .list li{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px dashed var(--line);font-size:17px}
+  .list li:first-child{border-top:none}
+  .list li .o{width:26px;height:26px;border-radius:50%;background:var(--accent-deep);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .list li .n{font-weight:900;font-size:22px;font-variant-numeric:tabular-nums}
+  .list li .m{color:var(--ink-soft)}
+  .empty{color:var(--ink-soft);font-size:14px}
+  footer{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:14px}
+  @media (max-width: 760px){ .grid{grid-template-columns:1fr} .stage .num{font-size:110px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 로그인 -->
+  <div id="login">
+    <h1>bebeknow 럭키드로우</h1>
+    <p class="sub">비밀번호는 시트 "집계" 탭 B2</p>
+    <div class="card" style="max-width:460px">
+      <label class="t" for="pin">비밀번호</label>
+      <input type="password" id="pin" inputmode="numeric" maxlength="6" placeholder="••••">
+      <button class="btn" id="loginBtn">들어가기</button>
+      <div class="msg" id="loginMsg"></div>
+    </div>
+  </div>
+
+  <!-- 추첨 -->
+  <div id="app" hidden>
+    <div class="head">
+      <div>
+        <h1>bebeknow 럭키드로우</h1>
+        <div class="round" id="roundLbl">1회차</div>
+      </div>
+      <div class="count">응모 <b id="entrants">0</b>명 · 당첨 <b id="winCount">0</b>명</div>
+    </div>
+
+    <div class="grid">
+      <div class="stage">
+        <div class="lbl" id="stageLbl">추첨을 시작해 주세요</div>
+        <div class="num" id="stageNum">---</div>
+        <div class="who" id="stageWho"></div>
+      </div>
+      <div class="side">
+        <div class="list">
+          <h2 id="listTitle">1회차 당첨 번호</h2>
+          <ol id="winners"><li class="empty">아직 없어요</li></ol>
+        </div>
+        <button class="btn" id="drawBtn">🎲 번호 뽑기</button>
+        <button class="btn sec" id="nextBtn">이번 회차 마감 · 다음 회차 시작</button>
+      </div>
+    </div>
+    <div class="msg" id="msg"></div>
+    <button class="btn ghost" id="logoutBtn" style="margin-top:14px">나가기</button>
+    <footer>bebeknow draw · v2026.10.16-1</footer>
+  </div>
+
+</div>
+
+<script>
+var GAS_URL = "https://script.google.com/macros/s/AKfycbwOrp74H1BYqzJ-8Wv7jv4q5qJ8K0qfA1z6YpHIRz-LsfTCHWrP8SoGe_8QYl51Q_zOew/exec";
+var PIN_KEY = "bebeknow_staff_pin";
+var pin = "", round = 0, busy = false;
+
+function $(id){ return document.getElementById(id); }
+function msg(t, cls){ var m = $("msg"); m.className = "msg " + (t ? cls : ""); m.textContent = t || ""; }
+function pad3(n){ return ("00" + n).slice(-3); }
+function getJSON(url){ return fetch(url, {redirect:"follow"}).then(function(r){ return r.json(); }); }
+function postJSON(body){ return fetch(GAS_URL, {method:"POST", body: JSON.stringify(body), redirect:"follow"}).then(function(r){ return r.json(); }); }
+
+function render(res){
+  round = res.round;
+  $("roundLbl").textContent = round + "회차";
+  $("listTitle").textContent = round + "회차 당첨 번호";
+  $("entrants").textContent = res.entrants;
+  var w = res.winners || [];
+  $("winCount").textContent = w.length;
+  var ol = $("winners"); ol.innerHTML = "";
+  if(!w.length){ ol.innerHTML = '<li class="empty">아직 없어요</li>'; return; }
+  w.forEach(function(x){
+    var li = document.createElement("li");
+    li.innerHTML = '<span class="o">' + x.order + '</span><span class="n">' + pad3(x.no) + '</span><span class="m">' + (x.name || "") + '</span>';
+    ol.appendChild(li);
+  });
+}
+function load(){
+  return getJSON(GAS_URL + "?draw=status&pin=" + encodeURIComponent(pin)).then(function(res){
+    if(res.status === "unauth"){ try{ sessionStorage.removeItem(PIN_KEY); }catch(e){} location.reload(); return; }
+    if(res.status === "ok") render(res);
+    return res;
+  });
+}
+
+/* 로그인 */
+$("loginBtn").addEventListener("click", function(){
+  var p = $("pin").value.trim(); if(!p) return;
+  $("loginBtn").disabled = true;
+  getJSON(GAS_URL + "?draw=status&pin=" + encodeURIComponent(p)).then(function(res){
+    $("loginBtn").disabled = false;
+    var lm = $("loginMsg");
+    if(res.status === "unauth" || res.status === "locked"){ lm.className = "msg err"; lm.textContent = "비밀번호가 맞지 않아요."; return; }
+    if(res.status !== "ok"){ lm.className = "msg err"; lm.textContent = "연결에 문제가 있어요. 다시 시도해 주세요."; return; }
+    pin = p; try{ sessionStorage.setItem(PIN_KEY, p); }catch(e){}
+    $("login").hidden = true; $("app").hidden = false; render(res);
+  }).catch(function(){ $("loginBtn").disabled = false; });
+});
+$("pin").addEventListener("keydown", function(e){ if(e.key === "Enter") $("loginBtn").click(); });
+$("logoutBtn").addEventListener("click", function(){ try{ sessionStorage.removeItem(PIN_KEY); }catch(e){} location.reload(); });
+
+/* 번호 뽑기: 서버가 먼저 뽑고, 화면은 2초간 숫자가 돌다가 결과 공개 */
+$("drawBtn").addEventListener("click", function(){
+  if(busy) return; busy = true; msg("");
+  $("drawBtn").disabled = true; $("nextBtn").disabled = true;
+  var num = $("stageNum"), who = $("stageWho");
+  $("stageLbl").textContent = round + "회차 추첨 중…"; who.textContent = "";
+  num.classList.remove("pop"); num.classList.add("rolling");
+  var roll = setInterval(function(){ num.textContent = pad3(1 + Math.floor(Math.random() * 999)); }, 60);
+  var started = Date.now();
+  postJSON({ action: "draw", pin: pin, round: round }).then(function(res){
+    var wait = Math.max(0, 2200 - (Date.now() - started));
+    setTimeout(function(){
+      clearInterval(roll); num.classList.remove("rolling");
+      busy = false; $("drawBtn").disabled = false; $("nextBtn").disabled = false;
+      if(res.status === "ok"){
+        num.textContent = pad3(res.no); void num.offsetWidth; num.classList.add("pop");
+        $("stageLbl").textContent = round + "회차 " + res.order + "번째 당첨";
+        who.textContent = res.name ? res.name + "님" : "";
+        render(res);
+      } else if(res.status === "empty"){
+        num.textContent = "---"; $("stageLbl").textContent = "뽑을 수 있는 번호가 없어요";
+        msg(res.entrants ? "이번 회차 응모자를 모두 뽑았어요." : "이번 회차 응모자가 아직 없어요.", "err");
+      } else if(res.status === "stale"){
+        msg("다른 화면에서 회차가 바뀌었어요. 새로고침합니다.", "err"); load();
+      } else {
+        num.textContent = "---"; msg("추첨에 실패했어요. 다시 눌러 주세요.", "err");
+      }
+    }, wait);
+  }).catch(function(){
+    clearInterval(roll); num.classList.remove("rolling"); num.textContent = "---";
+    busy = false; $("drawBtn").disabled = false; $("nextBtn").disabled = false;
+    msg("네트워크 연결을 확인해 주세요.", "err");
+  });
+});
+
+/* 다음 회차 */
+$("nextBtn").addEventListener("click", function(){
+  if(busy) return;
+  if(!confirm(round + "회차를 마감하고 " + (round + 1) + "회차를 시작할까요?\n\n응모번호가 1~999로 새로 발급되고, 이미 참여한 분은 다시 참여할 수 없어요.")) return;
+  busy = true; $("nextBtn").disabled = true; $("drawBtn").disabled = true;
+  postJSON({ action: "nextRound", pin: pin, round: round }).then(function(res){
+    busy = false; $("nextBtn").disabled = false; $("drawBtn").disabled = false;
+    if(res.status === "ok"){
+      msg(res.closed.round + "회차 마감 (응모 " + res.closed.entrants + "명 · 당첨 " + res.closed.winners + "명) → " + res.round + "회차 시작", "ok");
+      $("stageNum").textContent = "---"; $("stageLbl").textContent = res.round + "회차 추첨을 시작해 주세요"; $("stageWho").textContent = "";
+      load();
+    } else if(res.status === "stale"){ msg("이미 다른 화면에서 회차가 바뀌었어요.", "err"); load(); }
+    else msg("회차 변경에 실패했어요. 다시 시도해 주세요.", "err");
+  }).catch(function(){ busy = false; $("nextBtn").disabled = false; $("drawBtn").disabled = false; msg("네트워크 연결을 확인해 주세요.", "err"); });
+});
+
+/* 응모 인원 자동 갱신 (10초) */
+setInterval(function(){ if(pin && !busy) load().catch(function(){}); }, 10000);
+
+/* 자동 로그인 */
+(function(){ var s = ""; try{ s = sessionStorage.getItem(PIN_KEY) || ""; }catch(e){} if(s){ $("pin").value = s; $("loginBtn").click(); } })();
+</script>
+</body>
+</html>
