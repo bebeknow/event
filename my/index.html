@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>bebeknow 내 응모번호 확인</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap">
+<style>
+  :root{
+    --bg:#faf6f1;--bg-deep:#f3ebe1;--card:#fff;--ink:#4a3f36;--ink-soft:#8a7c70;--line:#e9dfd5;
+    --accent:#c9a086;--accent-deep:#b08464;--accent-tint:#f6ece3;--ok:#5f8f43;--err:#c46a5a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+    background:linear-gradient(180deg,#fdf9f4 0%,var(--bg-deep) 100%);color:var(--ink);min-height:100vh;min-height:100dvh;
+    padding:28px 16px calc(32px + env(safe-area-inset-bottom));display:flex;justify-content:center;-webkit-font-smoothing:antialiased;
+    word-break:keep-all;overflow-wrap:break-word}
+  .wrap{width:100%;max-width:440px}
+  .brand{text-align:center;margin-bottom:22px}
+  .brand .logo{font-family:'Comfortaa',sans-serif;font-weight:700;text-transform:lowercase;letter-spacing:-0.045em;font-size:34px;color:var(--accent-deep)}
+  .brand .slogan{font-size:13px;color:var(--ink-soft);margin-top:4px;letter-spacing:.02em}
+  h1{font-size:22px;font-weight:800;text-align:center;text-wrap:balance}
+  .sub{font-size:14.5px;color:var(--ink-soft);text-align:center;margin:6px 0 18px;line-height:1.55;text-wrap:pretty}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 2px 12px rgba(74,63,54,.06)}
+  label{display:block;font-size:14px;font-weight:700;margin-bottom:8px}
+  input{width:100%;padding:15px 14px;font-size:22px;font-weight:800;letter-spacing:.04em;text-align:center;color:var(--ink);
+    border:1.5px solid var(--line);border-radius:14px;background:#fdfbf8;outline:none;font-family:inherit}
+  input:focus{border-color:var(--accent)}
+  .btn{width:100%;margin-top:12px;padding:17px;font-size:18px;font-weight:800;color:#fff;background:var(--accent-deep);border:none;border-radius:16px;font-family:inherit;cursor:pointer}
+  .btn:disabled{opacity:.55}
+  .btn.sec{background:#fff;color:var(--accent-deep);border:1.5px solid var(--accent)}
+  .note{font-size:12.5px;color:var(--ink-soft);margin-top:10px;line-height:1.5;text-align:center}
+  .msg{margin-top:12px;padding:12px 14px;border-radius:12px;font-size:15px;font-weight:600;line-height:1.5;background:#faeae6;color:var(--err);text-align:center}
+  [hidden]{display:none!important}
+
+  .result{margin-top:16px;text-align:center}
+  .result .rlbl{font-size:15px;font-weight:800;color:var(--accent-deep)}
+  .result .rnum{font-size:96px;font-weight:900;line-height:1.05;letter-spacing:.04em;font-variant-numeric:tabular-nums;margin:6px 0 4px}
+  .result .when{font-size:15px;color:var(--ink-soft)}
+  .state{margin-top:16px;padding:16px;border-radius:16px;font-size:17px;font-weight:800;line-height:1.5;text-wrap:balance}
+  .state small{display:block;font-size:14px;font-weight:600;margin-top:4px;color:inherit;opacity:.85}
+  .state.wait{background:var(--accent-tint);color:var(--accent-deep)}
+  .state.won{background:#e8f3df;color:var(--ok);font-size:20px}
+  .state.lost{background:#f1ede8;color:var(--ink-soft)}
+  footer{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><div class="logo">bebeknow</div><div class="slogan">Easy breath, Easy life</div></div>
+  <h1>내 응모번호 확인</h1>
+  <p class="sub">이벤트에 참여할 때 넣은 휴대폰 번호를 입력하면 회차와 응모번호, 발표 시각을 알려 드려요.</p>
+
+  <div class="card">
+    <label for="phone">휴대폰 번호</label>
+    <input type="tel" id="phone" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000" maxlength="13">
+    <button class="btn" id="go" type="button">확인하기</button>
+    <div class="msg" id="msg" hidden></div>
+
+    <div class="result" id="result" hidden>
+      <div class="rlbl" id="rlbl">럭키드로우 응모번호</div>
+      <div class="rnum" id="rnum">---</div>
+      <div class="when" id="when"></div>
+      <div class="state" id="state"></div>
+      <button class="btn sec" id="again" type="button">결과 다시 확인</button>
+    </div>
+  </div>
+  <p class="note">입력한 번호는 확인에만 쓰이고, 이 화면에는 이름 같은 개인정보가 나오지 않아요.</p>
+  <footer>bebeknow · v2026.10.16-2</footer>
+</div>
+
+<script>
+var GAS_URL = "https://script.google.com/macros/s/AKfycbwOrp74H1BYqzJ-8Wv7jv4q5qJ8K0qfA1z6YpHIRz-LsfTCHWrP8SoGe_8QYl51Q_zOew/exec";
+var EVENT_KEY = "bebeknow_event_done";   // 같은 휴대폰으로 이벤트에 참여했으면 그 번호를 미리 채움
+function $(id){ return document.getElementById(id); }
+function digits(v){ return String(v || "").replace(/\D/g, "").slice(0, 11); }
+function fmtPhone(v){
+  var d = digits(v);
+  if(d.length < 4) return d;
+  if(d.length < 8) return d.slice(0, 3) + "-" + d.slice(3);
+  return d.slice(0, 3) + "-" + d.slice(3, d.length - 4) + "-" + d.slice(-4);
+}
+function pad3(n){ return ("00" + n).slice(-3); }
+function showMsg(t){ var m = $("msg"); m.hidden = !t; m.textContent = t || ""; }
+
+$("phone").addEventListener("input", function(){ var c = fmtPhone(this.value); if(c !== this.value) this.value = c; $("result").hidden = true; showMsg(""); });
+$("phone").addEventListener("keydown", function(e){ if(e.key === "Enter") check(); });
+$("go").addEventListener("click", check);
+$("again").addEventListener("click", check);
+
+var busy = false;
+function check(){
+  var d = digits($("phone").value);
+  if(!/^01[016789]\d{7,8}$/.test(d)){ $("result").hidden = true; showMsg("휴대폰 번호를 다시 확인해 주세요."); return; }
+  if(busy) return; busy = true; showMsg(""); $("result").hidden = true;   // 다른 번호의 예전 결과가 남지 않게
+  $("go").disabled = true; $("again").disabled = true; $("go").textContent = "확인하는 중…";
+  var ctl = new AbortController(), t = setTimeout(function(){ ctl.abort(); }, 25000);
+  fetch(GAS_URL + "?my=" + encodeURIComponent(d), { redirect: "follow", signal: ctl.signal })
+    .then(function(r){ return r.json(); })
+    .then(function(res){ if(digits($("phone").value) === d) render(res); })   // 기다리는 사이 번호를 바꿨으면 무시
+    .catch(function(){ showMsg("연결이 원활하지 않아요. 잠시 뒤에 다시 눌러 주세요."); })
+    .then(function(){ clearTimeout(t); busy = false; $("go").disabled = false; $("again").disabled = false; $("go").textContent = "확인하기"; });
+}
+
+function render(res){
+  var box = $("result");
+  if(res.status !== "ok") box.hidden = true;            // 예전 결과가 남아 다른 번호의 결과처럼 보이지 않게
+  if(res.status === "busy"){ showMsg("확인 요청이 많아요. 잠시 뒤에 다시 눌러 주세요."); return; }
+  if(res.status === "bad"){ showMsg("휴대폰 번호를 다시 확인해 주세요."); return; }
+  if(res.status === "none"){ box.hidden = true; showMsg("참여 기록을 찾지 못했어요. 이벤트에 참여할 때 넣은 번호인지 확인해 주세요."); return; }
+  if(res.status !== "ok"){ showMsg("확인하지 못했어요. 부스 직원에게 물어봐 주세요."); return; }
+  box.hidden = false;
+  if(!res.no){
+    $("rlbl").textContent = "이벤트 참여 확인";
+    $("rnum").textContent = "✓";
+    $("when").textContent = "";
+    setState("wait", "참여가 확인됐어요", "응모번호는 부스 직원에게 물어봐 주세요.");
+    return;
+  }
+  $("rlbl").textContent = res.round + "회차 럭키드로우 응모번호";
+  $("rnum").textContent = pad3(res.no);
+  $("when").textContent = res.time ? "발표 시각 " + korTime(res.time) : "발표 시각은 부스에서 안내해 드려요";
+  if(res.won) setState("won", "🎉 당첨됐어요!", "부스로 와 주세요. 이름과 휴대폰 번호를 확인한 뒤 경품을 드려요.");
+  else if(res.finished) setState("lost", "아쉽게도 이번에는 당첨되지 않았어요", "참여해 주셔서 고맙습니다.");
+  else if(res.drawnCount > 0) setState("wait", "추첨이 진행 중이에요", "지금까지 " + res.drawnCount + "명 발표" + (res.quota ? " (모두 " + res.quota + "명)" : "") + " · 아직 이 번호는 나오지 않았어요. 조금 뒤에 다시 확인해 주세요.");
+  else if(res.time && passed(res.time)) setState("wait", "곧 발표해요", "조금 뒤에 여기서 다시 확인해 주세요.");
+  else setState("wait", "아직 발표 전이에요", res.time ? korTime(res.time) + "에 부스에서 발표해요. 그 뒤에 여기서 결과를 확인할 수 있어요." : "발표 뒤에 여기서 결과를 확인할 수 있어요.");
+}
+/* "13:05" → "오후 1시 5분" */
+function korTime(hm){
+  var p = String(hm).split(":"), h = +p[0], m = +p[1];
+  return (h < 12 ? "오전 " : "오후 ") + (h % 12 || 12) + "시" + (m ? " " + m + "분" : "");
+}
+function passed(hm){ var p = String(hm).split(":"), now = new Date(); return now.getHours() * 60 + now.getMinutes() >= (+p[0]) * 60 + (+p[1]); }
+function setState(cls, title, sub){
+  var s = $("state"); s.className = "state " + cls;
+  s.textContent = title;
+  var sm = document.createElement("small"); sm.textContent = sub; s.appendChild(sm);
+}
+
+/* 이 휴대폰으로 이벤트에 참여했다면 번호를 미리 채움 */
+(function(){
+  try{
+    var saved = JSON.parse(localStorage.getItem(EVENT_KEY) || "null");
+    if(saved && saved.phone){ $("phone").value = fmtPhone(saved.phone); }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
