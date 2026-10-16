@@ -7,7 +7,7 @@
 <title>베베노 부스 · 직원</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap">
-<link rel="stylesheet" href="booth.css?v=8">
+<link rel="stylesheet" href="booth.css?v=9">
 <style>
   body{padding:16px 22px 28px}
   .wrap{max-width:1460px;margin:0 auto}
@@ -26,6 +26,8 @@
   .draw-layer .bar b{font-size:16px}
   .draw-layer .bar span{font-size:13px;color:var(--ink-soft)}
   .draw-layer .bar button{padding:9px 16px;border-radius:12px;border:1.5px solid var(--line);background:#fff;font-size:14px;font-weight:700;color:var(--ink)}
+  .draw-layer .bar .btns{display:flex;gap:8px;flex-shrink:0}
+  .draw-layer .bar #ipadRoll.on{border-color:var(--accent);color:var(--accent-deep)}
   .draw-layer iframe{flex:1;width:100%;border:0}
   .top .out{padding:8px 14px;font-size:13px;border-radius:999px;border:1.5px solid var(--line);background:none;color:var(--ink-soft)}
 
@@ -52,10 +54,13 @@
   .pick input{width:18px;height:18px;accent-color:var(--ship)}
   .pick.on{color:var(--ship)}
   .colors{display:flex;gap:8px;margin-top:8px}
-  .colors button{flex:1;padding:12px 6px;font-size:16px;font-weight:800;color:#fff;border:none;border-radius:12px}
+  .colors button{flex:1;padding:12px 6px;font-size:16px;font-weight:800;border:1.5px solid transparent;border-radius:12px}
   .colors button:active{transform:scale(.97)}
-  .colors .핑크{background:var(--pink)}.colors .베이지{background:var(--beige)}.colors .그린{background:var(--green)}
-  .colors .옐로우{background:var(--yellow);color:#5a4a1a}
+  /* 색상 버튼은 파스텔 톤 (글자는 같은 계열의 진한 색) */
+  .colors .핑크{background:#f9d5dd;border-color:#f0b8c5;color:#9a4458}
+  .colors .베이지{background:#f1e4d3;border-color:#e2cdb2;color:#7d5f3e}
+  .colors .그린{background:#d6ecd8;border-color:#b9dcbd;color:#3f7146}
+  .colors .옐로우{background:#faefc2;border-color:#efdc93;color:#7a6420}
   .hint{font-size:13px;color:var(--ink-soft);margin-top:12px;line-height:1.5}
 
   .cart{min-height:120px}
@@ -181,17 +186,18 @@
 
     <!-- 이벤트 추첨 (같은 화면 안에서, 직원 로그인 그대로) — 뽑으면 대기 중인 아이패드에도 크게 나옴 -->
     <div class="draw-layer" id="drawLayer" hidden>
-      <div class="bar"><div><b>🎲 이벤트 추첨</b> <span>이 창이 열려 있는 동안 아이패드(대기 화면)에서 숫자가 돌고, 뽑으면 당첨 번호가 크게 나옵니다</span></div><button type="button" id="closeDraw">← 접수로 돌아가기</button></div>
+      <div class="bar"><div><b>🎲 이벤트 추첨</b> <span id="ipadState">아이패드 상태를 확인하는 중…</span></div>
+        <div class="btns"><button type="button" id="ipadRoll">아이패드 숫자 돌리기</button><button type="button" id="closeDraw">← 접수로 돌아가기</button></div></div>
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.16-2</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.16-3</span></footer>
   </div>
 </div>
 
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="common.js?v=8"></script>
-<script src="po.js?v=8"></script>
+<script src="common.js?v=9"></script>
+<script src="po.js?v=9"></script>
 <script>
 /* 비밀번호는 로그인 때 한 번만 쓰고, 이후에는 직원용 토큰(1일)으로 요청 — 비밀번호 잠금이 걸려도 이미 로그인한 화면은 동작 */
 var TOKEN_KEY = "bebeknow_booth_staff_token", ACK_KEY = "bebeknow_booth_ack";
@@ -249,7 +255,11 @@ function restore(s) {
   renderStatus("새로고침 전에 접수된 주문이에요. 필요하면 다시 인쇄하세요."); poll();
 }
 function lockedMsg(el) { msg(el, "비밀번호를 여러 번 틀려 10분간 잠겼어요. 잠시 후 다시 시도해주세요."); }
-function logout() { try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {} location.reload(); }
+function logout() {
+  try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {}
+  if (ipadRoll) apiPost({ action: "drawMode", token: tok, on: false }).catch(function () {}).then(function () { location.reload(); });   // 아이패드 숫자 돌리기도 끔
+  else location.reload();
+}
 /* 토큰으로 현재 세션을 받아 화면에 들어감 */
 function openWith(t) {
   return apiGet({ staff: "session", token: t, station: STATION }).then(function (res) {
@@ -281,12 +291,43 @@ $("logoutBtn").addEventListener("click", function () {
 
 /* ---------- 이벤트 추첨 (같은 화면 안에서 열기) ---------- */
 /* 추첨 창을 열면 대기 중인 아이패드가 숫자를 돌리기 시작하고, 닫으면 대기 화면으로 (10분마다 다시 알림) */
-var drawKeep = null;
+/* 아이패드 숫자 돌리기: 추첨 창을 열면 켜고, 닫거나 버튼을 누르면 끔. 뽑을 번호가 없으면 서버가 알아서 끔 */
+var drawKeep = null, ipadRoll = false, rollGen = 0;   // rollGen: 늦게 도착한 예전 응답은 무시
+function paintRoll(note) {
+  $("ipadRoll").textContent = ipadRoll ? "⏸ 아이패드 기본 화면으로" : "▶ 아이패드 숫자 돌리기";
+  $("ipadRoll").classList.toggle("on", ipadRoll);
+  $("ipadState").textContent = note || (ipadRoll ? "아이패드(대기 화면)에서 숫자가 돌고 있어요. 뽑으면 당첨 번호가 크게 나옵니다"
+                                                 : "아이패드는 기본 화면이에요. 번호를 뽑으면 당첨 번호는 그대로 크게 나옵니다");
+}
+function sendDrawMode(on, g) {
+  return apiPost({ action: "drawMode", token: tok, on: on }).then(function (r) {
+    if (g !== rollGen) return;
+    if (!r || r.status !== "ok") throw new Error("bad");
+    $("ipadRoll").disabled = false;
+    ipadRoll = !!r.on;
+    paintRoll(r.empty ? "이번 회차에 뽑을 번호가 없어서 아이패드는 기본 화면이에요" : "");
+  }).catch(function () {
+    if (g !== rollGen) return;
+    $("ipadRoll").disabled = false;
+    ipadRoll = !on;                                  // 바뀌지 않았다고 보고 다시 누를 수 있게
+    paintRoll("아이패드 상태를 바꾸지 못했어요. 인터넷 연결을 확인하고 버튼을 다시 눌러 주세요");
+    if (!on && $("drawLayer").hidden) setTimeout(function () { if (g === rollGen) setDrawMode(false); }, 5000);   // 창을 닫았는데 끄기 실패 → 될 때까지 다시
+  });
+}
 function setDrawMode(on) {
   clearInterval(drawKeep);
-  apiPost({ action: "drawMode", token: tok, on: on }).catch(function () {});
-  if (on) drawKeep = setInterval(function () { apiPost({ action: "drawMode", token: tok, on: true }).catch(function () {}); }, 600000);
+  var g = ++rollGen;
+  ipadRoll = on; paintRoll(on ? "아이패드 숫자 돌리기를 켜는 중…" : "아이패드를 기본 화면으로 바꾸는 중…");
+  $("ipadRoll").disabled = true;
+  sendDrawMode(on, g);
+  if (on) drawKeep = setInterval(function () { if (ipadRoll && g === rollGen) sendDrawMode(true, g); }, 600000);
 }
+$("ipadRoll").addEventListener("click", function () { setDrawMode(!ipadRoll); });
+window.addEventListener("message", function (e) {
+  var d = e.data;
+  if (e.source !== $("drawFrame").contentWindow || !d || d.type !== "bebeknow-draw") return;
+  if (d.ipadOff) { clearInterval(drawKeep); rollGen++; ipadRoll = false; $("ipadRoll").disabled = false; paintRoll(); }
+});
 $("openDraw").addEventListener("click", function () {
   var fr = $("drawFrame");
   if (!fr.src) fr.src = "../draw/?embed=1";
@@ -306,7 +347,7 @@ $("tabFind").addEventListener("click", function () { setTab("find"); });
 
 /* ---------- 제품 담기 ---------- */
 function renderProducts() {
-  $("prods").innerHTML = PRODUCTS.map(function (p) {
+  $("prods").innerHTML = PRODUCTS.filter(function (p) { return !p.hidden; }).map(function (p) {
     var name = esc(p.label || p.key) + (p.set ? '<span class="tag">세트</span>' : "");
     if (p.colors) {                                         // 색상이 있는 제품: 색상 버튼을 눌러야 담김
       return '<div class="prod wide' + (p.set ? " set" : "") + '"><b>' + name + "</b><small>" + won(p.price) + " · " +

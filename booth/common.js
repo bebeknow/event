@@ -12,7 +12,8 @@ var PRODUCTS = [
   { key: SET_KEY,            price: 259000, colors: ["핑크", "베이지", "그린"], set: true, label: "아기비데 + 콧물흡입기 세트" },
   { key: "아기비데",         price: 84800 },
   { key: "실리콘약병 3개입", price: 14800 },
-  { key: "실리콘약병 1개입", price: 8000,   colors: ["핑크", "옐로우", "베이지"] }
+  /* 2026-10-16 판매 중단: 목록에는 안 보이고, 예전 주문을 불러와 고칠 때 단가만 씀 */
+  { key: "실리콘약병 1개입", price: 8000, colors: ["핑크", "옐로우", "베이지"], hidden: true }
 ];
 /* Purchase Order 에 찍는 정식 상품명 (백엔드 SHIP_NAMES 와 같게) */
 var FULL_NAMES = {

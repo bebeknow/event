@@ -94,11 +94,12 @@
         </div>
         <button class="btn" id="drawBtn">🎲 번호 뽑기</button>
         <button class="btn sec" id="nextBtn">이번 회차 마감 · 다음 회차 시작</button>
+        <button class="btn ghost" id="resetBtn" type="button">연습 기록 지우기 · 1회차부터 다시</button>
       </div>
     </div>
     <div class="msg" id="msg"></div>
     <button class="btn ghost" id="logoutBtn" style="margin-top:14px">나가기</button>
-    <footer>bebeknow draw · v2026.10.16-3</footer>
+    <footer>bebeknow draw · v2026.10.16-4</footer>
   </div>
 
 </div>
@@ -106,7 +107,7 @@
 <script>
 var GAS_URL = "https://script.google.com/macros/s/AKfycbwOrp74H1BYqzJ-8Wv7jv4q5qJ8K0qfA1z6YpHIRz-LsfTCHWrP8SoGe_8QYl51Q_zOew/exec";
 var PIN_KEY = "bebeknow_staff_pin";
-var pin = "", round = 0, busy = false;
+var pin = "", round = 0, busy = false, total = 0;   // total: 전체 회차 참여 인원 (초기화 확인용)
 /* 부스 직원 화면(/booth) 안에서 열면 직원 로그인 토큰을 그대로 씀 (비밀번호 다시 안 넣음) */
 var BOOTH_TOKEN_KEY = "bebeknow_booth_staff_token", token = "";
 function authQS(){ return token ? "token=" + encodeURIComponent(token) : "pin=" + encodeURIComponent(pin); }
@@ -115,11 +116,14 @@ function authBody(o){ if(token) o.token = token; else o.pin = pin; return o; }
 function $(id){ return document.getElementById(id); }
 function msg(t, cls){ var m = $("msg"); m.className = "msg " + (t ? cls : ""); m.textContent = t || ""; }
 function pad3(n){ return ("00" + n).slice(-3); }
+/* 부스 맥북 화면(/booth) 안에서 열렸을 때 바깥 화면에 알림 (아이패드 숫자 돌리기 버튼 상태 맞추기) */
+function tellBooth(o){ try{ if(window.parent !== window) window.parent.postMessage(Object.assign({ type: "bebeknow-draw" }, o), "*"); }catch(e){} }
 function getJSON(url){ return fetch(url, {redirect:"follow"}).then(function(r){ return r.json(); }); }
 function postJSON(body){ return fetch(GAS_URL, {method:"POST", body: JSON.stringify(body), redirect:"follow"}).then(function(r){ return r.json(); }); }
 
 function render(res){
   round = res.round;
+  if(res.total !== undefined) total = res.total;
   $("roundLbl").textContent = round + "회차";
   $("listTitle").textContent = round + "회차 당첨 번호";
   $("entrants").textContent = res.entrants;
@@ -176,9 +180,11 @@ $("drawBtn").addEventListener("click", function(){
         $("stageLbl").textContent = round + "회차 " + res.order + "번째 당첨";
         who.textContent = res.name ? res.name + "님" : "";
         render(res);
+        if(res.remaining === 0){ msg("이번 회차 응모자를 모두 뽑았어요. 아이패드는 당첨 번호를 보여준 뒤 기본 화면으로 돌아가요.", "ok"); tellBooth({ ipadOff: true }); }
       } else if(res.status === "empty"){
         num.textContent = "---"; $("stageLbl").textContent = "뽑을 수 있는 번호가 없어요";
         msg(res.entrants ? "이번 회차 응모자를 모두 뽑았어요." : "이번 회차 응모자가 아직 없어요.", "err");
+        tellBooth({ ipadOff: true });
       } else if(res.status === "stale"){
         msg("다른 화면에서 회차가 바뀌었어요. 새로고침합니다.", "err"); load();
       } else {
@@ -202,10 +208,30 @@ $("nextBtn").addEventListener("click", function(){
     if(res.status === "ok"){
       msg(res.closed.round + "회차 마감 (응모 " + res.closed.entrants + "명 · 당첨 " + res.closed.winners + "명) → " + res.round + "회차 시작", "ok");
       $("stageNum").textContent = "---"; $("stageLbl").textContent = res.round + "회차 추첨을 시작해 주세요"; $("stageWho").textContent = "";
+      tellBooth({ ipadOff: true });
       load();
     } else if(res.status === "stale"){ msg("이미 다른 화면에서 회차가 바뀌었어요.", "err"); load(); }
     else msg("회차 변경에 실패했어요. 다시 시도해 주세요.", "err");
   }).catch(function(){ busy = false; $("nextBtn").disabled = false; $("drawBtn").disabled = false; msg("네트워크 연결을 확인해 주세요.", "err"); });
+});
+
+/* 연습 기록 지우기: 참여자·추첨 탭 내용을 "연습기록_날짜" 탭에 보관한 뒤 비우고 1회차부터 다시 (현장구매는 그대로) */
+$("resetBtn").addEventListener("click", function(){
+  if(busy) return;
+  var c = prompt("연습 기록을 지우고 1회차부터 다시 시작합니다.\n\n· 참여자 탭과 추첨 탭의 내용이 모두 비워져요.\n· 지운 내용은 시트의 '연습기록_날짜' 탭에 그대로 보관돼요.\n· 현장구매(주문) 기록은 건드리지 않아요. 연습 주문은 시트에서 직접 지워 주세요.\n· 집계 탭의 참여자 수도 0부터 다시 세요.\n· 행사 중에는 누르지 마세요. 지금 참여자 " + total + "명이 모두 비워져요.\n\n계속하려면 초기화 라고 입력해 주세요.");
+  if(c === null) return;
+  if(c.trim() !== "초기화"){ msg("'초기화'라고 정확히 입력해야 지워져요. 아무것도 바뀌지 않았어요.", "err"); return; }
+  busy = true; $("resetBtn").disabled = true; $("drawBtn").disabled = true; $("nextBtn").disabled = true;
+  postJSON(authBody({ action: "drawReset", confirm: "초기화", expect: total, round: round })).then(function(res){
+    busy = false; $("resetBtn").disabled = false; $("drawBtn").disabled = false; $("nextBtn").disabled = false;
+    if(res.status === "ok"){
+      msg("연습 기록을 지웠어요 (참여자 " + res.participants + "명 · 추첨 " + res.draws + "건 → '" + res.backup + "' 탭에 보관). 1회차부터 다시 시작해요.", "ok");
+      $("stageNum").textContent = "---"; $("stageLbl").textContent = "추첨을 시작해 주세요"; $("stageWho").textContent = "";
+      tellBooth({ ipadOff: true });
+      load();
+    } else if(res.status === "changed" || res.status === "stale"){ msg("그사이 참여자나 회차가 바뀌었어요. 아무것도 지우지 않았어요. 화면을 확인하고 다시 눌러 주세요.", "err"); load(); }
+    else msg("초기화에 실패했어요. 아무것도 지우지 않았어요. 다시 시도해 주세요.", "err");
+  }).catch(function(){ busy = false; $("resetBtn").disabled = false; $("drawBtn").disabled = false; $("nextBtn").disabled = false; msg("네트워크 연결을 확인해 주세요.", "err"); });
 });
 
 /* 응모 인원 자동 갱신 (10초) */
