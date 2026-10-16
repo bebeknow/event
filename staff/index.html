@@ -88,6 +88,18 @@
   .switch input:checked ~ .tg{background:var(--ok)}
   .switch input:checked ~ .tg::after{left:25px}
   .switch.on{border-color:var(--ok);background:#f3f8ee}
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .draw-icon{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 14px;border-radius:16px;
+    border:1.5px solid var(--accent);background:#fff;color:var(--accent-deep);font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;
+    box-shadow:0 2px 10px rgba(176,132,100,.15)}
+  .draw-icon .di{font-size:26px;line-height:1}
+  .draw-icon:active{transform:scale(.97)}
+  .draw-layer{position:fixed;inset:0;z-index:2000;background:var(--bg);display:flex;flex-direction:column}
+  .draw-layer[hidden]{display:none}
+  .draw-layer .bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line);background:#fff;flex-shrink:0}
+  .draw-layer .bar b{font-size:15px}
+  .draw-layer .bar button{padding:9px 16px;border-radius:12px;border:1.5px solid var(--line);background:#fff;font-family:inherit;font-size:14px;font-weight:700;color:var(--ink);cursor:pointer}
+  .draw-layer iframe{flex:1;width:100%;border:0}
   [hidden]{display:none!important}
   footer{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:20px}
 
@@ -161,8 +173,13 @@
 
   <!-- ===== ① 스태프 작성 ===== -->
   <div id="step1" hidden>
-    <h1>bebeknow 구매 접수</h1>
-    <p class="sub">베베노 부스 · 구매 정보를 확인해 주세요</p>
+    <div class="topbar">
+      <div>
+        <h1>bebeknow 구매 접수</h1>
+        <p class="sub">베베노 부스 · 구매 정보를 확인해 주세요</p>
+      </div>
+      <button type="button" class="draw-icon" id="openDraw" title="이벤트 추첨"><span class="di">🎲</span><span>이벤트 추첨</span></button>
+    </div>
 
     <div class="card" id="step1Card">
       <!-- 왼쪽: 제품 · 색상 · 수량/금액 -->
@@ -205,7 +222,7 @@
     </div>
 
     <button class="btn ghost" id="logoutBtn">나가기</button>
-    <footer>bebeknow staff · <span id="ver">v2026.10.14-9</span></footer>
+    <footer>bebeknow staff · <span id="ver">v2026.10.16-1</span></footer>
   </div>
 
   <!-- ===== ② 고객 작성 (배송) ===== -->
@@ -260,6 +277,12 @@
     <div class="addr-head"><b>주소 검색</b><button type="button" id="addrClose" aria-label="닫기">✕</button></div>
     <div id="addrEmbed"></div>
   </div>
+</div>
+
+<!-- 이벤트 추첨 화면 (같은 비밀번호로 자동 로그인) -->
+<div class="draw-layer" id="drawLayer" hidden>
+  <div class="bar"><b>🎲 이벤트 추첨</b><button type="button" id="closeDraw">← 구매 접수로 돌아가기</button></div>
+  <iframe id="drawFrame" title="이벤트 추첨"></iframe>
 </div>
 
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
@@ -408,6 +431,14 @@ $("nextBtn").addEventListener("click", function(){
   $("addrClose").addEventListener("click", closeAddr);
   layer.addEventListener("click", function(e){ if(e.target === layer) closeAddr(); });
 })();
+
+/* ---------- 이벤트 추첨 (같은 화면 안에서 열기) ---------- */
+$("openDraw").addEventListener("click", function(){
+  var fr = $("drawFrame");
+  if(!fr.src) fr.src = "../draw/?embed=1";
+  $("drawLayer").hidden = false;
+});
+$("closeDraw").addEventListener("click", function(){ $("drawLayer").hidden = true; });
 
 /* ---------- 자동 로그인 ---------- */
 (function(){ var saved = ""; try{ saved = sessionStorage.getItem(PIN_KEY) || ""; }catch(e){} if(saved){ $("pin").value = saved; $("loginBtn").click(); } })();

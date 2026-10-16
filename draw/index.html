@@ -98,7 +98,7 @@
     </div>
     <div class="msg" id="msg"></div>
     <button class="btn ghost" id="logoutBtn" style="margin-top:14px">나가기</button>
-    <footer>bebeknow draw · v2026.10.16-1</footer>
+    <footer>bebeknow draw · v2026.10.16-2</footer>
   </div>
 
 </div>
@@ -206,6 +206,9 @@ $("nextBtn").addEventListener("click", function(){
 
 /* 응모 인원 자동 갱신 (10초) */
 setInterval(function(){ if(pin && !busy) load().catch(function(){}); }, 10000);
+
+/* 스태프 화면 안에 심어서 열 때: 나가기 버튼 숨김 (닫기는 바깥 화면에서) */
+if(/embed/.test(location.search)){ $("logoutBtn").hidden = true; document.body.style.paddingTop = "14px"; }
 
 /* 자동 로그인 */
 (function(){ var s = ""; try{ s = sessionStorage.getItem(PIN_KEY) || ""; }catch(e){} if(s){ $("pin").value = s; $("loginBtn").click(); } })();
