@@ -73,7 +73,6 @@
   .done h1{font-size:30px;font-weight:800;margin-bottom:8px}
   .done .no{font-size:18px;color:var(--ink-soft)}
   .done .ship{font-size:24px;font-weight:800;color:var(--accent-deep);margin:14px 0 2px}
-  .done .perk{display:inline-block;margin-top:14px;padding:10px 16px;border-radius:12px;background:var(--ok-tint);color:#3f6b2a;font-size:17px;font-weight:700}
   .done .thanks{margin-top:18px;font-size:17px;color:var(--ink-soft)}
   .done .btn{margin-top:22px}
 </style>
@@ -137,7 +136,6 @@
       <h1>주문이 접수되었습니다</h1>
       <div class="no" id="doneNo"></div>
       <div class="ship" id="doneShip"></div>
-      <div id="donePerk"></div>
       <p class="thanks">감사합니다. 고칠 부분이 생기면 직원에게 말씀해 주세요.</p>
       <button class="btn" id="okBtn">확인</button>
     </div>
@@ -331,8 +329,6 @@ function showDone() {
   var o = order, isShip = o.method === "배송";
   $("doneNo").textContent = "주문번호 " + o.orderNo;
   $("doneShip").textContent = isShip ? (o.shipDate || shipDate) + " 발송 예정" : "직원에게 제품을 받아 가세요";
-  var warranty = (o.items || []).some(function (it) { return it.warranty; });
-  $("donePerk").innerHTML = warranty ? '<span class="perk">🎁 캐럿헤드 증정 · 🛡️ 보증 기간 1년 → 2년</span>' : "";
   show("done");
   clearTimeout(idleT);
   idleT = setTimeout(function () { if (view === "done") toIdle(""); }, 15000);

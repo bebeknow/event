@@ -70,17 +70,11 @@ function renderPO(o, copy) {
   /* 회사 보관용: 주문 수집 때 필요한 관리 정보 */
   var mg = "";
   if (company) {
-    var gifts = items.filter(function (it) { return it.gift && it.gift !== "없음"; })
-      .map(function (it) { return esc(it.gift) + " × " + esc(it.qty); });
-    var warr = items.filter(function (it) { return it.warranty; })
-      .map(function (it) { return esc(productLabel(it.product)) + (it.color ? "(" + esc(it.color) + ")" : ""); });
     var picks = items.filter(function (it) { return pickupText(it, o.method); })
       .map(function (it) { return "콧물흡입기(" + esc(it.color) + ") × " + esc(it.qty); });
     mg = '<div class="mg"><div class="ttl">관리 정보</div><dl class="kv">' +
       "<dt>수령 방식</dt><dd class=\"strong\">" + (isShip ? "배송" : "현장 수령") + "</dd>" +
       "<dt>이벤트 참여</dt><dd>" + (o.participant ? "O" : "X") + "</dd>" +
-      "<dt>증정품</dt><dd>" + (gifts.length ? gifts.join("<br>") : "없음") + "</dd>" +
-      "<dt>보증 연장</dt><dd>" + (warr.length ? warr.join("<br>") + " (1년 → 2년)" : "해당 없음") + "</dd>" +
       (picks.length ? "<dt>현장 전달</dt><dd class=\"strong\">" + picks.join("<br>") + " · 택배는 아기비데만</dd>" : "") +
       (o.request ? "<dt>배송 요청</dt><dd>" + esc(o.request) + "</dd>" : "") +
     "</dl></div>";

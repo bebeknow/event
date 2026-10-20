@@ -98,6 +98,10 @@
   .badge{display:inline-block;font-size:12px;font-weight:800;padding:3px 9px;border-radius:999px;background:var(--accent-tint);color:var(--accent-deep)}
   .badge.ship{background:#e3edf7;color:var(--ship)}
   .badge.done{background:#eceae7;color:var(--ink-soft)}
+  .badge.cancel{background:var(--err-tint);color:var(--err)}
+  .order.cancelled{background:#f4f2ef}
+  .order.cancelled .info,.order.cancelled .items{text-decoration:line-through;color:#a8a29c}
+  .order .acts .right{margin-left:auto}
   .order .info{font-size:15px;line-height:1.7;margin-top:6px}
   .order .items{font-size:14px;color:var(--ink-soft);margin-top:4px;line-height:1.6}
   .order .acts{display:flex;gap:8px;margin-top:12px}
@@ -191,7 +195,7 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.16-3</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.20-1</span></footer>
   </div>
 </div>
 
@@ -481,6 +485,13 @@ function renderStatus(note) {
   }
   var o = order;
   box.className = "status done";
+  if (o.cancelled) {                                         // 주문 찾기에서 방금 접수한 주문을 취소한 경우
+    box.innerHTML = '<div class="big" style="color:var(--err)">✕ 취소된 주문 · ' + esc(o.orderNo) + "</div>" +
+      "<p>" + esc(o.cancelledAt || "") + " 취소 · 페이히어에서도 결제를 취소해주세요.</p>" +
+      '<div class="btns"><button class="btn" id="nextBtn">다음 고객</button></div>';
+    $("nextBtn").addEventListener("click", nextCustomer);
+    return;
+  }
   box.innerHTML = '<div class="big">✓ 접수 완료 · ' + esc(o.orderNo) + "</div>" +
     "<p>" + (note || "Purchase Order 고객용·보관용 두 장을 출력했어요.") + "</p>" +
     '<div class="who"><b>' + esc(o.name) + "</b> · " + esc(o.phone) +
@@ -489,7 +500,7 @@ function renderStatus(note) {
         var picks = o.items.filter(function (it) { return pickupText(it, o.method); });
         return picks.length ? "<br><b style=\"color:var(--ship)\">🛍️ 지금 전달: " + picks.map(function (it) { return "콧물흡입기(" + esc(it.color) + ") × " + esc(it.qty); }).join(", ") + "</b> — 이 세트는 택배에 아기비데만" : "";
       })() +
-      (o.participant ? "<br>🎁 이벤트 참여자" + (o.items.some(function (it) { return it.warranty; }) ? " · 캐럿헤드 증정 · 보증 1년 연장" : "") : "") +
+      (o.participant ? "<br>🎁 이벤트 참여자" : "") +
       (o.shipLogged === false && o.method === "배송" ? '<br><span style="color:var(--err)">⚠ 토글업로드 탭 기록 실패 — 시트에서 직접 확인</span>' : "") +
     "</div>" +
     '<div class="btns"><button class="btn sec" id="reprintC">고객용 인쇄</button><button class="btn sec" id="reprintK">보관용 인쇄</button><button class="btn" id="nextBtn">다음 고객</button></div>';
@@ -560,14 +571,17 @@ function find() {
   }).catch(function () { $("findBtn").disabled = false; msg($("findMsg"), "네트워크 연결을 확인해주세요."); });
 }
 function orderCard(o, i) {
-  var isShip = o.method === "배송";
-  return '<div class="order" data-i="' + i + '">' +
+  var isShip = o.method === "배송", live = !o.cancelled && !o.shipped;
+  return '<div class="order' + (o.cancelled ? " cancelled" : "") + '" data-i="' + i + '">' +
     '<div class="h"><b>' + esc(o.name) + '</b><span class="no">' + esc(o.orderNo) + " · " + esc(o.at) + "</span>" +
       '<span class="badge' + (isShip ? " ship" : "") + '">' + (isShip ? "배송" : "현장 수령") + "</span>" +
-      (o.shipped ? '<span class="badge done">발송 완료</span>' : "") + "</div>" +
+      (o.shipped ? '<span class="badge done">발송 완료</span>' : "") +
+      (o.cancelled ? '<span class="badge cancel">취소됨' + (o.cancelledAt ? " · " + esc(o.cancelledAt) : "") + "</span>" : "") + "</div>" +
     '<div class="info">' + esc(o.phone) + (isShip ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") : "") + "</div>" +
     '<div class="items">' + o.items.map(function (it) { var pk = pickupText(it, o.method); return esc(itemLabel(it)) + " × " + it.qty + " · " + won(it.amount) + (pk ? " <b>(" + esc(pk) + ")</b>" : ""); }).join("<br>") + "<br><b>합계 " + won(o.total) + "</b></div>" +
-    '<div class="acts">' + (o.shipped ? "" : '<button class="btn sec" data-a="edit">정보 수정</button>') + '<button class="btn ghost" data-a="printC">고객용 인쇄</button><button class="btn ghost" data-a="printK">보관용 인쇄</button></div>' +
+    (o.cancelled ? "" :
+      '<div class="acts">' + (live ? '<button class="btn sec" data-a="edit">정보 수정</button>' : "") + '<button class="btn ghost" data-a="printC">고객용 인쇄</button><button class="btn ghost" data-a="printK">보관용 인쇄</button>' +
+      (live ? '<button class="btn danger right" data-a="cancelOrder">주문 취소</button>' : "") + "</div>") +
     '<div class="edit" hidden></div><div class="msg"></div></div>';
 }
 function renderResults() { $("results").innerHTML = found.map(orderCard).join(""); }
@@ -584,7 +598,28 @@ $("results").addEventListener("click", function (e) {
   }
   if (b.dataset.a === "cancelEdit") { card.querySelector(".edit").hidden = true; return; }
   if (b.dataset.a === "save") return saveEdit(card, i);
+  if (b.dataset.a === "cancelOrder") return cancelOrder(card, i);
 });
+/* 주문 취소: 시트 현장구매 "취소" 열에 표시(집계에서 빠짐), 배송이면 토글업로드 줄 삭제 */
+function cancelOrder(card, i) {
+  var o = found[i], m = card.querySelector(".msg"), b = card.querySelector('[data-a="cancelOrder"]');
+  if (!confirm(o.name + "님 " + won(o.total) + " 주문(" + o.orderNo + ")을 취소할까요?\n\n페이히어에서도 결제를 취소해주세요.")) return;
+  b.disabled = true; b.textContent = "취소 중…";
+  apiPost({ action: "cancelOrder", token: tok, station: STATION, orderNo: o.orderNo }).then(function (res) {
+    b.disabled = false; b.textContent = "주문 취소";
+    if (res.status === "unauth") return logout();
+    if (res.status === "locked") return lockedMsg(m);
+    if (res.status === "shipped") return msg(m, "이미 발송 완료로 체크된 주문이라 취소할 수 없어요. 반품으로 처리해주세요.");
+    if (res.status === "notfound") return msg(m, "시트에서 이 주문을 찾지 못했어요.");
+    if (res.status !== "ok") return msg(m, "취소하지 못했어요." + (res.message ? " [" + res.message + "]" : ""));
+    found[i] = res;
+    if (order && order.orderNo === res.orderNo) { order = res; if (phase === "done") renderStatus(); }
+    renderResults();
+    var nc = $("results").querySelector('.order[data-i="' + i + '"]');
+    var warn = res.shipError || res.mirrorError ? " ⚠ 토글업로드" + (res.mirrorError ? "(백업 파일)" : "") + " 줄을 지우지 못했어요. 시트에서 이 주문번호 줄을 직접 지워주세요." : "";
+    msg(nc.querySelector(".msg"), "취소했어요. 페이히어에서도 결제를 취소해주세요." + warn, warn ? "err" : "ok");
+  }).catch(function () { b.disabled = false; b.textContent = "주문 취소"; msg(m, "네트워크 연결을 확인해주세요."); });
+}
 function openEdit(card, o) {
   var box = card.querySelector(".edit"), isShip = o.method === "배송";
   box.innerHTML =
@@ -618,6 +653,7 @@ function saveEdit(card, i) {
       if (res.status === "unauth") return logout();
       if (res.status === "locked") return lockedMsg(m);
       if (res.status === "shipped") return msg(m, "이미 발송 완료로 체크된 주문이라 고칠 수 없어요. 시트에서 확인해주세요.");
+      if (res.status === "cancelled") return msg(m, "취소된 주문이라 고칠 수 없어요.");
       if (res.status !== "ok") return msg(m, "저장하지 못했어요." + (res.message ? " [" + res.message + "]" : ""));
       found[i] = res.order;
       if (order && order.orderNo === res.order.orderNo) {       // 방금 접수한 주문을 고친 경우: 상태 확인이 또 인쇄하지 않게
