@@ -75,6 +75,14 @@
   .done .ship{font-size:24px;font-weight:800;color:var(--accent-deep);margin:14px 0 2px}
   .done .thanks{margin-top:18px;font-size:17px;color:var(--ink-soft)}
   .done .btn{margin-top:22px}
+  /* 계좌이체 안내 (입금 계좌는 시트 집계 탭에서 불러옴 — 이 파일에는 없음) */
+  .bankbox{margin-top:16px;border:2px solid var(--accent);border-radius:16px;padding:14px 18px;background:#fffaf4;text-align:left}
+  .bankbox .bt{font-size:18px;font-weight:800;color:var(--accent-deep);margin-bottom:8px}
+  .bankbox .r{display:grid;grid-template-columns:84px 1fr;gap:10px;padding:6px 0;font-size:19px;line-height:1.45}
+  .bankbox .r span{font-size:15px;font-weight:700;color:var(--ink-soft);padding-top:2px}
+  .bankbox .r b{font-weight:800;word-break:break-all}
+  .bankbox .acct{font-size:24px;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+  .bankbox .miss{font-size:17px;color:var(--ink-soft)}
 </style>
 </head>
 <body>
@@ -136,6 +144,7 @@
       <h1>주문이 접수되었습니다</h1>
       <div class="no" id="doneNo"></div>
       <div class="ship" id="doneShip"></div>
+      <div id="doneBank"></div>
       <p class="thanks">감사합니다. 고칠 부분이 생기면 직원에게 말씀해 주세요.</p>
       <button class="btn" id="okBtn">확인</button>
     </div>
@@ -152,6 +161,7 @@ var busy = false, gen = 0, misses = 0;
 var seenDraw = "", drawT = null, rollT = null;   // 마지막으로 보여준 추첨 결과
 var drawPhase = "";   // "" | "rolling"(추첨 창 열림, 숫자 도는 중) | "reveal"(당첨 번호 보여주는 중)
 var drawOn = false;   // 맥북에서 추첨 창이 열려 있는지
+var bank = null;      // 입금 계좌 (계좌이체 주문일 때만 서버가 보내줌)
 try { localStorage.removeItem("bebeknow_booth_pin_ipad"); } catch (e) {}     // 예전 시험판이 남긴 비밀번호 삭제
 
 function show(id) { view = id; gen++; ["login", "idle", "form", "done", "draw"].forEach(function (k) { $(k).hidden = k !== id; }); window.scrollTo(0, 0); }
@@ -190,7 +200,7 @@ function toIdle(note, keepSkip) {
   clearTimeout(idleT); clearTimeout(drawT); clearInterval(rollT); drawPhase = "";
   if (cur && !keepSkip) skipId = cur.id;
   cur = null; order = null;
-  $("who").innerHTML = ""; $("sum").innerHTML = ""; $("doneNo").textContent = "";
+  $("who").innerHTML = ""; $("sum").innerHTML = ""; $("doneNo").textContent = ""; $("doneBank").innerHTML = "";
   $("idleNote").textContent = note || "";
   show("idle");
 }
@@ -202,6 +212,7 @@ function poll() {
     if (res.status === "unauth") return needLogin();
     if (res.status !== "ok") return;
     if (res.shipDate) shipDate = res.shipDate;
+    bank = res.bank || null;
     var s = res.session;
     misses = s ? 0 : misses + 1;
     if (busy) return;                                       // 저장 중에는 화면을 바꾸지 않음
@@ -262,6 +273,17 @@ function revealDraw(d) {
   }, wasRolling ? 1000 : 2200);
 }
 
+/* ---------- 계좌이체 안내 ---------- */
+function bankHtml(total, payer) {
+  if (!bank || !bank.account) return '<div class="bankbox"><div class="bt">🏦 계좌이체로 결제해 주세요</div><div class="miss">입금 계좌는 직원에게 문의해 주세요.</div></div>';
+  return '<div class="bankbox"><div class="bt">🏦 계좌이체로 결제해 주세요</div>' +
+    (bank.bank ? '<div class="r"><span>은행</span><b>' + esc(bank.bank) + "</b></div>" : "") +
+    '<div class="r"><span>계좌번호</span><b class="acct">' + esc(bank.account) + "</b></div>" +
+    (bank.holder ? '<div class="r"><span>예금주</span><b>' + esc(bank.holder) + "</b></div>" : "") +
+    '<div class="r"><span>입금액</span><b>' + won(total) + "</b></div>" +
+    (payer ? '<div class="r"><span>입금자명</span><b>' + esc(payer) + "</b></div>" : "") + "</div>";
+}
+
 /* ---------- 확인 화면 ---------- */
 function openConfirm(s) {
   clearTimeout(idleT);
@@ -274,7 +296,8 @@ function openConfirm(s) {
       return '<div class="it"><span>' + (it.color ? '<span class="dot ' + esc(it.color) + '"></span>' : "") + esc(itemLabel(it)) + " × " + esc(it.qty) +
         (pk ? '<br><small style="color:var(--ship);font-weight:700">' + esc(pk) + ' · 택배는 아기비데만</small>' : "") + "</span><span>" + won(it.amount) + "</span></div>";
     }).join("") +
-    '<div class="tot"><span>합계</span><b>' + won(s.total) + "</b></div>";
+    '<div class="tot"><span>합계</span><b>' + won(s.total) + "</b></div>" +
+    (c.pay === "계좌이체" ? bankHtml(s.total, c.payer || c.name) : "");
   $("who").innerHTML =
     '<div class="r"><span>성함</span><b>' + esc(c.name) + "</b></div>" +
     '<div class="r"><span>연락처</span><b>' + esc(c.phone) + "</b></div>" +
@@ -329,9 +352,11 @@ function showDone() {
   var o = order, isShip = o.method === "배송";
   $("doneNo").textContent = "주문번호 " + o.orderNo;
   $("doneShip").textContent = isShip ? (o.shipDate || shipDate) + " 발송 예정" : "직원에게 제품을 받아 가세요";
+  var transfer = o.pay === "계좌이체";
+  $("doneBank").innerHTML = transfer ? bankHtml(o.total, o.payer || o.name) : "";
   show("done");
   clearTimeout(idleT);
-  idleT = setTimeout(function () { if (view === "done") toIdle(""); }, 15000);
+  idleT = setTimeout(function () { if (view === "done") toIdle(""); }, transfer ? 90000 : 15000);   // 계좌이체는 입금할 시간을 넉넉히
 }
 $("okBtn").addEventListener("click", function () { toIdle(""); });
 

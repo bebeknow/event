@@ -78,6 +78,14 @@
   .total span{font-size:15px;font-weight:700;color:var(--ink-soft)}
   .total strong{font-size:28px;font-weight:900}
   .method{margin:12px 0 4px}
+  /* 결제수단: 페이히어가 기본, 계좌이체만 체크 */
+  .paychk{display:flex;align-items:center;gap:8px;margin:6px 2px 4px;font-size:15px;font-weight:700;color:var(--ink-soft);cursor:pointer;width:fit-content}
+  .paychk input{width:20px;height:20px;accent-color:var(--accent-deep)}
+  .paychk:has(input:checked){color:var(--accent-deep)}
+  .payer{margin:6px 0 4px}
+  .payer label.t{font-size:13px;margin-bottom:4px}
+  .payer input{padding:10px 12px;font-size:16px}
+  .payer input:disabled{background:#fff;color:var(--ink);border-color:transparent;padding-left:2px}
 
   .status{margin-top:12px;padding:18px;border-radius:16px;background:var(--accent-tint);text-align:center}
   .status .big{font-size:20px;font-weight:800;margin-bottom:6px}
@@ -146,6 +154,8 @@
         <h2>주문 내역</h2>
         <div class="cart" id="cart"></div>
         <div class="total"><span>합계</span><strong id="total">0원</strong></div>
+        <label class="paychk"><input type="checkbox" id="cPay"> 계좌이체로 받음</label>
+        <div class="payer" id="cPayerBox" hidden><label class="t" for="cPayer">입금자명</label><input type="text" id="cPayer" placeholder="고객 성함과 다르면 고쳐주세요" autocomplete="off"></div>
         <div class="chips method">
           <label class="chip"><input type="radio" name="method" value="현장" checked><span>🛍️ 현장 수령</span></label>
           <label class="chip ship"><input type="radio" name="method" value="배송"><span>🚚 배송</span></label>
@@ -195,7 +205,7 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.20-2</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.20-3</span></footer>
   </div>
 </div>
 
@@ -222,9 +232,21 @@ var CUST = { name: "cName", phone: "cPhone", zip: "cZip", address: "cAddr", addr
 function custData() {
   var d = {}, ship = radio("method") === "배송";
   Object.keys(CUST).forEach(function (k) { d[k] = (k === "name" || k === "phone" || ship) ? $(CUST[k]).value.trim() : ""; });
+  d.pay = $("cPay").checked ? "계좌이체" : "페이히어";
+  d.payer = $("cPay").checked ? $("cPayer").value.trim() : "";
   return d;
 }
-function fillCust(c) { Object.keys(CUST).forEach(function (k) { $(CUST[k]).value = (c && c[k]) || ""; }); }
+function fillCust(c) {
+  Object.keys(CUST).forEach(function (k) { $(CUST[k]).value = (c && c[k]) || ""; });
+  $("cPay").checked = !!(c && c.pay === "계좌이체");
+  $("cPayer").value = (c && c.payer) || "";
+  $("cPayerBox").hidden = !$("cPay").checked;
+}
+/* 계좌이체 체크 → 입금자명 칸 (비어 있으면 고객 성함으로 채움) */
+$("cPay").addEventListener("change", function () {
+  $("cPayerBox").hidden = !this.checked;
+  if (this.checked && !$("cPayer").value.trim()) $("cPayer").value = $("cName").value.trim();
+});
 function syncShip() { $("cShip").hidden = radio("method") !== "배송"; if ($("cart")) renderCart(); }
 Array.prototype.forEach.call(document.querySelectorAll('input[name="method"]'), function (r) { r.addEventListener("change", syncShip); });
 $("cPhone").addEventListener("input", function () { this.value = fmtPhone(this.value); });
@@ -425,6 +447,7 @@ $("sendBtn").addEventListener("click", function () {
   if (!cd.name) { $("cName").focus(); return msg($("takeMsg"), "고객 성함을 입력해주세요."); }
   if (digits(cd.phone).length < 10 || digits(cd.phone).length > 11) { $("cPhone").focus(); return msg($("takeMsg"), "연락처를 확인해주세요."); }
   if (radio("method") === "배송" && !cd.address) { $("cAddr").focus(); return msg($("takeMsg"), "배송 주소를 입력해주세요."); }
+  if (cd.pay === "계좌이체" && !cd.payer) { cd.payer = cd.name; $("cPayer").value = cd.name; }
   var sig = cartSig();
   var id = lastSend && lastSend.sig === sig ? lastSend.id : uid();      // 같은 내용으로 다시 누르면 같은 번호
   lastSend = { id: id, sig: sig };
@@ -468,6 +491,7 @@ function setPhase(p) {
   $("sendBtn").disabled = p === "sending";
   Array.prototype.forEach.call(document.querySelectorAll('input[name="method"]'), function (r) { r.disabled = p !== "edit"; });
   Object.keys(CUST).forEach(function (k) { $(CUST[k]).disabled = p !== "edit"; });
+  $("cPay").disabled = p !== "edit"; $("cPayer").disabled = p !== "edit";
   $("cAddrBtn").disabled = p !== "edit";
   renderCart(); renderStatus();
 }
@@ -500,6 +524,7 @@ function renderStatus(note) {
         var picks = o.items.filter(function (it) { return pickupText(it, o.method); });
         return picks.length ? "<br><b style=\"color:var(--ship)\">🛍️ 지금 전달: " + picks.map(function (it) { return "콧물흡입기(" + esc(it.color) + ") × " + esc(it.qty); }).join(", ") + "</b> — 이 세트는 택배에 아기비데만" : "";
       })() +
+      (o.pay === "계좌이체" ? '<br><b style="color:var(--accent-deep)">🏦 계좌이체 · 입금자 ' + esc(o.payer || o.name) + "</b> — 입금 확인 후 제품 전달" : "") +
       (o.participant ? "<br>🎁 이벤트 참여자" : "") +
       (o.shipLogged === false && o.method === "배송" ? '<br><span style="color:var(--err)">⚠ 토글업로드 탭 기록 실패 — 시트에서 직접 확인</span>' : "") +
     "</div>" +
@@ -577,7 +602,7 @@ function orderCard(o, i) {
       '<span class="badge' + (isShip ? " ship" : "") + '">' + (isShip ? "배송" : "현장 수령") + "</span>" +
       (o.shipped ? '<span class="badge done">발송 완료</span>' : "") +
       (o.cancelled ? '<span class="badge cancel">취소됨' + (o.cancelledAt ? " · " + esc(o.cancelledAt) : "") + "</span>" : "") + "</div>" +
-    '<div class="info">' + esc(o.phone) + (isShip ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") : "") + "</div>" +
+    '<div class="info">' + esc(o.phone) + (o.pay ? " · " + (o.pay === "계좌이체" ? "🏦 계좌이체 (입금자 " + esc(o.payer || o.name) + ")" : "💳 페이히어") : "") + (isShip ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") : "") + "</div>" +
     '<div class="items">' + o.items.map(function (it) { var pk = pickupText(it, o.method); return esc(itemLabel(it)) + " × " + it.qty + " · " + won(it.amount) + (pk ? " <b>(" + esc(pk) + ")</b>" : ""); }).join("<br>") + "<br><b>합계 " + won(o.total) + "</b></div>" +
     (o.cancelled ? "" :
       '<div class="acts">' + (live ? '<button class="btn sec" data-a="edit">정보 수정</button>' : "") + '<button class="btn ghost" data-a="printC">고객용 인쇄</button><button class="btn ghost" data-a="printK">보관용 인쇄</button>' +
@@ -630,9 +655,16 @@ function openEdit(card, o) {
       '<input type="text" name="address" placeholder="주소" value="' + esc(o.address) + '" style="margin-top:8px">' +
       '<input type="text" name="address2" placeholder="상세주소" value="' + esc(o.address2) + '" style="margin-top:8px"></div>' +
       '<div class="field"><label class="t">배송 요청사항</label><input type="text" name="request" value="' + esc(o.request) + '"></div>' : "") +
+    '<div class="field"><label class="paychk"><input type="checkbox" name="pay"' + (o.pay === "계좌이체" ? " checked" : "") + '> 계좌이체로 받음</label>' +
+      '<div class="payer"' + (o.pay === "계좌이체" ? "" : " hidden") + '><label class="t">입금자명</label><input type="text" name="payer" value="' + esc(o.payer || "") + '" placeholder="고객 성함과 다르면 고쳐주세요"></div></div>' +
     '<div class="row"><button class="btn ghost" data-a="cancelEdit">닫기</button><button class="btn" data-a="save">저장하고 다시 인쇄</button></div>';
   box.hidden = false;
   box.querySelector('[name="phone"]').addEventListener("input", function () { this.value = fmtPhone(this.value); });
+  box.querySelector('[name="pay"]').addEventListener("change", function () {
+    var pb = box.querySelector(".payer"), pi = box.querySelector('[name="payer"]');
+    pb.hidden = !this.checked;
+    if (this.checked && !pi.value.trim()) pi.value = box.querySelector('[name="name"]').value.trim();
+  });
   box.querySelector('[name="name"]').focus();
 }
 function saveEdit(card, i) {
@@ -645,8 +677,10 @@ function saveEdit(card, i) {
   var mineOrder = order && order.orderNo === o.orderNo;
   if (mineOrder) editing++;
   function done() { if (mineOrder) setTimeout(function () { editing = Math.max(0, editing - 1); }, 4000); }   // 늦게 도착하는 상태 확인 응답까지 무시
+  var bank = box.querySelector('[name="pay"]').checked;
   apiPost({ action: "update", token: tok, station: STATION, orderNo: o.orderNo, name: v("name"), phone: v("phone"),
-            zip: v("zip"), address: v("address"), address2: v("address2"), request: v("request") })
+            zip: v("zip"), address: v("address"), address2: v("address2"), request: v("request"),
+            pay: bank ? "계좌이체" : "페이히어", payer: bank ? (v("payer") || v("name")) : "" })
     .then(function (res) {
       done();
       b.disabled = false; b.textContent = "저장하고 다시 인쇄";

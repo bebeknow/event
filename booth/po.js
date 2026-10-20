@@ -74,6 +74,7 @@ function renderPO(o, copy) {
       .map(function (it) { return "콧물흡입기(" + esc(it.color) + ") × " + esc(it.qty); });
     mg = '<div class="mg"><div class="ttl">관리 정보</div><dl class="kv">' +
       "<dt>수령 방식</dt><dd class=\"strong\">" + (isShip ? "배송" : "현장 수령") + "</dd>" +
+      "<dt>결제</dt><dd class=\"strong\">" + (o.pay === "계좌이체" ? "계좌이체 · 입금자 " + esc(o.payer || o.name) : o.pay ? esc(o.pay) : "-") + "</dd>" +
       "<dt>이벤트 참여</dt><dd>" + (o.participant ? "O" : "X") + "</dd>" +
       (picks.length ? "<dt>현장 전달</dt><dd class=\"strong\">" + picks.join("<br>") + " · 택배는 아기비데만</dd>" : "") +
       (o.request ? "<dt>배송 요청</dt><dd>" + esc(o.request) + "</dd>" : "") +
