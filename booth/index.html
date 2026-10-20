@@ -195,7 +195,7 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.20-1</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.20-2</span></footer>
   </div>
 </div>
 
@@ -616,7 +616,7 @@ function cancelOrder(card, i) {
     if (order && order.orderNo === res.orderNo) { order = res; if (phase === "done") renderStatus(); }
     renderResults();
     var nc = $("results").querySelector('.order[data-i="' + i + '"]');
-    var warn = res.shipError || res.mirrorError ? " ⚠ 토글업로드" + (res.mirrorError ? "(백업 파일)" : "") + " 줄을 지우지 못했어요. 시트에서 이 주문번호 줄을 직접 지워주세요." : "";
+    var warn = res.shipError ? " ⚠ 토글업로드 줄을 지우지 못했어요. 시트에서 이 주문번호 줄을 직접 지워주세요." : "";
     msg(nc.querySelector(".msg"), "취소했어요. 페이히어에서도 결제를 취소해주세요." + warn, warn ? "err" : "ok");
   }).catch(function () { b.disabled = false; b.textContent = "주문 취소"; msg(m, "네트워크 연결을 확인해주세요."); });
 }
