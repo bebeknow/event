@@ -195,6 +195,14 @@
         </div>
         <div class="msg" id="findMsg"></div>
       </div>
+      <div class="card" id="ezCard">
+        <div class="bar" style="align-items:center;flex-wrap:wrap;gap:8px">
+          <b>📄 이지어드민(MCK) 발주서</b>
+          <select id="ezScope" style="font:inherit;padding:6px 8px;border-radius:8px;border:1px solid #ccc"><option value="today">오늘 접수한 배송 주문</option><option value="unshipped">발송 완료 안 된 전부</option></select>
+          <button class="btn" id="ezBtn" type="button">.xls 내려받기</button>
+        </div>
+        <div class="msg info" id="ezMsg">내려받은 파일을 이지어드민 → 주문배송관리 → 주문관리 → 발주 → "라이프비기닝 (엑셀)" 업로드 → 다음 ×3. 취소·발송 완료된 주문은 빠져요.</div>
+      </div>
       <div id="results"></div>
     </div>
 
@@ -205,7 +213,7 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.20-3</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.22-1</span></footer>
   </div>
 </div>
 
@@ -576,6 +584,32 @@ function poll() {
     if (phase !== "edit" && mine === sessId) pollT = setTimeout(poll, phase === "waiting" ? 1500 : 3000);
   });
 }
+
+/* ---------- 이지어드민 발주서 (.xls, 97-2003) ---------- */
+var EZ_HEAD = ["주문번호", "pimz_code", "주문상품명", "옵션", "주문상품명|옵션", "수량", "수령자", "수령자 전화번호", "수령자 핸드폰", "수령자 우편번호", "수령자 주소", "비고", "택배사", "운송장번호"];
+function loadSheetJS() {
+  if (window.XLSX) return Promise.resolve();
+  return new Promise(function (ok, bad) { var s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; s.onload = ok; s.onerror = function () { bad(new Error("xlsx")); }; document.head.appendChild(s); });
+}
+$("ezBtn").addEventListener("click", function () {
+  var b = $("ezBtn"); b.disabled = true; msg($("ezMsg"), "배송 주문을 모으는 중…", "info");
+  Promise.all([apiGet({ staff: "ship", token: tok, scope: $("ezScope").value }), loadSheetJS()]).then(function (r) {
+    var res = r[0]; b.disabled = false;
+    if (res.status === "unauth") return logout();
+    if (res.status !== "ok") return msg($("ezMsg"), "주문을 불러오지 못했어요. 다시 눌러주세요.");
+    var rows = res.rows || [];
+    if (!rows.length) return msg($("ezMsg"), "내려받을 배송 주문이 없어요.", "info");
+    var aoa = [EZ_HEAD].concat(rows.map(function (o) {
+      var addr = (o.address || "") + (o.address2 ? " " + o.address2 : "");
+      return [o.orderNo, "", o.product, o.option || "", o.option || "", o.qty, o.name, o.phone, o.phone, o.zip || "", addr, o.request || "", "", ""];
+    }));
+    var ws = XLSX.utils.aoa_to_sheet(aoa); ws["!cols"] = [{ wch: 16 }, { wch: 10 }, { wch: 30 }, { wch: 8 }, { wch: 12 }, { wch: 6 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 8 }, { wch: 40 }, { wch: 20 }, { wch: 8 }, { wch: 14 }];
+    var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "발주서");
+    var d = new Date(), stamp = d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2) + "_" + ("0" + d.getHours()).slice(-2) + ("0" + d.getMinutes()).slice(-2);
+    XLSX.writeFile(wb, "이지어드민_발주서_" + stamp + ".xls", { bookType: "xls" });
+    msg($("ezMsg"), "배송 주문 " + rows.length + "건을 .xls로 내려받았어요. 이지어드민 발주 화면에서 업로드하세요.", "info");
+  }).catch(function () { b.disabled = false; msg($("ezMsg"), "네트워크를 확인하고 다시 눌러주세요."); });
+});
 
 /* ---------- 주문 찾기 · 수정 ---------- */
 var found = [];
