@@ -30,6 +30,8 @@
   .draw-layer .bar #ipadRoll.on{border-color:var(--accent);color:var(--accent-deep)}
   .draw-layer iframe{flex:1;width:100%;border:0}
   .top .out{padding:8px 14px;font-size:13px;border-radius:999px;border:1.5px solid var(--line);background:none;color:var(--ink-soft)}
+  .top .net{padding:7px 12px;font-size:13px;font-weight:800;border-radius:999px;background:var(--err-tint);color:var(--err);border:1.5px solid #e8c3bb}
+  .top .net[hidden]{display:none}
 
   /* 접수 */
   /* 제품 담기 | 주문 내역 | 고객 정보 — 맥북 14"(1512px) 한 화면 */
@@ -138,6 +140,7 @@
       <div class="tabs"><button id="tabTake" class="on">접수</button><button id="tabFind">주문 찾기 · 수정</button></div>
       <span class="sp"></span>
       <button class="draw" id="openDraw" type="button">🎲 이벤트 추첨</button>
+      <span class="net" id="netBadge" hidden>⚠ 인터넷 연결이 불안정해요</span>
       <span class="st" id="stationLbl"></span>
       <button class="out" id="logoutBtn">나가기</button>
     </div>
@@ -205,7 +208,7 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.22-2</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.23-1</span></footer>
   </div>
 </div>
 
@@ -224,6 +227,31 @@ var lastSend = null;      // {id, sig}: 보내기가 응답 없이 끝났을 때
 var editing = 0;          // 직원이 주문을 고치는 중이면 상태 확인이 그 변경을 "고객 수정"으로 오인하지 않게
 var reviseId = "";        // 고객이 "고칠 부분이 있어요"를 누른 세션 (비우기 때 확인 처리)
 function cartSig() { return JSON.stringify([radio("method"), cart.map(function (l) { return [l.product, l.color, l.qty, l.amount, !!l.pickup]; }), custData()]); }
+
+/* ---------- 입력 임시 저장 (인터넷이 끊기거나 새로고침해도 입력하던 주문이 남게) ---------- */
+var DRAFT_KEY = "bebeknow_booth_draft_" + STATION;
+function saveDraft() {
+  if (phase !== "edit") return;
+  try {
+    if (!cart.length && !$("cName").value.trim() && !$("cPhone").value.trim()) { localStorage.removeItem(DRAFT_KEY); return; }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), cart: cart, method: radio("method"), cust: custData() }));
+  } catch (e) {}
+}
+function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+/* 로그인 직후: 진행 중인 아이패드 세션이 없고 화면이 비어 있으면 임시 저장분을 되살림 (6시간 지난 건 버림) */
+function loadDraft() {
+  if (phase !== "edit" || cart.length) return;
+  var d = null; try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (e) {}
+  if (!d || !d.at || Date.now() - d.at > 6 * 3600000) { clearDraft(); return; }
+  cart = (d.cart || []).map(function (l) { return { product: l.product, color: l.color, qty: l.qty, amount: l.amount, pickup: !!l.pickup, manual: !!l.manual }; });
+  if (d.method) setMethod(d.method);
+  fillCust(d.cust); renderCart();
+  if (cart.length || (d.cust && (d.cust.name || d.cust.phone))) msg($("takeMsg"), "새로고침 전에 입력하던 주문을 되살렸어요. 다른 고객이면 [새 고객으로 비우기]를 눌러주세요.", "info");
+}
+/* 연결 상태 표시: 요청이 실패하면 켜고, 성공하면 끔 */
+function netState(ok) { $("netBadge").hidden = !!ok && navigator.onLine !== false; }
+window.addEventListener("online", function () { netState(true); });
+window.addEventListener("offline", function () { netState(false); });
 
 function radio(name) { var r = document.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ""; }
 
@@ -250,6 +278,9 @@ $("cPay").addEventListener("change", function () {
 function syncShip() { $("cShip").hidden = radio("method") !== "배송"; if ($("cart")) renderCart(); }
 Array.prototype.forEach.call(document.querySelectorAll('input[name="method"]'), function (r) { r.addEventListener("change", syncShip); });
 $("cPhone").addEventListener("input", function () { this.value = fmtPhone(this.value); });
+$("custCard").addEventListener("input", saveDraft);
+$("custCard").addEventListener("change", saveDraft);
+$("cPay").addEventListener("change", saveDraft);
 $("cAddrBtn").addEventListener("click", function () {
   var ok = openAddrSearch(function (r) { $("cZip").value = r.zip; $("cAddr").value = r.address; $("cAddr2").focus(); });
   if (!ok) { msg($("takeMsg"), "주소 검색을 불러오지 못했어요. 직접 입력해주세요."); $("cAddr").focus(); }
@@ -290,7 +321,7 @@ function logout() {
 function openWith(t) {
   return apiGet({ staff: "session", token: t, station: STATION }).then(function (res) {
     if (res.status !== "ok") return res;
-    shipDate = res.shipDate || ""; enter(t); restore(res.session);
+    shipDate = res.shipDate || ""; enter(t); restore(res.session); loadDraft();
     return res;
   });
 }
@@ -415,6 +446,7 @@ function renderCart() {
       '<button type="button" class="x" data-a="del" aria-label="빼기">✕</button></div>';
   }).join("");
   $("total").textContent = won(cartTotal());
+  saveDraft();
 }
 $("cart").addEventListener("click", function (e) {
   var b = e.target.closest("button[data-a]"); if (!b || phase !== "edit") return;
@@ -449,14 +481,32 @@ $("sendBtn").addEventListener("click", function () {
   if (radio("method") === "배송" && !cd.address) { $("cAddr").focus(); return msg($("takeMsg"), "배송 주소를 입력해주세요."); }
   if (cd.pay === "계좌이체" && !cd.payer) { cd.payer = cd.name; $("cPayer").value = cd.name; }
   var sig = cartSig();
-  var id = lastSend && lastSend.sig === sig ? lastSend.id : uid();      // 같은 내용으로 다시 누르면 같은 번호
-  lastSend = { id: id, sig: sig };
+  var same = !!(lastSend && lastSend.sig === sig);
+  var id = same ? lastSend.id : uid();                                   // 같은 내용으로 다시 누르면 같은 번호
+  lastSend = { id: id, sig: sig, dupOk: same && !!lastSend.dupOk };     // 같은 내용을 다시 보낼 때는 중복 확인창을 또 띄우지 않음
   var btn = $("sendBtn");
   btn.textContent = "보내는 중…"; setPhase("sending");
   var ack = ""; try { ack = sessionStorage.getItem(ACK_KEY) || ""; } catch (e) {}
-  apiPost(Object.assign({ action: "push", token: tok, station: STATION, id: id, ack: ack, method: radio("method"),
+  /* 같은 연락처로 30분 안에 접수된 주문이 있으면 먼저 물어봄 (직원이 두 번 접수하는 실수 방지). 조회가 실패하면 그냥 진행 */
+  var dupCheck = lastSend.dupOk ? Promise.resolve(true)
+    : apiGet({ staff: "orders", token: tok, q: digits(cd.phone) }).then(function (r) {
+        var list = (r && r.status === "ok" && r.orders) || [], now = Date.now();
+        var recent = list.filter(function (o) {
+          if (o.cancelled || digits(o.phone) !== digits(cd.phone)) return false;
+          var t = Date.parse(String(o.at || "").replace(" ", "T"));
+          return t && now - t < 30 * 60000;
+        });
+        if (!recent.length) return true;
+        var lines = recent.slice(0, 3).map(function (o) { return "· " + o.orderNo + " · " + String(o.at).slice(11) + " · " + won(o.total) + " · " + o.items.map(function (it) { return itemLabel(it) + "×" + it.qty; }).join(", "); });
+        return confirm("방금 같은 연락처(" + cd.phone + ")로 접수된 주문이 있어요.\n\n" + lines.join("\n") + "\n\n같은 고객의 추가 주문이 맞으면 [확인], 이미 접수된 주문이면 [취소]를 눌러주세요.");
+      }).catch(function () { return true; });
+  dupCheck.then(function (go) {
+    if (!go) { btn.textContent = "아이패드로 확인 보내기"; lastSend = null; setPhase("edit"); msg($("takeMsg"), "보내지 않았어요. 이미 접수된 주문은 [주문 찾기 · 수정]에서 확인할 수 있어요.", "info"); return; }
+    lastSend.dupOk = true;
+  return apiPost(Object.assign({ action: "push", token: tok, station: STATION, id: id, ack: ack, method: radio("method"),
             items: cart.map(function (l) { return { product: l.product, color: l.color, qty: l.qty, amount: l.amount, pickup: radio("method") === "배송" && !!l.pickup }; }) }, cd))
     .then(function (res) {
+      netState(true);
       if (res.status === "conflict" && res.session && res.session.order) {   // 응답이 끊긴 사이 고객이 접수를 끝낸 주문이 있음 → 그 주문부터 처리
         btn.textContent = "아이패드로 확인 보내기";
         var s0 = res.session; sessId = s0.id; order = s0.order; lastRev = s0.rev || 1; lastSend = null;
@@ -479,9 +529,11 @@ $("sendBtn").addEventListener("click", function () {
       if (s && s.state === "done") { order = s.order; lastRev = s.rev; setPhase("done"); printBoth(order); }   // 응답이 늦는 사이 고객이 이미 끝낸 경우
       else setPhase("waiting");
       poll();
-    }).catch(function () {
-      btn.textContent = "아이패드로 확인 보내기"; setPhase("edit");
-      msg($("takeMsg"), "응답이 없어요. 인터넷을 확인하고 다시 눌러주세요. (같은 주문은 한 번만 보내집니다)");
+    });
+  }).catch(function () {
+      netState(false);
+      btn.textContent = "아이패드로 확인 보내기"; setPhase("edit"); saveDraft();
+      msg($("takeMsg"), "응답이 없어요. 입력한 내용은 그대로 남아 있으니, 인터넷을 확인하고 다시 눌러주세요. (같은 주문은 한 번만 보내집니다)");
     });
 });
 
@@ -550,7 +602,7 @@ function nextCustomer() {
   clearTimeout(pollT);
   try { if (sessId || reviseId) sessionStorage.setItem(ACK_KEY, sessId || reviseId); } catch (e) {}
   cart = []; sessId = ""; reviseId = ""; order = null; lastRev = 0; lastSend = null;
-  setMethod("현장"); fillCust(null);
+  setMethod("현장"); fillCust(null); clearDraft();
   msg($("takeMsg"), ""); setPhase("edit");
 }
 
@@ -560,6 +612,7 @@ function poll() {
   if (phase === "edit" || phase === "sending" || !sessId) return;
   var mine = sessId;
   apiGet({ staff: "session", token: tok, station: STATION }).then(function (res) {
+    netState(true);
     if (res.status === "unauth") return logout();
     var s = res.session;
     if (res.status !== "ok" || mine !== sessId || !s || s.id !== sessId) return;
@@ -572,7 +625,7 @@ function poll() {
       reviseId = sessId; sessId = ""; lastSend = null; setPhase("edit");
       msg($("takeMsg"), "고객이 고칠 부분이 있다고 했어요. 고객에게 확인해 고친 뒤 다시 보내주세요.", "info");
     } else if (s.state === "cancelled" && phase === "waiting") { sessId = ""; lastSend = null; setPhase("edit"); msg($("takeMsg"), "보내기가 취소됐어요. 다시 보내주세요.", "info"); }
-  }).catch(function () {}).then(function () {
+  }).catch(function () { netState(false); }).then(function () {
     if (phase !== "edit" && mine === sessId) pollT = setTimeout(poll, phase === "waiting" ? 1500 : 3000);
   });
 }

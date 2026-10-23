@@ -163,7 +163,7 @@
     </div>
     <div class="msg" id="msg"></div>
     <button class="btn ghost" id="logoutBtn" style="margin-top:14px">나가기</button>
-    <footer>bebeknow draw · v2026.10.16-6</footer>
+    <footer>bebeknow draw · v2026.10.23-1</footer>
   </div>
 
 </div>
@@ -212,8 +212,13 @@ function render(res){
     ol.appendChild(li);
   });
 }
+/* 상태 조회는 번호를 매겨, 뒤에 시작한 조회(또는 추첨·회차 변경·초기화)가 있으면 먼저 출발한 늦은 응답은 버림
+ * (초기화 직전에 출발한 10초 자동 조회가 초기화 뒤에 도착해 이전 회차로 되돌려 보이던 문제) */
+var loadSeq = 0;
 function load(){
+  var my = ++loadSeq;
   return getJSON(GAS_URL + "?draw=status&" + authQS()).then(function(res){
+    if(my !== loadSeq) return res;
     if(res.status === "unauth"){ try{ sessionStorage.removeItem(token ? BOOTH_TOKEN_KEY : PIN_KEY); }catch(e){} location.reload(); return; }
     if(res.status === "ok") render(res);
     return res;
@@ -238,7 +243,7 @@ $("logoutBtn").addEventListener("click", function(){ try{ sessionStorage.removeI
 
 /* 번호 뽑기: 서버가 먼저 뽑고, 화면은 2초간 숫자가 돌다가 결과 공개 */
 $("drawBtn").addEventListener("click", function(){
-  if(busy) return; busy = true; msg("");
+  if(busy) return; busy = true; loadSeq++; msg("");
   $("drawBtn").disabled = true; $("nextBtn").disabled = true;
   var num = $("stageNum"), who = $("stageWho");
   $("stageLbl").textContent = round + "회차 추첨 중…"; who.textContent = "";
@@ -285,7 +290,7 @@ $("drawBtn").addEventListener("click", function(){
 $("nextBtn").addEventListener("click", function(){
   if(busy) return;
   if(!confirm(round + "회차를 마감하고 " + (round + 1) + "회차를 시작할까요?\n\n응모번호가 1~999로 새로 발급되고, 이미 참여한 분은 다시 참여할 수 없어요.")) return;
-  busy = true; $("nextBtn").disabled = true; $("drawBtn").disabled = true;
+  busy = true; loadSeq++; $("nextBtn").disabled = true; $("drawBtn").disabled = true;
   postJSON(authBody({ action: "nextRound", round: round })).then(function(res){
     busy = false; $("nextBtn").disabled = false; syncDrawBtn();
     if(res.status === "ok"){
@@ -305,7 +310,7 @@ $("resetBtn").addEventListener("click", function(){
   var c = prompt("연습 기록을 지우고 1회차부터 다시 시작합니다.\n\n· 참여자 탭과 추첨 탭의 내용이 모두 비워져요.\n· 지운 내용은 시트의 '연습기록_날짜' 탭에 그대로 보관돼요.\n· 현장구매(주문) 기록은 건드리지 않아요. 연습 주문은 시트에서 직접 지워 주세요.\n· 집계 탭의 참여자 수도 0부터 다시 세요.\n· 회차별 발표 시각·당첨 인원 설정은 그대로 남아요.\n· 행사 중에는 누르지 마세요. 지금 참여자 " + total + "명이 모두 비워져요.\n\n계속하려면 초기화 라고 입력해 주세요.");
   if(c === null) return;
   if(c.trim() !== "초기화"){ msg("'초기화'라고 정확히 입력해야 지워져요. 아무것도 바뀌지 않았어요.", "err"); return; }
-  busy = true; $("resetBtn").disabled = true; $("drawBtn").disabled = true; $("nextBtn").disabled = true;
+  busy = true; loadSeq++; $("resetBtn").disabled = true; $("drawBtn").disabled = true; $("nextBtn").disabled = true;
   postJSON(authBody({ action: "drawReset", confirm: "초기화", expect: total, round: round })).then(function(res){
     busy = false; $("resetBtn").disabled = false; syncDrawBtn(); $("nextBtn").disabled = false;
     if(res.status === "ok"){
