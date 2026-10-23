@@ -199,7 +199,8 @@
     color:#fff;font-size:44px;line-height:84px;margin:0 auto 20px;
   }
   #done h2{font-size:22px;font-weight:800;margin-bottom:10px}
-  #done p{font-size:15px;color:var(--ink-soft);line-height:1.7}
+  #done p{font-size:15px;color:var(--ink-soft);line-height:1.7;word-break:keep-all}
+  #done #doneLead{font-weight:700;color:var(--ink)}
   .draw-box{margin:0 0 18px;padding:18px 16px 16px;border-radius:18px;text-align:center;
     background:linear-gradient(135deg,#fff7ec,#fdeede);border:2px solid var(--accent)}
   .draw-box[hidden]{display:none}
@@ -474,7 +475,7 @@
         <a data-link="kakao" href="#" target="_blank" rel="noopener noreferrer">카카오톡 채널</a>
       </div>
       <div class="foot-brand">bebeknow</div>
-      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.10.23-3</span></p>
+      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.10.23-4</span></p>
     </footer>
   </div>
 
@@ -482,7 +483,7 @@
   <div id="done">
     <div class="check">✓</div>
     <h2>참여가 완료되었어요!</h2>
-    <p id="doneLead">럭키드로우에 응모되었어요. 당첨되면 실리콘 약병 3개입을 드려요 🎁</p>
+    <p id="doneLead">응모 완료! 당첨되면 실리콘 약병 3개입 🎁</p>
     <div class="draw-box" id="drawBox" hidden>
       <div class="draw-label" id="drawRound">응모번호</div>
       <div class="draw-num" id="drawNum">000</div>
@@ -716,7 +717,7 @@ function showForm(){
   if(/demo/i.test(location.search + location.hash)){
     document.getElementById("formView").style.display = "none";
     document.getElementById("done").style.display = "block";
-    document.getElementById("doneLead").textContent = "김베베님, 럭키드로우에 응모되었어요. 당첨되면 실리콘 약병 3개입을 드려요 🎁";
+    document.getElementById("doneLead").textContent = "김베베님 응모 완료! 당첨되면 실리콘 약병 3개입 🎁";
     showDraw("drawBox", "drawRound", "drawNum", 1, 37);
     var dm = document.createElement("div");
     dm.style.cssText = "margin:0 0 14px;padding:10px 14px;border-radius:12px;background:#fff6d6;color:#6b5320;font-size:12.5px;font-weight:700;text-align:center;";
@@ -864,7 +865,7 @@ document.getElementById("eventForm").addEventListener("submit", function(ev){
     document.getElementById("done").style.display="block";
 
     function z(n){ return (n<10?"0":"")+n; }
-    document.getElementById("doneLead").textContent = name + "님, 럭키드로우에 응모되었어요. 당첨되면 실리콘 약병 3개입을 드려요 🎁";
+    document.getElementById("doneLead").textContent = name + "님 응모 완료! 당첨되면 실리콘 약병 3개입 🎁";
     if(res && res.drawNo) showDraw("drawBox", "drawRound", "drawNum", res.round, res.drawNo);
     try{ localStorage.removeItem(MISSION_KEY); }catch(e){}
 
