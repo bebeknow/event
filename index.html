@@ -207,14 +207,8 @@
   .draw-num{font-size:64px;font-weight:900;line-height:1.1;letter-spacing:.06em;color:var(--ink);margin:4px 0 6px;font-variant-numeric:tabular-nums}
   .draw-note{font-size:12.5px;color:var(--ink-soft);line-height:1.5}
   #locked .draw-box{margin:16px 0 0}
-  #done .staff{
-    margin:22px 0 26px;background:var(--card);border:2px dashed var(--accent);
-    border-radius:16px;padding:18px;font-size:16px;font-weight:800;color:var(--accent-deep);
-  }
-  #done .staff-time{
-    margin-top:8px;font-size:12.5px;font-weight:600;color:var(--ink-soft);
-    font-variant-numeric:tabular-nums;
-  }
+  #done .done-more{margin:0 0 26px;font-size:13.5px;color:var(--ink-soft);line-height:1.7}
+  #done .done-more a{color:var(--accent-deep);font-weight:700}
   .hint.warn{color:var(--err);font-weight:600}
   .hint.warn[hidden]{display:none}
 
@@ -306,10 +300,6 @@
   .gate form > .sec-label:first-child{margin-top:4px}
 
   /* ===== 완료 화면 요약 ===== */
-  .done-summary{list-style:none;margin-top:12px;padding-top:12px;border-top:1px dashed var(--accent);text-align:left}
-  .done-summary li{font-size:13.5px;font-weight:600;color:var(--ink);padding:3px 0}
-  .done-summary li .ok{color:#3f6b2a;margin-right:6px}
-  .done-summary li .no{color:var(--ink-soft);margin-right:6px}
   #done .links{text-align:left}
 
   /* ===== 브랜드 슬로건 ===== */
@@ -333,6 +323,7 @@
     margin:20px 0 26px;background:var(--card);border:1px solid var(--line);
     border-radius:16px;padding:18px;font-size:14px;line-height:1.7;color:var(--ink);
   }
+  #locked .lock-box a{color:var(--accent-deep)}
   #locked .done-label{
     font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--accent-deep);
     text-align:left;margin:0 2px 8px;
@@ -483,7 +474,7 @@
         <a data-link="kakao" href="#" target="_blank" rel="noopener noreferrer">카카오톡 채널</a>
       </div>
       <div class="foot-brand">bebeknow</div>
-      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.10.23-2</span></p>
+      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.10.23-3</span></p>
     </footer>
   </div>
 
@@ -497,11 +488,7 @@
       <div class="draw-num" id="drawNum">000</div>
       <div class="draw-note">발표 때 이 번호가 불리면 스태프에게 이 화면을 보여주세요</div>
     </div>
-    <div class="staff">
-      이 화면을 스태프에게 보여주세요 🙂
-      <div class="staff-time" id="staffTime"></div>
-      <ul class="done-summary" id="doneSummary"></ul>
-    </div>
+    <p class="done-more">응모번호는 <a href="my/">내 응모번호 확인</a>에서 휴대폰 번호로 언제든 다시 볼 수 있어요.</p>
 
     <!-- ===== 브랜드 슬로건 (문구는 여기서 수정) ===== -->
     <div class="slogan">
@@ -526,7 +513,7 @@
     </div>
     <div class="lock-box">
       한 기기·한 번호당 <b>한 번만</b> 참여할 수 있어요.<br>
-      아직 선물을 받지 못하셨다면 스태프에게 <b>휴대전화번호</b>를 알려주세요.
+      응모번호를 잃어버리셨다면 <a href="my/"><b>내 응모번호 확인</b></a>에서 휴대폰 번호로 다시 볼 수 있어요.
     </div>
     <div class="slogan">
       <div class="slogan-en">Easy breath, Easy life</div>
@@ -729,17 +716,8 @@ function showForm(){
   if(/demo/i.test(location.search + location.hash)){
     document.getElementById("formView").style.display = "none";
     document.getElementById("done").style.display = "block";
-    var dz = function(n){ return (n<10?"0":"")+n; };
-    var dclock = document.getElementById("staffTime");
-    var dtick = function(){ var t = new Date(); dclock.textContent = "김베베님 · " + (t.getMonth()+1)+"/"+t.getDate()+" "+dz(t.getHours())+":"+dz(t.getMinutes())+":"+dz(t.getSeconds()); };
-    dtick(); setInterval(dtick, 1000);
+    document.getElementById("doneLead").textContent = "김베베님, 럭키드로우에 응모되었어요. 당첨되면 실리콘 약병 3개입을 드려요 🎁";
     showDraw("drawBox", "drawRound", "drawNum", 1, 37);
-    var dsum = document.getElementById("doneSummary");
-    MISSION_ORDER.forEach(function(k){
-      var li = document.createElement("li");
-      li.innerHTML = '<span class="ok">✅</span>' + MISSION_LABEL[k] + ' <small style="color:var(--ink-soft)">(자가 체크)</small>';
-      dsum.appendChild(li);
-    });
     var dm = document.createElement("div");
     dm.style.cssText = "margin:0 0 14px;padding:10px 14px;border-radius:12px;background:#fff6d6;color:#6b5320;font-size:12.5px;font-weight:700;text-align:center;";
     dm.textContent = "미리보기 화면입니다 (실제 참여 아님)";
@@ -885,24 +863,9 @@ document.getElementById("eventForm").addEventListener("submit", function(ev){
     document.getElementById("formView").style.display="none";
     document.getElementById("done").style.display="block";
 
-    /* 참여자 이름 + 초 단위로 움직이는 시계 — 캡처 화면은 시간이 멈춰 있어 구분됩니다 */
-    var clock = document.getElementById("staffTime");
     function z(n){ return (n<10?"0":"")+n; }
-    function tick(){
-      var t = new Date();
-      clock.textContent = name + "님 · " + (t.getMonth()+1)+"/"+t.getDate()+" "+z(t.getHours())+":"+z(t.getMinutes())+":"+z(t.getSeconds());
-    }
-    tick(); setInterval(tick, 1000);
+    document.getElementById("doneLead").textContent = name + "님, 럭키드로우에 응모되었어요. 당첨되면 실리콘 약병 3개입을 드려요 🎁";
     if(res && res.drawNo) showDraw("drawBox", "drawRound", "drawNum", res.round, res.drawNo);
-
-    /* 미션 요약 */
-    var sum = document.getElementById("doneSummary");
-    sum.innerHTML = "";
-    MISSION_ORDER.forEach(function(k){
-      var li = document.createElement("li");
-      li.innerHTML = '<span class="ok">✅</span>' + MISSION_LABEL[k] + ' <small style="color:var(--ink-soft)">(자가 체크)</small>';
-      sum.appendChild(li);
-    });
     try{ localStorage.removeItem(MISSION_KEY); }catch(e){}
 
     try{
