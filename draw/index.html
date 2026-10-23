@@ -163,7 +163,7 @@
     </div>
     <div class="msg" id="msg"></div>
     <button class="btn ghost" id="logoutBtn" style="margin-top:14px">나가기</button>
-    <footer>bebeknow draw · v2026.10.23-1</footer>
+    <footer>bebeknow draw · v2026.10.23-2</footer>
   </div>
 
 </div>
@@ -307,14 +307,14 @@ $("nextBtn").addEventListener("click", function(){
 /* 연습 기록 지우기: 참여자·추첨 탭 내용을 "연습기록_날짜" 탭에 보관한 뒤 비우고 1회차부터 다시 (현장구매는 그대로) */
 $("resetBtn").addEventListener("click", function(){
   if(busy) return;
-  var c = prompt("연습 기록을 지우고 1회차부터 다시 시작합니다.\n\n· 참여자 탭과 추첨 탭의 내용이 모두 비워져요.\n· 지운 내용은 시트의 '연습기록_날짜' 탭에 그대로 보관돼요.\n· 현장구매(주문) 기록은 건드리지 않아요. 연습 주문은 시트에서 직접 지워 주세요.\n· 집계 탭의 참여자 수도 0부터 다시 세요.\n· 회차별 발표 시각·당첨 인원 설정은 그대로 남아요.\n· 행사 중에는 누르지 마세요. 지금 참여자 " + total + "명이 모두 비워져요.\n\n계속하려면 초기화 라고 입력해 주세요.");
+  var c = prompt("연습 기록을 지우고 1회차부터 다시 시작합니다.\n\n· 참여자 탭과 추첨 탭의 내용이 모두 비워져요.\n· 지운 내용은 되돌릴 수 없어요.\n· 현장구매(주문) 기록은 건드리지 않아요. 연습 주문은 시트에서 직접 지워 주세요.\n· 집계 탭의 참여자 수도 0부터 다시 세요.\n· 회차별 발표 시각·당첨 인원 설정은 그대로 남아요.\n· 행사 중에는 누르지 마세요. 지금 참여자 " + total + "명이 모두 비워져요.\n\n계속하려면 초기화 라고 입력해 주세요.");
   if(c === null) return;
   if(c.trim() !== "초기화"){ msg("'초기화'라고 정확히 입력해야 지워져요. 아무것도 바뀌지 않았어요.", "err"); return; }
   busy = true; loadSeq++; $("resetBtn").disabled = true; $("drawBtn").disabled = true; $("nextBtn").disabled = true;
   postJSON(authBody({ action: "drawReset", confirm: "초기화", expect: total, round: round })).then(function(res){
     busy = false; $("resetBtn").disabled = false; syncDrawBtn(); $("nextBtn").disabled = false;
     if(res.status === "ok"){
-      msg("연습 기록을 지웠어요 (참여자 " + res.participants + "명 · 추첨 " + res.draws + "건 → '" + res.backup + "' 탭에 보관). 1회차부터 다시 시작해요.", "ok");
+      msg("연습 기록을 지웠어요 (참여자 " + res.participants + "명 · 추첨 " + res.draws + "건). 1회차부터 다시 시작해요.", "ok");
       $("stageNum").textContent = "---"; $("stageLbl").textContent = "추첨을 시작해 주세요"; $("stageWho").textContent = "";
       tellBooth({ ipadOff: true });
       load();
