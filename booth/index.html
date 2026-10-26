@@ -221,9 +221,9 @@
           <b>📄 이지어드민(MCK) 발주서</b>
           <select id="ezScope"><option value="today">오늘 접수한 배송 주문</option><option value="unshipped">발송 완료 안 된 전부</option></select>
           <button class="btn ghost" id="ezPreview" type="button">미리보기</button>
-          <button class="btn" id="ezBtn" type="button">.xls 내려받기</button>
+          <button class="btn" id="ezBtn" type="button">엑셀 내려받기</button>
         </div>
-        <div class="msg info" id="ezMsg">내려받은 파일을 이지어드민 → 주문배송관리 → 주문관리 → 발주 → "라이프비기닝 (엑셀)" 업로드 → 다음 ×3 → 접수. 취소·발송 완료된 주문은 빠져요. 올린 주문은 시트 현장구매 탭에서 [발송 완료]를 체크해주세요.</div>
+        <div class="msg info" id="ezMsg">MCK 수동 발주 업로드 양식(.xlsx) 그대로예요. 이지어드민 → 주문배송관리 → 주문관리 → 발주 → "라이프비기닝 (엑셀)" 업로드. 취소·발송 완료된 주문은 빠져요. 올린 주문은 시트 현장구매 탭에서 [발송 완료]를 체크해주세요.</div>
         <div class="scroll" id="ezTable" hidden></div>
       </div>
     </div>
@@ -235,7 +235,7 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.23-3</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.26-1</span></footer>
   </div>
 </div>
 
@@ -806,15 +806,13 @@ function saveEdit(card, i) {
     }).catch(function () { done(); b.disabled = false; b.textContent = "저장하고 다시 인쇄"; msg(m, "네트워크 연결을 확인해주세요."); });
 }
 
-/* ---------- 이지어드민 발주서 (.xls, Excel 97-2003) ----------
- * 열 이름은 이지어드민 "라이프비기닝 (엑셀)" 발주서 헤더 기준. pimz_code(상품코드)·옵션 표기는 MCK 양식을 받으면 맞춤.
- * 시트에서 배송 주문(토글업로드 줄 + 현장구매의 우편번호·취소·발송 완료)을 받아 그대로 표로 씀 */
-var EZ_HEAD = ["주문번호", "pimz_code", "주문상품명", "옵션", "주문상품명|옵션", "수량", "수령자", "수령자 전화번호", "수령자 핸드폰", "수령자 우편번호", "수령자 주소", "비고", "택배사", "운송장번호"];
-var EZ_CODES = {};   // 제품 정식명 → MCK 상품코드 (양식 받으면 채움). 비어 있으면 빈칸
+/* ---------- 이지어드민(MCK) 수동 발주 업로드 양식 (.xlsx) ----------
+ * 2026-10-26 MCK가 보낸 "수동 발주 업로드 양식.xlsx" 머리글 그대로 (토글업로드 탭과 같은 구조, 주소는 한 칸·우편번호 없음).
+ * 시트에서 배송 주문(토글업로드 줄 + 현장구매의 취소·발송 완료)을 받아 그대로 표로 씀 */
+var EZ_HEAD = ["받는사람 이름", "받는사람 전화번호", "받는사람 전화번호2", "받는사람 주소", "상품 이름", "옵션 이름", "상품 수량", "배송메시지", "주문일시", "주문번호"];
 function ezRow(o) {
-  var name = o.product || "", opt = o.option || "";
-  return [o.orderNo, EZ_CODES[name] || "", name, opt, opt ? name + "|" + opt : name, o.qty, o.name, o.phone, o.phone, o.zip || "",
-          (o.address || "") + (o.address2 ? " " + o.address2 : ""), o.request || "", "", ""];
+  return [o.name, o.phone, o.phone2 || "", (o.address || "") + (o.address2 ? " " + o.address2 : ""),
+          o.product || "", o.option || "", o.qty, o.request || "", o.at || "", o.orderNo];
 }
 function loadSheetJS() {
   if (window.XLSX) return Promise.resolve();
@@ -843,8 +841,8 @@ $("ezPreview").addEventListener("click", function () {
     box.hidden = false;
     box.innerHTML = "<table><tr>" + EZ_HEAD.map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") + "</tr>" +
       rows.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + esc(c) + "</td>"; }).join("") + "</tr>"; }).join("") + "</table>";
-    var orders = {}; rows.forEach(function (r) { orders[r[0]] = true; });
-    msg($("ezMsg"), rows.length + "줄 (" + Object.keys(orders).length + "건 주문). 맞으면 [.xls 내려받기]를 눌러주세요.", "info");
+    var orders = {}; rows.forEach(function (r) { orders[r[9]] = true; });
+    msg($("ezMsg"), rows.length + "줄 (" + Object.keys(orders).length + "건 주문). 맞으면 [엑셀 내려받기]를 눌러주세요.", "info");
   }).catch(function () {});
 });
 $("ezBtn").addEventListener("click", function () {
@@ -852,12 +850,12 @@ $("ezBtn").addEventListener("click", function () {
     var rows = r[0];
     if (!rows.length) return msg($("ezMsg"), "내려받을 배송 주문이 없어요.", "info");
     var ws = XLSX.utils.aoa_to_sheet([EZ_HEAD].concat(rows));
-    ws["!cols"] = [{ wch: 16 }, { wch: 10 }, { wch: 30 }, { wch: 8 }, { wch: 34 }, { wch: 6 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 8 }, { wch: 40 }, { wch: 20 }, { wch: 8 }, { wch: 14 }];
-    var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "발주서");
+    ws["!cols"] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 44 }, { wch: 32 }, { wch: 10 }, { wch: 9 }, { wch: 22 }, { wch: 17 }, { wch: 15 }];
+    var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
     var d = new Date(), stamp = d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2) + "_" + ("0" + d.getHours()).slice(-2) + ("0" + d.getMinutes()).slice(-2);
-    XLSX.writeFile(wb, "이지어드민_발주서_" + stamp + ".xls", { bookType: "xls" });
-    var orders = {}; rows.forEach(function (x) { orders[x[0]] = true; });
-    msg($("ezMsg"), "배송 주문 " + Object.keys(orders).length + "건(" + rows.length + "줄)을 .xls로 내려받았어요. 이지어드민에 올린 뒤 시트에서 [발송 완료]를 체크해주세요.", "ok");
+    XLSX.writeFile(wb, "수동발주_베베노코베_" + stamp + ".xlsx", { bookType: "xlsx" });
+    var orders = {}; rows.forEach(function (x) { orders[x[9]] = true; });
+    msg($("ezMsg"), "배송 주문 " + Object.keys(orders).length + "건(" + rows.length + "줄)을 내려받았어요. 이지어드민에 올린 뒤 시트에서 [발송 완료]를 체크해주세요.", "ok");
   }).catch(function (e) { if (e && e.message === "xlsx") msg($("ezMsg"), "엑셀 변환 도구를 불러오지 못했어요. 인터넷을 확인하고 다시 눌러주세요."); });
 });
 
