@@ -56,7 +56,13 @@
   .pick input{width:18px;height:18px;accent-color:var(--ship)}
   .pick.on{color:var(--ship)}
   .colors{display:flex;gap:8px;margin-top:8px}
-  .colors button{flex:1;padding:12px 6px;font-size:16px;font-weight:800;border:1.5px solid transparent;border-radius:12px}
+  .colors button{flex:1;padding:12px 6px;font-size:16px;font-weight:800;border:1.5px solid transparent;border-radius:12px;position:relative}
+  /* 남은 수량 (시트 "재고" 탭) */
+  .stk{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:11.5px;font-weight:800;color:var(--ink-soft);vertical-align:1px;white-space:nowrap}
+  .stk.low{background:#fff3c4;border-color:#efdc93;color:#7a6420}
+  .stk.out{background:#f8d7d3;border-color:#e8b9b2;color:#a33}
+  .colors .stk{display:block;margin:4px auto 0;width:fit-content;font-size:11px;padding:0 6px}
+  .prods .stkNote{grid-column:1 / -1;font-size:12px;color:var(--ink-soft);margin-top:-2px}
   .colors button:active{transform:scale(.97)}
   /* 색상 버튼은 파스텔 톤 (글자는 같은 계열의 진한 색) */
   .colors .핑크{background:#f9d5dd;border-color:#f0b8c5;color:#9a4458}
@@ -229,12 +235,12 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.23-2</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.23-3</span></footer>
   </div>
 </div>
 
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="common.js?v=9"></script>
+<script src="common.js?v=10"></script>
 <script src="po.js?v=9"></script>
 <script>
 /* 비밀번호는 로그인 때 한 번만 쓰고, 이후에는 직원용 토큰(1일)으로 요청 — 비밀번호 잠금이 걸려도 이미 로그인한 화면은 동작 */
@@ -316,7 +322,7 @@ function enter(t) {
   try { sessionStorage.setItem(TOKEN_KEY, t); } catch (e) {}
   $("login").hidden = true; $("app").hidden = false;
   $("stationLbl").textContent = "스테이션 " + STATION;
-  renderProducts(); renderCart(); syncShip();
+  renderProducts(); renderCart(); syncShip(); loadStock();
 }
 /* 새로고침해도 진행 중이던 주문을 이어감 (입력 중이면 계속 기다리고, 끝난 주문은 인쇄 없이 보여줌) */
 function restore(s) {
@@ -428,14 +434,40 @@ function renderProducts() {
   $("prods").innerHTML = PRODUCTS.filter(function (p) { return !p.hidden; }).map(function (p) {
     var name = esc(p.label || p.key) + (p.set ? '<span class="tag">세트</span>' : "");
     if (p.colors) {                                         // 색상이 있는 제품: 색상 버튼을 눌러야 담김
-      return '<div class="prod wide' + (p.set ? " set" : "") + '"><b>' + name + "</b><small>" + won(p.price) + " · " +
+      return '<div class="prod wide' + (p.set ? " set" : "") + '"><b>' + name + (p.set ? '<span class="stk" data-stk="아기비데|" hidden></span>' : "") + "</b><small>" + won(p.price) + " · " +
         (p.set ? "콧물흡입기 색상을 눌러 담기" : "색상을 눌러 담기") + "</small>" +
         '<div class="colors">' + p.colors.map(function (c) {
-          return '<button type="button" class="' + esc(c) + '" data-p="' + esc(p.key) + '" data-c="' + esc(c) + '">' + esc(c) + "</button>";
+          return '<button type="button" class="' + esc(c) + '" data-p="' + esc(p.key) + '" data-c="' + esc(c) + '">' + esc(c) + '<span class="stk" data-stk="콧물흡입기|' + esc(c) + '" hidden></span></button>';
         }).join("") + "</div></div>";
     }
-    return '<button type="button" class="prod" data-p="' + esc(p.key) + '"><b>' + name + "</b><small>" + won(p.price) + "</small></button>";
-  }).join("");
+    return '<button type="button" class="prod" data-p="' + esc(p.key) + '"><b>' + name + '<span class="stk" data-stk="' + esc(p.key) + '|" hidden></span></b><small>' + won(p.price) + "</small></button>";
+  }).join("") + '<div class="stkNote" id="stkNote" hidden></div>';
+  paintStock();
+}
+
+/* ---------- 남은 수량 (시트 "재고" 탭: 가져간 수량 − 나간 수량). 로그인 뒤·접수 뒤·취소 뒤·60초마다 새로 읽음 ---------- */
+var stock = {}, stockAt = 0, stockT = null;
+function paintStock() {
+  var any = false;
+  Array.prototype.forEach.call(document.querySelectorAll("[data-stk]"), function (el) {
+    var r = stock[el.dataset.stk];
+    if (!r || r.left === null || r.left === undefined) { el.hidden = true; return; }
+    any = true; el.hidden = false;
+    el.textContent = r.left <= 0 ? "품절" : r.left + "개";
+    el.className = "stk" + (r.left <= 0 ? " out" : r.left <= 2 ? " low" : "");
+  });
+  var n = $("stkNote"); if (!n) return;
+  n.hidden = !any;
+  if (any) n.textContent = "남은 수량은 시트 재고 탭 기준 (현장 수령·세트 현장 수령·경품 지급만 차감)" + (stockAt ? " · " + new Date(stockAt).toTimeString().slice(0, 5) + " 확인" : "");
+}
+function loadStock() {
+  if (!tok) return;
+  clearTimeout(stockT);
+  apiGet({ staff: "stock", token: tok }).then(function (res) {
+    if (res.status !== "ok") return;
+    stock = {}; (res.rows || []).forEach(function (r) { stock[r.product + "|" + (r.color || "")] = r; });
+    stockAt = Date.now(); paintStock();
+  }).catch(function () {}).then(function () { stockT = setTimeout(loadStock, 60000); });
 }
 $("prods").addEventListener("click", function (e) {
   var b = e.target.closest("[data-p]"); if (!b) return;
@@ -592,7 +624,7 @@ function renderStatus(note) {
   box.innerHTML = '<div class="big">✓ 접수 완료 · ' + esc(o.orderNo) + "</div>" +
     "<p>" + (note || "Purchase Order 고객용·보관용 두 장을 출력했어요.") + "</p>" +
     '<div class="who"><b>' + esc(o.name) + "</b> · " + esc(o.phone) +
-      (o.method === "배송" ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") + "<br>📦 " + esc(o.shipDate || shipDate) + " 발송 예정" : "<br>🛍️ 현장 수령") +
+      (o.method === "배송" ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") + "<br>📦 " + esc(SHIP_NOTE) : "<br>🛍️ 현장 수령") +
       (function () {                                          // 지금 전달할 콧물흡입기를 줄별로 (색상·수량)
         var picks = o.items.filter(function (it) { return pickupText(it, o.method); });
         return picks.length ? "<br><b style=\"color:var(--ship)\">🛍️ 지금 전달: " + picks.map(function (it) { return "콧물흡입기(" + esc(it.color) + ") × " + esc(it.qty); }).join(", ") + "</b> — 이 세트는 택배에 아기비데만" : "";
@@ -638,7 +670,7 @@ function poll() {
     var s = res.session;
     if (res.status !== "ok" || mine !== sessId || !s || s.id !== sessId) return;
     if (s.state === "done") {
-      if (phase === "waiting") { order = s.order; lastRev = s.rev; setPhase("done"); printBoth(order); }
+      if (phase === "waiting") { order = s.order; lastRev = s.rev; setPhase("done"); printBoth(order); loadStock(); }
       else if (!editing && s.rev > lastRev) {             // 고객이 아이패드에서 정보를 고침 → 다시 출력
         order = s.order; lastRev = s.rev; renderStatus("주문 정보가 바뀌어서 바뀐 내용으로 다시 출력했어요."); printBoth(order);
       }
@@ -713,7 +745,7 @@ function cancelOrder(card, i) {
     if (res.status !== "ok") return msg(m, "취소하지 못했어요." + (res.message ? " [" + res.message + "]" : ""));
     found[i] = res;
     if (order && order.orderNo === res.orderNo) { order = res; if (phase === "done") renderStatus(); }
-    renderResults();
+    renderResults(); loadStock();
     var nc = $("results").querySelector('.order[data-i="' + i + '"]');
     var warn = res.shipError ? " ⚠ 토글업로드 줄을 지우지 못했어요. 시트에서 이 주문번호 줄을 직접 지워주세요." : "";
     msg(nc.querySelector(".msg"), "취소했어요. 페이히어에서도 결제를 취소해주세요." + warn, warn ? "err" : "ok");

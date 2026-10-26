@@ -24,6 +24,8 @@ var FULL_NAMES = {
   "아기비데+콧물흡입기": "베베노 아기비데 + 콧물흡입기 세트"
 };
 var PICKUP_NOTE = "콧물흡입기 현장 수령";
+/* 배송 안내 문구. 발송 일정이 확정되기 전까지는 날짜 대신 이 문구를 보여줌 (서버가 주는 다음 영업일 날짜는 쓰지 않음) */
+var SHIP_NOTE = "행사 종료 후 순차 발송 (영업일 기준 2~3일)";
 
 function $(id) { return document.getElementById(id); }
 function priceOf(product) { for (var i = 0; i < PRODUCTS.length; i++) if (PRODUCTS[i].key === product) return PRODUCTS[i].price; return 0; }

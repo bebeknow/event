@@ -152,7 +152,7 @@
 
 </div>
 
-<script src="common.js?v=9"></script>
+<script src="common.js?v=10"></script>
 <script>
 /* 이 아이패드는 직원 비밀번호를 저장하지 않음: 처음에 비밀번호로 "기기 토큰"을 받아 그것만 저장 (지금 진행 중인 주문만 다룰 수 있음) */
 var TOKEN_KEY = "bebeknow_booth_token_" + STATION;
@@ -290,7 +290,7 @@ function openConfirm(s) {
   cur = s; order = null;
   var isShip = s.method === "배송", c = s.customer || {};
   $("sum").innerHTML =
-    '<div class="meth' + (isShip ? " ship" : "") + '">' + (isShip ? "🚚 배송 주문" + (shipDate ? " · " + esc(shipDate) + " 발송 예정" : "") : "🛍️ 현장 수령") + "</div>" +
+    '<div class="meth' + (isShip ? " ship" : "") + '">' + (isShip ? "🚚 배송 주문 · " + esc(SHIP_NOTE) : "🛍️ 현장 수령") + "</div>" +
     s.items.map(function (it) {
       var pk = pickupText(it, s.method);
       return '<div class="it"><span>' + (it.color ? '<span class="dot ' + esc(it.color) + '"></span>' : "") + esc(itemLabel(it)) + " × " + esc(it.qty) +
@@ -351,7 +351,7 @@ $("reviseBtn").addEventListener("click", function () {
 function showDone() {
   var o = order, isShip = o.method === "배송";
   $("doneNo").textContent = "주문번호 " + o.orderNo;
-  $("doneShip").textContent = isShip ? (o.shipDate || shipDate) + " 발송 예정" : "직원에게 제품을 받아 가세요";
+  $("doneShip").textContent = isShip ? SHIP_NOTE : "직원에게 제품을 받아 가세요";
   var transfer = o.pay === "계좌이체";
   $("doneBank").innerHTML = transfer ? bankHtml(o.total, o.payer || o.name) : "";
   show("done");
