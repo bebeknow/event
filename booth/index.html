@@ -115,6 +115,8 @@
   .badge.ship{background:#e3edf7;color:var(--ship)}
   .badge.done{background:#eceae7;color:var(--ink-soft)}
   .badge.cancel{background:var(--err-tint);color:var(--err)}
+  .badge.mck{background:#e3edf7;color:#2f5d9e}
+  .badge.direct{background:#fdebd3;color:#b35c1e}
   .order.cancelled{background:#f4f2ef}
   .order.cancelled .info,.order.cancelled .items{text-decoration:line-through;color:#a8a29c}
   .order .acts .right{margin-left:auto}
@@ -218,12 +220,13 @@
       <!-- 이지어드민(MCK) 발주서: 배송 주문을 수동 발주 업로드 양식(.xls)으로 -->
       <div class="card ez" id="ezCard" style="margin-top:16px">
         <div class="bar">
-          <b>📄 이지어드민(MCK) 발주서</b>
-          <select id="ezScope"><option value="today">오늘 접수한 배송 주문</option><option value="unshipped">발송 완료 안 된 전부</option></select>
+          <b>📄 배송 주문 엑셀</b>
+          <select id="ezDest"><option value="mck">MCK 발주 (아기비데만 택배)</option><option value="direct">직접 발송 (콧물흡입기·약병 포함)</option></select>
+          <select id="ezScope"><option value="today">오늘 접수분</option><option value="unshipped">발송 완료 안 된 전부</option></select>
           <button class="btn ghost" id="ezPreview" type="button">미리보기</button>
           <button class="btn" id="ezBtn" type="button">엑셀 내려받기</button>
         </div>
-        <div class="msg info" id="ezMsg">MCK 수동 발주 업로드 양식(.xlsx) 그대로예요. 이지어드민 → 주문배송관리 → 주문관리 → 발주 → "라이프비기닝 (엑셀)" 업로드. 취소·발송 완료된 주문은 빠져요. 올린 주문은 시트 현장구매 탭에서 [발송 완료]를 체크해주세요.</div>
+        <div class="msg info" id="ezMsg">MCK는 수동 발주 업로드 양식(.xlsx)으로, 직접 발송은 토글 업로드 양식으로 내려받아요. 시트의 MCK발주·직접발송 탭을 그대로 복사해도 같아요. 취소·발송 완료된 주문은 빠져요. 올린 주문은 시트 현장구매 탭에서 [발송 완료]를 체크해주세요.</div>
         <div class="scroll" id="ezTable" hidden></div>
       </div>
     </div>
@@ -235,7 +238,7 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.26-1</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.26-2</span></footer>
   </div>
 </div>
 
@@ -631,7 +634,8 @@ function renderStatus(note) {
       })() +
       (o.pay === "계좌이체" ? '<br><b style="color:var(--accent-deep)">🏦 계좌이체 · 입금자 ' + esc(o.payer || o.name) + "</b> — 입금 확인 후 제품 전달" : "") +
       (o.participant ? "<br>🎁 이벤트 참여자" : "") +
-      (o.shipLogged === false && o.method === "배송" ? '<br><span style="color:var(--err)">⚠ 토글업로드 탭 기록 실패 — 시트에서 직접 확인</span>' : "") +
+      (o.method === "배송" && o.dest ? '<br><b style="color:' + (o.dest === "MCK" ? "#2f5d9e" : "#b35c1e") + '">' + (o.dest === "MCK" ? "📦 MCK 발주 (아기비데 택배)" : "📦 직접 발송 (사무실에서 토글로)") + "</b>" : "") +
+      (o.shipLogged === false && o.method === "배송" ? '<br><span style="color:var(--err)">⚠ 발송 탭 기록 실패 — 시트에서 직접 확인</span>' : "") +
     "</div>" +
     '<div class="btns"><button class="btn sec" id="reprintC">고객용 인쇄</button><button class="btn sec" id="reprintK">보관용 인쇄</button><button class="btn" id="nextBtn">다음 고객</button></div>';
   $("reprintC").addEventListener("click", function () { printPO(order, "customer"); });
@@ -706,6 +710,7 @@ function orderCard(o, i) {
   return '<div class="order' + (o.cancelled ? " cancelled" : "") + '" data-i="' + i + '">' +
     '<div class="h"><b>' + esc(o.name) + '</b><span class="no">' + esc(o.orderNo) + " · " + esc(o.at) + "</span>" +
       '<span class="badge' + (isShip ? " ship" : "") + '">' + (isShip ? "배송" : "현장 수령") + "</span>" +
+      (isShip && o.dest ? '<span class="badge ' + (o.dest === "MCK" ? "mck" : "direct") + '">' + (o.dest === "MCK" ? "MCK" : "직접 발송") + "</span>" : "") +
       (o.shipped ? '<span class="badge done">발송 완료</span>' : "") +
       (o.cancelled ? '<span class="badge cancel">취소됨' + (o.cancelledAt ? " · " + esc(o.cancelledAt) : "") + "</span>" : "") + "</div>" +
     '<div class="info">' + esc(o.phone) + (o.pay ? " · " + (o.pay === "계좌이체" ? "🏦 계좌이체 (입금자 " + esc(o.payer || o.name) + ")" : "💳 페이히어") : "") + (isShip ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") : "") + "</div>" +
@@ -747,7 +752,7 @@ function cancelOrder(card, i) {
     if (order && order.orderNo === res.orderNo) { order = res; if (phase === "done") renderStatus(); }
     renderResults(); loadStock();
     var nc = $("results").querySelector('.order[data-i="' + i + '"]');
-    var warn = res.shipError ? " ⚠ 토글업로드 줄을 지우지 못했어요. 시트에서 이 주문번호 줄을 직접 지워주세요." : "";
+    var warn = res.shipError ? " ⚠ 발송 탭(MCK발주·직접발송) 줄을 지우지 못했어요. 시트에서 이 주문번호 줄을 직접 지워주세요." : "";
     msg(nc.querySelector(".msg"), "취소했어요. 페이히어에서도 결제를 취소해주세요." + warn, warn ? "err" : "ok");
   }).catch(function () { b.disabled = false; b.textContent = "주문 취소"; msg(m, "네트워크 연결을 확인해주세요."); });
 }
@@ -809,10 +814,14 @@ function saveEdit(card, i) {
 /* ---------- 이지어드민(MCK) 수동 발주 업로드 양식 (.xlsx) ----------
  * 2026-10-26 MCK가 보낸 "수동 발주 업로드 양식.xlsx" 머리글 그대로 (토글업로드 탭과 같은 구조, 주소는 한 칸·우편번호 없음).
  * 시트에서 배송 주문(토글업로드 줄 + 현장구매의 취소·발송 완료)을 받아 그대로 표로 씀 */
-var EZ_HEAD = ["받는사람 이름", "받는사람 전화번호", "받는사람 전화번호2", "받는사람 주소", "상품 이름", "옵션 이름", "상품 수량", "배송메시지", "주문일시", "주문번호"];
+var EZ_HEAD_MCK    = ["받는사람 이름", "받는사람 전화번호", "받는사람 전화번호2", "받는사람 주소", "상품 이름", "옵션 이름", "상품 수량", "배송메시지", "주문일시", "주문번호"];
+var EZ_HEAD_DIRECT = ["받는사람 이름", "받는사람 전화번호", "받는사람 전화번호2", "받는사람 주소", "받는사람 상세주소", "상품 이름", "옵션 이름", "상품 수량", "배송메시지", "주문일시", "주문번호"];
+function ezDest() { return $("ezDest").value === "direct" ? "direct" : "mck"; }
+function ezHead() { return ezDest() === "mck" ? EZ_HEAD_MCK : EZ_HEAD_DIRECT; }
 function ezRow(o) {
-  return [o.name, o.phone, o.phone2 || "", (o.address || "") + (o.address2 ? " " + o.address2 : ""),
-          o.product || "", o.option || "", o.qty, o.request || "", o.at || "", o.orderNo];
+  if (ezDest() === "mck") return [o.name, o.phone, o.phone2 || "", (o.address || "") + (o.address2 ? " " + o.address2 : ""),
+                                  o.product || "", o.option || "", o.qty, o.request || "", o.at || "", o.orderNo];
+  return [o.name, o.phone, o.phone2 || "", o.address || "", o.address2 || "", o.product || "", o.option || "", o.qty, o.request || "", o.at || "", o.orderNo];
 }
 function loadSheetJS() {
   if (window.XLSX) return Promise.resolve();
@@ -826,7 +835,7 @@ function loadSheetJS() {
 function ezFetch() {
   var b1 = $("ezBtn"), b2 = $("ezPreview"); b1.disabled = b2.disabled = true;
   msg($("ezMsg"), "배송 주문을 모으는 중…", "info");
-  return apiGet({ staff: "ship", token: tok, scope: $("ezScope").value }).then(function (res) {
+  return apiGet({ staff: "ship", token: tok, scope: $("ezScope").value, dest: ezDest() }).then(function (res) {
     b1.disabled = b2.disabled = false;
     if (res.status === "unauth") { logout(); throw new Error("unauth"); }
     if (res.status === "locked") { lockedMsg($("ezMsg")); throw new Error("locked"); }
@@ -839,9 +848,9 @@ $("ezPreview").addEventListener("click", function () {
     var box = $("ezTable");
     if (!rows.length) { box.hidden = true; return msg($("ezMsg"), "해당하는 배송 주문이 없어요.", "info"); }
     box.hidden = false;
-    box.innerHTML = "<table><tr>" + EZ_HEAD.map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") + "</tr>" +
+    box.innerHTML = "<table><tr>" + ezHead().map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") + "</tr>" +
       rows.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + esc(c) + "</td>"; }).join("") + "</tr>"; }).join("") + "</table>";
-    var orders = {}; rows.forEach(function (r) { orders[r[9]] = true; });
+    var orders = {}; rows.forEach(function (r) { orders[r[r.length - 1]] = true; });
     msg($("ezMsg"), rows.length + "줄 (" + Object.keys(orders).length + "건 주문). 맞으면 [엑셀 내려받기]를 눌러주세요.", "info");
   }).catch(function () {});
 });
@@ -849,13 +858,15 @@ $("ezBtn").addEventListener("click", function () {
   Promise.all([ezFetch(), loadSheetJS()]).then(function (r) {
     var rows = r[0];
     if (!rows.length) return msg($("ezMsg"), "내려받을 배송 주문이 없어요.", "info");
-    var ws = XLSX.utils.aoa_to_sheet([EZ_HEAD].concat(rows));
-    ws["!cols"] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 44 }, { wch: 32 }, { wch: 10 }, { wch: 9 }, { wch: 22 }, { wch: 17 }, { wch: 15 }];
+    var mck = ezDest() === "mck";
+    var ws = XLSX.utils.aoa_to_sheet([ezHead()].concat(rows));
+    ws["!cols"] = mck ? [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 44 }, { wch: 32 }, { wch: 10 }, { wch: 9 }, { wch: 22 }, { wch: 17 }, { wch: 15 }]
+                      : [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 34 }, { wch: 18 }, { wch: 32 }, { wch: 10 }, { wch: 9 }, { wch: 22 }, { wch: 17 }, { wch: 15 }];
     var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
     var d = new Date(), stamp = d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2) + "_" + ("0" + d.getHours()).slice(-2) + ("0" + d.getMinutes()).slice(-2);
-    XLSX.writeFile(wb, "수동발주_베베노코베_" + stamp + ".xlsx", { bookType: "xlsx" });
-    var orders = {}; rows.forEach(function (x) { orders[x[9]] = true; });
-    msg($("ezMsg"), "배송 주문 " + Object.keys(orders).length + "건(" + rows.length + "줄)을 내려받았어요. 이지어드민에 올린 뒤 시트에서 [발송 완료]를 체크해주세요.", "ok");
+    XLSX.writeFile(wb, (mck ? "MCK발주_베베노코베_" : "직접발송_토글_베베노코베_") + stamp + ".xlsx", { bookType: "xlsx" });
+    var orders = {}; rows.forEach(function (x) { orders[x[x.length - 1]] = true; });
+    msg($("ezMsg"), (mck ? "MCK 발주 " : "직접 발송 ") + Object.keys(orders).length + "건(" + rows.length + "줄)을 내려받았어요. " + (mck ? "이지어드민에 올린 뒤" : "토글에 올려 발송한 뒤") + " 시트에서 [발송 완료]를 체크해주세요.", "ok");
   }).catch(function (e) { if (e && e.message === "xlsx") msg($("ezMsg"), "엑셀 변환 도구를 불러오지 못했어요. 인터넷을 확인하고 다시 눌러주세요."); });
 });
 
