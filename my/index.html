@@ -61,7 +61,7 @@
 <div class="wrap">
   <div class="brand"><div class="logo">bebeknow</div><div class="slogan">Easy breath, Easy life</div></div>
   <h1>내 응모번호 확인</h1>
-  <p class="sub">이벤트에 참여할 때 넣은 휴대폰 번호를 입력하면 회차와 응모번호, 발표 시각을 알려 드려요.</p>
+  <p class="sub">이벤트에 참여할 때 넣은 휴대폰 번호를 입력하면 응모번호와 발표 시각을 알려 드려요.</p>
 
   <div class="cd" id="cd" hidden>
     <div class="cdl" id="cdLbl">발표까지</div>
@@ -84,7 +84,7 @@
     </div>
   </div>
   <p class="note">입력한 번호는 확인에만 쓰이고, 이 화면에는 이름 같은 개인정보가 나오지 않아요.</p>
-  <footer>bebeknow · v2026.10.16-3</footer>
+  <footer>bebeknow · v2026.10.26-1</footer>
 </div>
 
 <script>
@@ -137,9 +137,9 @@ function render(res){
     setState("wait", "참여가 확인됐어요", "응모번호는 부스 직원에게 물어봐 주세요.");
     return;
   }
-  $("rlbl").textContent = res.round + "회차 럭키드로우 응모번호";
+  $("rlbl").textContent = "럭키드로우 응모번호";
   $("rnum").textContent = pad3(res.no);
-  $("when").textContent = res.time ? "발표 시각 " + korTime(res.time) : "발표 시각은 부스에서 안내해 드려요";
+  $("when").textContent = res.time ? "발표 시각 " + dayText(res.day) + korTime(res.time) : "발표 시각은 부스에서 안내해 드려요";
   if(res.won) setState("won", "🎉 당첨됐어요!", "부스로 와 주세요. 이름과 휴대폰 번호를 확인한 뒤 경품을 드려요.");
   else if(res.finished) setState("lost", "아쉽게도 이번에는 당첨되지 않았어요", "참여해 주셔서 고맙습니다.");
   else if(res.drawnCount > 0) setState("wait", "추첨이 진행 중이에요", "지금까지 " + res.drawnCount + "명 발표" + (res.quota ? " (모두 " + res.quota + "명)" : "") + " · 아직 이 번호는 나오지 않았어요. 조금 뒤에 다시 확인해 주세요.");
@@ -153,6 +153,14 @@ function render(res){
 /* ───── 발표 카운트다운: 서버 시각 기준(휴대폰 시계가 틀려도 맞게), 한국 시각으로 오늘 HH:MM ───── */
 var skew = 0, cdRound = 0, cdHM = "", resultHM = "", resultRound = 0, infoSeq = 0;
 function nowMs(){ return Date.now() + skew; }
+/* 참여한 날이 오늘이 아니면 "10/30(목) " (오늘이면 빈칸) */
+function dayText(day){
+  if(!day) return "";
+  var k = new Date(nowMs() + 9 * 3600000), today = k.getUTCFullYear() + "-" + ("0" + (k.getUTCMonth() + 1)).slice(-2) + "-" + ("0" + k.getUTCDate()).slice(-2);
+  if(day === today) return "";
+  var p = String(day).split("-"), d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+  return (+p[1]) + "/" + (+p[2]) + "(" + "일월화수목금토".charAt(d.getUTCDay()) + ") ";
+}
 function targetMs(hm){
   var k = new Date(nowMs() + 9 * 3600000), p = String(hm).split(":");
   return Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate(), (+p[0]) - 9, +p[1]);
@@ -176,11 +184,11 @@ function tick(){
     var left = targetMs(cdHM) - nowMs(), t = $("cdTime");
     $("cd").hidden = false;
     if(left > 0){
-      $("cdLbl").textContent = cdRound + "회차 발표까지";
+      $("cdLbl").textContent = "다음 발표까지";
       t.className = "cdt"; fillLeft(t, left);
       $("cdSub").textContent = korTime(cdHM) + "에 부스에서 추첨해요";
     } else {
-      $("cdLbl").textContent = cdRound + "회차 발표 시간이에요";
+      $("cdLbl").textContent = "발표 시간이에요";
       t.className = "cdt now"; t.textContent = "지금 발표 중";
       $("cdSub").textContent = "아래에 휴대폰 번호를 넣고 결과를 확인해 보세요";
     }

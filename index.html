@@ -475,7 +475,7 @@
         <a data-link="kakao" href="#" target="_blank" rel="noopener noreferrer">카카오톡 채널</a>
       </div>
       <div class="foot-brand">bebeknow</div>
-      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.10.23-4</span></p>
+      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.10.26-1</span></p>
     </footer>
   </div>
 
@@ -692,10 +692,19 @@ function hideErr(){ document.getElementById("errMsg").style.display="none"; }
  * -------------------------------------------- */
 var DEVICE_KEY = "bebeknow_event_done";
 function pad3(n){ n = parseInt(n, 10); return isNaN(n) ? "" : ("00" + n).slice(-3); }
-function showDraw(boxId, roundId, numId, round, no){
-  if(!no) return;
-  document.getElementById(roundId).textContent = (round ? round + "회차 " : "") + "럭키드로우 응모번호";
-  document.getElementById(numId).textContent = pad3(no);
+/* 회차 번호 대신 발표 시각으로: "오늘 14:00 발표" (다른 날이면 "10/30(목) 14:00 발표") */
+function drawWhen(time, day){
+  if(!time) return "";
+  var t = new Date(), today = t.getFullYear() + "-" + ("0" + (t.getMonth() + 1)).slice(-2) + "-" + ("0" + t.getDate()).slice(-2);
+  if(!day || day === today) return "오늘 " + time + " 발표";
+  var p = String(day).split("-"), d = new Date(+p[0], +p[1] - 1, +p[2]);
+  return (+p[1]) + "/" + (+p[2]) + "(" + "일월화수목금토".charAt(d.getDay()) + ") " + time + " 발표";
+}
+function showDraw(boxId, roundId, numId, info){
+  if(!info || !info.no) return;
+  var w = drawWhen(info.time, info.day);
+  document.getElementById(roundId).textContent = "럭키드로우 응모번호" + (w ? " · " + w : "");
+  document.getElementById(numId).textContent = pad3(info.no);
   document.getElementById(boxId).hidden = false;
 }
 function readDevice(){ try{ var r = localStorage.getItem(DEVICE_KEY); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
@@ -704,7 +713,7 @@ function showLocked(d){
   document.getElementById("formView").style.display = "none";
   document.getElementById("done").style.display = "none";
   document.getElementById("lockMeta").textContent = (d.at || "오늘") + " · " + (d.name || "") + "님 · 끝번호 " + (d.phone ? d.phone.slice(-4) : "----");
-  showDraw("lockDraw", "lockDrawRound", "lockDrawNum", d.round, d.draw);
+  showDraw("lockDraw", "lockDrawRound", "lockDrawNum", { no: d.draw, time: d.time, day: d.day });
   document.getElementById("locked").style.display = "block";
   window.scrollTo(0,0);
 }
@@ -718,7 +727,7 @@ function showForm(){
     document.getElementById("formView").style.display = "none";
     document.getElementById("done").style.display = "block";
     document.getElementById("doneLead").textContent = "김베베님 응모 완료! 당첨되면 실리콘 약병 3개입 🎁";
-    showDraw("drawBox", "drawRound", "drawNum", 1, 37);
+    showDraw("drawBox", "drawRound", "drawNum", { no: 37, time: "14:00" });
     var dm = document.createElement("div");
     dm.style.cssText = "margin:0 0 14px;padding:10px 14px;border-radius:12px;background:#fff6d6;color:#6b5320;font-size:12.5px;font-weight:700;text-align:center;";
     dm.textContent = "미리보기 화면입니다 (실제 참여 아님)";
@@ -822,7 +831,7 @@ document.getElementById("eventForm").addEventListener("submit", function(ev){
         }
         if(res.status === "full"){
           unlock();
-          return showErr("이번 회차 응모번호(1~999)가 모두 발급됐어요. 스태프에게 알려주세요.");
+          return showErr("지금 응모번호(1~999)가 모두 발급됐어요. 스태프에게 알려주세요.");
         }
         if(res.status === "dup"){
           unlock();
@@ -866,13 +875,13 @@ document.getElementById("eventForm").addEventListener("submit", function(ev){
 
     function z(n){ return (n<10?"0":"")+n; }
     document.getElementById("doneLead").textContent = name + "님 응모 완료! 당첨되면 실리콘 약병 3개입 🎁";
-    if(res && res.drawNo) showDraw("drawBox", "drawRound", "drawNum", res.round, res.drawNo);
+    if(res && res.drawNo) showDraw("drawBox", "drawRound", "drawNum", { no: res.drawNo, time: res.drawTime, day: res.drawDay });
     try{ localStorage.removeItem(MISSION_KEY); }catch(e){}
 
     try{
       var t0 = new Date();
       var stamp = (res && res.at) || ((t0.getMonth()+1) + "/" + t0.getDate() + " " + z(t0.getHours()) + ":" + z(t0.getMinutes()));
-      localStorage.setItem(DEVICE_KEY, JSON.stringify({ name: name, at: stamp, phone: phoneDigits(phone), round: res && res.round, draw: res && res.drawNo }));
+      localStorage.setItem(DEVICE_KEY, JSON.stringify({ name: name, at: stamp, phone: phoneDigits(phone), round: res && res.round, draw: res && res.drawNo, time: res && res.drawTime, day: res && res.drawDay }));
     }catch(e){}
     window.scrollTo(0,0);
   }

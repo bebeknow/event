@@ -222,7 +222,7 @@ function poll() {
       var d = res.draw;
       drawOn = !!(res.drawMode && res.drawMode.on);
       if ((view === "idle" || view === "draw") && d && d.id !== seenDraw) return revealDraw(d);   // 새로 뽑힌 번호 공개
-      if (view === "idle" && drawOn) return startRolling(res.drawMode.round);                     // 맥북에서 추첨 창을 열면 숫자 돌리기 시작
+      if (view === "idle" && drawOn) return startRolling(res.drawMode.time);                     // 맥북에서 추첨 창을 열면 숫자 돌리기 시작
       if (view === "draw" && drawPhase === "rolling" && !drawOn) return toIdle("");              // 추첨 창을 닫으면 대기 화면
     } else if (view === "form" && cur) {
       if (s && s.id === cur.id && (s.state === "cancelled" || s.state === "revise")) return toIdle("직원이 내용을 고치고 있어요. 잠시만 기다려 주세요.");
@@ -243,10 +243,10 @@ function spin() {
   num.classList.remove("pop"); num.classList.add("rolling");
   rollT = setInterval(function () { num.textContent = pad3(1 + Math.floor(Math.random() * 999)); }, 60);
 }
-function startRolling(round) {
+function startRolling(time) {
   clearTimeout(drawT);
   drawPhase = "rolling";
-  $("drawLbl").textContent = (round ? round + "회차 " : "") + "럭키드로우 추첨 중…";
+  $("drawLbl").textContent = (time ? time + " 발표 · " : "") + "럭키드로우 추첨 중…";
   $("drawWho").textContent = "";
   if (view !== "draw") show("draw");
   spin();
@@ -258,17 +258,17 @@ function revealDraw(d) {
   drawPhase = "reveal";
   if (view !== "draw") show("draw");
   if (!wasRolling) spin();
-  $("drawLbl").textContent = d.round + "회차 럭키드로우 추첨 중…";
+  $("drawLbl").textContent = (d.time ? d.time + " 발표 · " : "") + "럭키드로우 추첨 중…";
   $("drawWho").textContent = "";
   drawT = setTimeout(function () {                         // 이미 돌고 있었으면 1초, 아니면 2초 더 돌리고 공개
     clearInterval(rollT);
     var num = $("drawNum");
     num.classList.remove("rolling"); num.textContent = pad3(d.no); void num.offsetWidth; num.classList.add("pop");
-    $("drawLbl").textContent = d.round + "회차 " + d.order + "번째 당첨 번호";
+    $("drawLbl").textContent = (d.time ? d.time + " 발표 · " : "") + d.order + "번째 당첨 번호";
     $("drawWho").textContent = d.name ? d.name + "님" : "";
     drawT = setTimeout(function () {
       if (view !== "draw") return;
-      if (drawOn) startRolling(d.round); else toIdle("");
+      if (drawOn) startRolling(d.time); else toIdle("");
     }, 20000);
   }, wasRolling ? 1000 : 2200);
 }

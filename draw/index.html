@@ -163,7 +163,7 @@
     </div>
     <div class="msg" id="msg"></div>
     <button class="btn ghost" id="logoutBtn" style="margin-top:14px">나가기</button>
-    <footer>bebeknow draw · v2026.10.23-2</footer>
+    <footer>bebeknow draw · v2026.10.26-1</footer>
   </div>
 
 </div>
@@ -172,6 +172,8 @@
 var GAS_URL = "https://script.google.com/macros/s/AKfycbwOrp74H1BYqzJ-8Wv7jv4q5qJ8K0qfA1z6YpHIRz-LsfTCHWrP8SoGe_8QYl51Q_zOew/exec";
 var PIN_KEY = "bebeknow_staff_pin";
 var pin = "", round = 0, busy = false, total = 0, quota = 0, plan = [], winnersN = 0;
+var curLabel = "", labels = {};   // v46: "10/30(목) 2회차" (안쪽 회차 번호는 round)
+function labelOf(r){ return labels[r] || (r + "회차"); }
 /* 뽑기 버튼: 정한 인원을 다 뽑았으면 잠금 (모든 경로에서 이 함수로만 켜고 끔) */
 function syncDrawBtn(){
   var full = quota && winnersN >= quota, b = $("drawBtn");
@@ -193,12 +195,14 @@ function postJSON(body){ return fetch(GAS_URL, {method:"POST", body: JSON.string
 
 function render(res){
   round = res.round;
+  if(res.labels) labels = res.labels;
+  curLabel = res.label || labelOf(round);
   if(res.total !== undefined) total = res.total;
   if(res.plan) plan = res.plan;
   quota = res.quota || 0;
   var pl = plan.filter(function(x){ return x.round === round; })[0];
-  $("roundLbl").textContent = round + "회차" + (pl && pl.time ? " · 발표 " + pl.time : "");
-  $("listTitle").textContent = round + "회차 당첨 번호";
+  $("roundLbl").textContent = curLabel + (pl && pl.time ? " · 발표 " + pl.time : "") + (res.label ? "  (전체 " + round + "번째)" : "");
+  $("listTitle").textContent = curLabel + " 당첨 번호";
   $("entrants").textContent = res.entrants;
   var w = res.winners || [];
   $("winCount").textContent = w.length;
@@ -246,7 +250,7 @@ $("drawBtn").addEventListener("click", function(){
   if(busy) return; busy = true; loadSeq++; msg("");
   $("drawBtn").disabled = true; $("nextBtn").disabled = true;
   var num = $("stageNum"), who = $("stageWho");
-  $("stageLbl").textContent = round + "회차 추첨 중…"; who.textContent = "";
+  $("stageLbl").textContent = curLabel + " 추첨 중…"; who.textContent = "";
   num.classList.remove("pop"); num.classList.add("rolling");
   var roll = setInterval(function(){ num.textContent = pad3(1 + Math.floor(Math.random() * 999)); }, 60);
   var started = Date.now();
@@ -257,7 +261,7 @@ $("drawBtn").addEventListener("click", function(){
       busy = false; syncDrawBtn(); $("nextBtn").disabled = false;
       if(res.status === "ok"){
         num.textContent = pad3(res.no); void num.offsetWidth; num.classList.add("pop");
-        $("stageLbl").textContent = round + "회차 " + res.order + "번째 당첨";
+        $("stageLbl").textContent = curLabel + " " + res.order + "번째 당첨";
         who.textContent = res.name ? res.name + "님" : "";
         render(res);
         if(res.remaining === 0){
@@ -289,13 +293,15 @@ $("drawBtn").addEventListener("click", function(){
 /* 다음 회차 */
 $("nextBtn").addEventListener("click", function(){
   if(busy) return;
-  if(!confirm(round + "회차를 마감하고 " + (round + 1) + "회차를 시작할까요?\n\n응모번호가 1~999로 새로 발급되고, 이미 참여한 분은 다시 참여할 수 없어요.")) return;
+  if(!confirm(curLabel + "를 마감하고 다음 회차를 시작할까요?\n\n응모번호가 1~999로 새로 발급되고, 이미 참여한 분은 다시 참여할 수 없어요.")) return;
   busy = true; loadSeq++; $("nextBtn").disabled = true; $("drawBtn").disabled = true;
   postJSON(authBody({ action: "nextRound", round: round })).then(function(res){
     busy = false; $("nextBtn").disabled = false; syncDrawBtn();
     if(res.status === "ok"){
-      msg(res.closed.round + "회차 마감 (응모 " + res.closed.entrants + "명 · 당첨 " + res.closed.winners + "명) → " + res.round + "회차 시작", "ok");
-      $("stageNum").textContent = "---"; $("stageLbl").textContent = res.round + "회차 추첨을 시작해 주세요"; $("stageWho").textContent = "";
+      if(res.labels) labels = res.labels;
+      var nl = res.label || labelOf(res.round);
+      msg((res.closed.label || labelOf(res.closed.round)) + " 마감 (응모 " + res.closed.entrants + "명 · 당첨 " + res.closed.winners + "명) → " + nl + " 시작", "ok");
+      $("stageNum").textContent = "---"; $("stageLbl").textContent = nl + " 추첨을 시작해 주세요"; $("stageWho").textContent = "";
       tellBooth({ ipadOff: true });
       winnersN = 0; quota = 0; syncDrawBtn();
       load();
@@ -336,7 +342,7 @@ function planRow(x){
 function numberRows(){
   var rows = $("planRows").querySelectorAll("tr");
   for(var i = 0; i < rows.length; i++){
-    rows[i].dataset.round = i + 1; rows[i].querySelector(".r").textContent = (i + 1) + "회차";
+    rows[i].dataset.round = i + 1; rows[i].querySelector(".r").textContent = labels[i + 1] ? labels[i + 1] + " (" + (i + 1) + ")" : (i + 1) + "번째 회차";
     rows[i].querySelector(".x").style.visibility = (i === rows.length - 1 && i + 1 > round) ? "visible" : "hidden";
   }
 }
@@ -386,6 +392,7 @@ function loadWinners(){
   return getJSON(GAS_URL + "?draw=winners&" + authQS()).then(function(res){
     if(seq !== winSeq || Object.keys(wBusy).some(function(k){ return wBusy[k]; })) return;
     if(res.status !== "ok") return;
+    if(res.labels) labels = res.labels;
     winners = res.winners || []; renderWinners();
   }).catch(function(){});
 }
@@ -408,7 +415,7 @@ function renderWinners(){
   list.forEach(function(w){
     if(w.round !== cur){
       cur = w.round; sec = document.createElement("div"); sec.className = "wround";
-      var h = document.createElement("h3"); h.textContent = w.round + "회차"; sec.appendChild(h); box.appendChild(sec);
+      var h = document.createElement("h3"); h.textContent = labelOf(w.round); sec.appendChild(h); box.appendChild(sec);
     }
     var row = document.createElement("div"); row.className = "wrow" + (w.given ? " given" : "");
     var o = document.createElement("span"); o.className = "o"; o.textContent = w.order;
@@ -428,7 +435,7 @@ function renderWinners(){
 function giveToggle(w){
   if(wBusy[w.row]) return;
   var on = !w.given;
-  if(!on && !confirm(w.round + "회차 " + pad3(w.no) + "번 " + w.name + "님의 지급 표시를 취소할까요?")) return;
+  if(!on && !confirm(labelOf(w.round) + " " + pad3(w.no) + "번 " + w.name + "님의 지급 표시를 취소할까요?")) return;
   wBusy[w.row] = true; winSeq++; renderWinners();
   postJSON(authBody({ action: "drawGive", row: w.row, no: w.no, round: w.round, phone: w.phone, given: on })).then(function(res){
     wBusy[w.row] = false;
