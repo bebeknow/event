@@ -238,7 +238,7 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.26-2</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.26-3</span></footer>
   </div>
 </div>
 
@@ -832,6 +832,27 @@ function loadSheetJS() {
     document.head.appendChild(el);
   });
 }
+/* MCK 파일: MCK가 보낸 양식(mck_template.xlsx)에 주문을 채워 넣음 → 빨간 머리글·글꼴·열 너비 그대로 */
+function loadScript(src, tag) {
+  return new Promise(function (ok, bad) {
+    var el = document.createElement("script"); el.src = src;
+    el.onload = ok; el.onerror = function () { bad(new Error(tag)); };
+    document.head.appendChild(el);
+  });
+}
+function loadMckTools() {
+  return Promise.all([
+    window.JSZip ? null : loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js", "jszip"),
+    window.buildMckXlsx ? null : loadScript("mckxlsx.js?v=1", "mckxlsx")
+  ]).then(function () {
+    return fetch("mck_template.xlsx?v=1").then(function (r) { if (!r.ok) throw new Error("template"); return r.arrayBuffer(); });
+  });
+}
+function saveBlob(blob, name) {
+  var a = document.createElement("a"), url = URL.createObjectURL(blob);
+  a.href = url; a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 1000);
+}
 function ezFetch() {
   var b1 = $("ezBtn"), b2 = $("ezPreview"); b1.disabled = b2.disabled = true;
   msg($("ezMsg"), "배송 주문을 모으는 중…", "info");
@@ -855,19 +876,31 @@ $("ezPreview").addEventListener("click", function () {
   }).catch(function () {});
 });
 $("ezBtn").addEventListener("click", function () {
-  Promise.all([ezFetch(), loadSheetJS()]).then(function (r) {
+  var mck = ezDest() === "mck";
+  Promise.all([ezFetch(), mck ? loadMckTools() : loadSheetJS()]).then(function (r) {
     var rows = r[0];
     if (!rows.length) return msg($("ezMsg"), "내려받을 배송 주문이 없어요.", "info");
-    var mck = ezDest() === "mck";
-    var ws = XLSX.utils.aoa_to_sheet([ezHead()].concat(rows));
-    ws["!cols"] = mck ? [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 44 }, { wch: 32 }, { wch: 10 }, { wch: 9 }, { wch: 22 }, { wch: 17 }, { wch: 15 }]
-                      : [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 34 }, { wch: 18 }, { wch: 32 }, { wch: 10 }, { wch: 9 }, { wch: 22 }, { wch: 17 }, { wch: 15 }];
-    var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-    var d = new Date(), stamp = d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2) + "_" + ("0" + d.getHours()).slice(-2) + ("0" + d.getMinutes()).slice(-2);
-    XLSX.writeFile(wb, (mck ? "MCK발주_베베노코베_" : "직접발송_토글_베베노코베_") + stamp + ".xlsx", { bookType: "xlsx" });
+    var d = new Date(), ymd = d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2);
     var orders = {}; rows.forEach(function (x) { orders[x[x.length - 1]] = true; });
-    msg($("ezMsg"), (mck ? "MCK 발주 " : "직접 발송 ") + Object.keys(orders).length + "건(" + rows.length + "줄)을 내려받았어요. " + (mck ? "이지어드민에 올린 뒤" : "토글에 올려 발송한 뒤") + " 시트에서 [발송 완료]를 체크해주세요.", "ok");
-  }).catch(function (e) { if (e && e.message === "xlsx") msg($("ezMsg"), "엑셀 변환 도구를 불러오지 못했어요. 인터넷을 확인하고 다시 눌러주세요."); });
+    var done = function () {
+      msg($("ezMsg"), (mck ? "MCK 발주 " : "직접 발송 ") + Object.keys(orders).length + "건(" + rows.length + "줄)을 내려받았어요. " + (mck ? "이지어드민에 올린 뒤" : "토글에 올려 발송한 뒤") + " 시트에서 [발송 완료]를 체크해주세요.", "ok");
+    };
+    if (mck) {
+      return window.buildMckXlsx(window.JSZip, r[1], rows, "blob").then(function (blob) {
+        saveBlob(blob, "수동 발주 업로드 양식_" + ymd + ".xlsx"); done();
+      });
+    }
+    var ws = XLSX.utils.aoa_to_sheet([ezHead()].concat(rows));
+    ws["!cols"] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 34 }, { wch: 18 }, { wch: 32 }, { wch: 10 }, { wch: 9 }, { wch: 22 }, { wch: 17 }, { wch: 15 }];
+    var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    var stamp = ymd + "_" + ("0" + d.getHours()).slice(-2) + ("0" + d.getMinutes()).slice(-2);
+    XLSX.writeFile(wb, "직접발송_토글_베베노코베_" + stamp + ".xlsx", { bookType: "xlsx" });
+    done();
+  }).catch(function (e) {
+    var m = e && e.message;
+    if (m === "xlsx" || m === "jszip" || m === "mckxlsx" || m === "template") msg($("ezMsg"), "엑셀 파일을 만들 도구를 불러오지 못했어요. 인터넷을 확인하고 다시 눌러주세요.");
+    else if (m && m !== "unauth" && m !== "locked" && m !== "bad" && m !== "net") msg($("ezMsg"), "엑셀 파일을 만들지 못했어요. [" + m + "]");
+  });
 });
 
 /* ---------- 자동 로그인 ---------- */
