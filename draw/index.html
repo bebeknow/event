@@ -21,7 +21,8 @@
   .plan table{width:100%;border-collapse:collapse}
   .plan th{font-size:13px;color:var(--ink-soft);font-weight:700;text-align:left;padding:4px 6px}
   .plan td{padding:5px 6px;border-top:1px dashed var(--line)}
-  .plan td.r{font-weight:800;white-space:nowrap;width:70px}
+  .plan td.r{font-weight:800;white-space:nowrap;width:150px}
+  .plan td.d{width:170px}
   .plan input{width:100%;padding:9px 10px;font-size:16px;font-weight:700;border:1.5px solid var(--line);border-radius:10px;background:#fdfbf8;font-family:inherit;color:var(--ink)}
   .plan .x{border:none;background:none;font-size:18px;color:var(--ink-soft);cursor:pointer;padding:6px}
   .plan .row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
@@ -151,7 +152,7 @@
       <h2>회차별 발표 시각 · 당첨 인원</h2>
       <p class="hint">정한 인원을 다 뽑으면 더 뽑히지 않고 아이패드는 기본 화면으로 돌아가요. 당첨 인원을 비워 두면 제한 없이 뽑을 수 있어요. 발표 시각은 고객의 '내 번호 확인' 화면에 나와요. 지난 회차와 진행 중인 회차 줄은 지울 수 없어요.</p>
       <table>
-        <thead><tr><th>회차</th><th>발표 시각</th><th>당첨 인원</th><th></th></tr></thead>
+        <thead><tr><th>회차</th><th>날짜</th><th>발표 시각</th><th>당첨 인원</th><th></th></tr></thead>
         <tbody id="planRows"></tbody>
       </table>
       <div class="row">
@@ -163,7 +164,7 @@
     </div>
     <div class="msg" id="msg"></div>
     <button class="btn ghost" id="logoutBtn" style="margin-top:14px">나가기</button>
-    <footer>bebeknow draw · v2026.10.26-1</footer>
+    <footer>bebeknow draw · v2026.10.26-2</footer>
   </div>
 
 </div>
@@ -332,17 +333,26 @@ $("resetBtn").addEventListener("click", function(){
 /* 회차별 발표 시각·당첨 인원 */
 function planRow(x){
   var tr = document.createElement("tr");
-  tr.innerHTML = '<td class="r"></td><td><input type="time" class="pt"></td><td><input type="number" class="pq" min="1" max="99" inputmode="numeric" placeholder="제한 없음"></td><td><button class="x" type="button" aria-label="마지막 회차 줄 지우기">✕</button></td>';
+  tr.innerHTML = '<td class="r"></td><td class="d"><input type="date" class="pd"></td><td><input type="time" class="pt"></td><td><input type="number" class="pq" min="1" max="99" inputmode="numeric" placeholder="제한 없음"></td><td><button class="x" type="button" aria-label="마지막 회차 줄 지우기">✕</button></td>';
+  tr.querySelector(".pd").value = x.day || "";
+  tr.querySelector(".pd").addEventListener("change", numberRows);
   tr.querySelector(".pt").value = x.time || "";
   tr.querySelector(".pq").value = x.quota ? x.quota : "";
   tr.querySelector(".x").addEventListener("click", function(){ tr.remove(); numberRows(); });
   return tr;
 }
 /* 회차 번호는 줄 순서 그대로 1, 2, 3… — 가운데 줄을 지우면 뒤 회차 설정이 앞으로 밀리므로 ✕ 는 마지막 줄에만 */
+function dayName(day, nth){
+  var p = String(day).split("-"), d = new Date(+p[0], +p[1] - 1, +p[2]);
+  return (+p[1]) + "/" + (+p[2]) + "(" + "일월화수목금토".charAt(d.getDay()) + ") " + nth + "회차";
+}
 function numberRows(){
-  var rows = $("planRows").querySelectorAll("tr");
+  var rows = $("planRows").querySelectorAll("tr"), seen = {};
   for(var i = 0; i < rows.length; i++){
-    rows[i].dataset.round = i + 1; rows[i].querySelector(".r").textContent = labels[i + 1] ? labels[i + 1] + " (" + (i + 1) + ")" : (i + 1) + "번째 회차";
+    var dv = rows[i].querySelector(".pd").value, nm;
+    if(dv){ seen[dv] = (seen[dv] || 0) + 1; nm = dayName(dv, seen[dv]); }
+    else nm = labels[i + 1] || (i + 1) + "번째 회차";
+    rows[i].dataset.round = i + 1; rows[i].querySelector(".r").textContent = nm;
     rows[i].querySelector(".x").style.visibility = (i === rows.length - 1 && i + 1 > round) ? "visible" : "hidden";
   }
 }
@@ -350,7 +360,7 @@ function openPlan(){
   var tb = $("planRows"); tb.innerHTML = "";
   var maxR = Math.max(round, plan.reduce(function(m, x){ return Math.max(m, x.round); }, 0), 1);
   for(var r = 1; r <= maxR; r++){
-    var x = plan.filter(function(p){ return p.round === r; })[0] || { round: r, time: "", quota: 0 };
+    var x = plan.filter(function(p){ return p.round === r; })[0] || { round: r, day: "", time: "", quota: 0 };
     tb.appendChild(planRow(x));
   }
   numberRows();
@@ -360,20 +370,21 @@ function openPlan(){
 $("planBtn").addEventListener("click", function(){ if($("planBox").hidden) openPlan(); else $("planBox").hidden = true; });
 $("planAdd").addEventListener("click", function(){
   if($("planRows").querySelectorAll("tr").length >= 30){ msg("회차는 30개까지 정할 수 있어요.", "err"); return; }
-  $("planRows").appendChild(planRow({ time: "", quota: 0 })); numberRows();
+  var rows0 = $("planRows").querySelectorAll("tr"), prev = rows0.length ? rows0[rows0.length - 1].querySelector(".pd").value : "";
+  $("planRows").appendChild(planRow({ day: prev, time: "", quota: 0 })); numberRows();
 });
 $("planSave").addEventListener("click", function(){
   var rows = $("planRows").querySelectorAll("tr"), out = [];
   for(var i = 0; i < rows.length; i++){
-    var tm = rows[i].querySelector(".pt").value, q = rows[i].querySelector(".pq").value.trim();
+    var tm = rows[i].querySelector(".pt").value, dv = rows[i].querySelector(".pd").value, q = rows[i].querySelector(".pq").value.trim();
     var qn = q === "" ? 0 : parseInt(q, 10);
     if(isNaN(qn) || (q !== "" && qn < 1) || qn > 99){ msg((i + 1) + "회차 당첨 인원은 1~99명으로 넣거나, 제한 없이 뽑으려면 비워 주세요.", "err"); return; }
-    out.push({ round: i + 1, time: tm, quota: qn });
+    out.push({ round: i + 1, day: dv, time: tm, quota: qn });
   }
   $("planSave").disabled = true;
   postJSON(authBody({ action: "drawPlan", plan: out })).then(function(res){
     $("planSave").disabled = false;
-    if(res.status === "ok"){ plan = res.plan; if(res.ipadOff) tellBooth({ ipadOff: true }); msg("회차별 발표 시각·당첨 인원을 저장했어요. 인원을 늘렸다면 아이패드 숫자 돌리기는 맥북 위쪽 버튼으로 다시 켜 주세요.", "ok"); $("planBox").hidden = true; load(); }
+    if(res.status === "ok"){ plan = res.plan; if(res.labels) labels = res.labels; if(res.ipadOff) tellBooth({ ipadOff: true }); msg("회차별 발표 시각·당첨 인원을 저장했어요. 인원을 늘렸다면 아이패드 숫자 돌리기는 맥북 위쪽 버튼으로 다시 켜 주세요.", "ok"); $("planBox").hidden = true; load(); }
     else msg(res.message || "저장하지 못했어요. 다시 시도해 주세요.", "err");
   }).catch(function(){ $("planSave").disabled = false; msg("네트워크 연결을 확인해 주세요.", "err"); });
 });
