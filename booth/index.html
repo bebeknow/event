@@ -242,7 +242,7 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.27-3</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.27-4</span></footer>
   </div>
 </div>
 
@@ -494,6 +494,13 @@ function cartTotal() { return cart.reduce(function (s, l) { return s + (Number(l
 function renderCart() {
   var box = $("cart");
   box.classList.toggle("locked", phase !== "edit");
+  /* "설치 확인 후 발송"은 아기비데(단품·세트)가 담겼을 때만 보임. 빠지면 현장 수령으로 되돌림 */
+  var hasBidet = cart.some(function (l) { return l.product === "아기비데" || l.product === SET_KEY; });
+  document.querySelector(".chip.hold").hidden = !hasBidet;
+  if (!hasBidet && radio("method") === HOLD_METHOD) {
+    document.querySelector('input[name="method"][value="현장"]').checked = true;
+    $("cShip").hidden = true;
+  }
   if (!cart.length) box.innerHTML = '<div class="empty">왼쪽에서 제품을 누르면 여기에 담깁니다.</div>';
   else box.innerHTML = cart.map(function (l, i) {
     /* 세트 + 배송: 콧물흡입기만 지금 가져가면 체크 → 택배에는 아기비데만 */
