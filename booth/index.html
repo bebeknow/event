@@ -86,6 +86,8 @@
   .total span{font-size:15px;font-weight:700;color:var(--ink-soft)}
   .total strong{font-size:28px;font-weight:900}
   .method{margin:12px 0 4px}
+  .chip.hold input:checked+span{background:#6b4f9e;border-color:#6b4f9e}
+  .badge.hold{background:#efe6f7;color:#6b4f9e}
   /* 결제수단: 페이히어가 기본, 계좌이체만 체크 */
   .paychk{display:flex;align-items:center;gap:8px;margin:6px 2px 4px;font-size:15px;font-weight:700;color:var(--ink-soft);cursor:pointer;width:fit-content}
   .paychk input{width:20px;height:20px;accent-color:var(--accent-deep)}
@@ -106,7 +108,7 @@
   /* 주문 찾기 */
   .find{max-width:860px}
   .find .bar{display:flex;gap:8px}
-  .find .bar .btn{width:auto;padding:0 26px}
+  .find .bar .btn{width:auto;padding:0 26px;white-space:nowrap}
   .order{border:1.5px solid var(--line);border-radius:16px;background:#fff;padding:16px;margin-top:12px}
   .order .h{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline}
   .order .h b{font-size:18px}
@@ -179,6 +181,7 @@
         <div class="chips method">
           <label class="chip"><input type="radio" name="method" value="현장" checked><span>🛍️ 현장 수령</span></label>
           <label class="chip ship"><input type="radio" name="method" value="배송"><span>🚚 배송</span></label>
+          <label class="chip hold"><input type="radio" name="method" value="배송 보류"><span>🏠 설치 확인 후 발송</span></label>
         </div>
       </div>
 
@@ -212,6 +215,7 @@
         <div class="bar">
           <input type="search" id="q" placeholder="고객 성함 또는 연락처 뒷자리" autocomplete="off">
           <button class="btn" id="findBtn">찾기</button>
+          <button class="btn sec" id="holdBtn" type="button">🏠 보류 목록</button>
         </div>
         <div class="msg" id="findMsg"></div>
       </div>
@@ -238,13 +242,13 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.27-2</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.27-3</span></footer>
   </div>
 </div>
 
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="common.js?v=10"></script>
-<script src="po.js?v=10"></script>
+<script src="common.js?v=11"></script>
+<script src="po.js?v=11"></script>
 <script>
 /* 비밀번호는 로그인 때 한 번만 쓰고, 이후에는 직원용 토큰(1일)으로 요청 — 비밀번호 잠금이 걸려도 이미 로그인한 화면은 동작 */
 var TOKEN_KEY = "bebeknow_booth_staff_token", ACK_KEY = "bebeknow_booth_ack";
@@ -288,7 +292,7 @@ function radio(name) { var r = document.querySelector('input[name="' + name + '"
 /* ---------- 고객 정보 (직원이 입력, 아이패드는 확인만) ---------- */
 var CUST = { name: "cName", phone: "cPhone", zip: "cZip", address: "cAddr", address2: "cAddr2", request: "cReq" };
 function custData() {
-  var d = {}, ship = radio("method") === "배송";
+  var d = {}, ship = isShipLike(radio("method"));
   Object.keys(CUST).forEach(function (k) { d[k] = (k === "name" || k === "phone" || ship) ? $(CUST[k]).value.trim() : ""; });
   d.pay = $("cPay").checked ? "계좌이체" : "페이히어";
   d.payer = $("cPay").checked ? $("cPayer").value.trim() : "";
@@ -305,7 +309,7 @@ $("cPay").addEventListener("change", function () {
   $("cPayerBox").hidden = !this.checked;
   if (this.checked && !$("cPayer").value.trim()) $("cPayer").value = $("cName").value.trim();
 });
-function syncShip() { $("cShip").hidden = radio("method") !== "배송"; if ($("cart")) renderCart(); }
+function syncShip() { $("cShip").hidden = !isShipLike(radio("method")); if ($("cart")) renderCart(); }
 Array.prototype.forEach.call(document.querySelectorAll('input[name="method"]'), function (r) { r.addEventListener("change", syncShip); });
 $("cPhone").addEventListener("input", function () { this.value = fmtPhone(this.value); });
 $("custCard").addEventListener("input", saveDraft);
@@ -493,7 +497,7 @@ function renderCart() {
   if (!cart.length) box.innerHTML = '<div class="empty">왼쪽에서 제품을 누르면 여기에 담깁니다.</div>';
   else box.innerHTML = cart.map(function (l, i) {
     /* 세트 + 배송: 콧물흡입기만 지금 가져가면 체크 → 택배에는 아기비데만 */
-    var pick = l.product === SET_KEY && radio("method") === "배송"
+    var pick = l.product === SET_KEY && isShipLike(radio("method"))
       ? '<label class="pick"><input type="checkbox" data-a="pick"' + (l.pickup ? " checked" : "") + (phase !== "edit" ? " disabled" : "") + "> " + PICKUP_NOTE + "</label>" : "";
     return '<div class="line" data-i="' + i + '">' +
       '<div class="nm">' + (l.color ? '<span class="dot ' + esc(l.color) + '"></span>' : "") + esc(itemLabel(l)) + pick + "</div>" +
@@ -534,7 +538,7 @@ $("sendBtn").addEventListener("click", function () {
   var cd = custData();
   if (!cd.name) { $("cName").focus(); return msg($("takeMsg"), "고객 성함을 입력해주세요."); }
   if (digits(cd.phone).length < 10 || digits(cd.phone).length > 11) { $("cPhone").focus(); return msg($("takeMsg"), "연락처를 확인해주세요."); }
-  if (radio("method") === "배송" && !cd.address) { $("cAddr").focus(); return msg($("takeMsg"), "배송 주소를 입력해주세요."); }
+  if (isShipLike(radio("method")) && !cd.address) { $("cAddr").focus(); return msg($("takeMsg"), "배송 주소를 입력해주세요."); }
   if (cd.pay === "계좌이체" && !cd.payer) { cd.payer = cd.name; $("cPayer").value = cd.name; }
   var sig = cartSig();
   var same = !!(lastSend && lastSend.sig === sig);
@@ -560,7 +564,7 @@ $("sendBtn").addEventListener("click", function () {
     if (!go) { btn.textContent = "아이패드로 확인 보내기"; lastSend = null; setPhase("edit"); msg($("takeMsg"), "보내지 않았어요. 이미 접수된 주문은 [주문 찾기 · 수정]에서 확인할 수 있어요.", "info"); return; }
     lastSend.dupOk = true;
   return apiPost(Object.assign({ action: "push", token: tok, station: STATION, id: id, ack: ack, method: radio("method"),
-            items: cart.map(function (l) { return { product: l.product, color: l.color, qty: l.qty, amount: l.amount, pickup: radio("method") === "배송" && !!l.pickup }; }) }, cd))
+            items: cart.map(function (l) { return { product: l.product, color: l.color, qty: l.qty, amount: l.amount, pickup: isShipLike(radio("method")) && !!l.pickup }; }) }, cd))
     .then(function (res) {
       netState(true);
       if (res.status === "conflict" && res.session && res.session.order) {   // 응답이 끊긴 사이 고객이 접수를 끝낸 주문이 있음 → 그 주문부터 처리
@@ -610,7 +614,7 @@ function renderStatus(note) {
   if (phase === "waiting") {
     box.className = "status";
     box.innerHTML = '<div class="big"><span class="spin"></span> 아이패드에서 고객이 확인 중</div>' +
-      "<p>" + (radio("method") === "배송" ? "🚚 배송" : "🛍️ 현장 수령") + " · 고객이 주문 내용과 입력한 정보를 확인하고 있어요.</p>" +
+      "<p>" + methodLabel(radio("method")) + " · 고객이 주문 내용과 입력한 정보를 확인하고 있어요.</p>" +
       '<div class="btns"><button class="btn danger" id="cancelBtn">보내기 취소하고 고치기</button></div>';
     $("cancelBtn").addEventListener("click", cancelSend);
     return;
@@ -627,7 +631,9 @@ function renderStatus(note) {
   box.innerHTML = '<div class="big">✓ 접수 완료 · ' + esc(o.orderNo) + "</div>" +
     "<p>" + (note || "Purchase Order 고객용·보관용 두 장을 출력했어요.") + "</p>" +
     '<div class="who"><b>' + esc(o.name) + "</b> · " + esc(o.phone) +
-      (o.method === "배송" ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") + "<br>📦 " + esc(SHIP_NOTE) : "<br>🛍️ 현장 수령") +
+      (isShipLike(o.method) ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") +
+        (o.method === HOLD_METHOD ? '<br><b style="color:#6b4f9e">🏠 설치 확인 후 발송 (결제 완료 · 발송 보류)</b><br>' + esc(holdNote(o.holdBy)) + "<br>고객 연락이 오면 [주문 찾기 · 수정] → [보류 목록] → [설치 확인됨 → 발송 진행]" : "<br>📦 " + esc(SHIP_NOTE))
+        : "<br>🛍️ 현장 수령") +
       (function () {                                          // 지금 전달할 콧물흡입기를 줄별로 (색상·수량)
         var picks = o.items.filter(function (it) { return pickupText(it, o.method); });
         return picks.length ? "<br><b style=\"color:var(--ship)\">🛍️ 지금 전달: " + picks.map(function (it) { return "콧물흡입기(" + esc(it.color) + ") × " + esc(it.qty); }).join(", ") + "</b> — 이 세트는 택배에 아기비데만" : "";
@@ -636,6 +642,7 @@ function renderStatus(note) {
       (o.participant ? "<br>🎁 이벤트 참여자" : "") +
       (o.method === "배송" && o.dest ? '<br><b style="color:' + (o.dest === "MCK" ? "#2f5d9e" : "#b35c1e") + '">' + (o.dest === "MCK" ? "📦 MCK 발주 (아기비데 택배)" : "📦 직접 발송 (사무실에서 토글로)") + "</b>" : "") +
       (o.shipLogged === false && o.method === "배송" ? '<br><span style="color:var(--err)">⚠ 발송 탭 기록 실패 — 시트에서 직접 확인</span>' : "") +
+      (o.holdLogged === false ? '<br><span style="color:var(--err)">⚠ 배송 보류 탭 기록 실패 — 시트 현장구매에는 있으니 보류 탭에 직접 적어주세요</span>' : "") +
     "</div>" +
     '<div class="btns"><button class="btn sec" id="reprintC">고객용 인쇄</button><button class="btn sec" id="reprintK">보관용 인쇄</button><button class="btn" id="nextBtn">다음 고객</button></div>';
   $("reprintC").addEventListener("click", function () { printPO(order, "customer"); });
@@ -706,17 +713,17 @@ function find() {
   }).catch(function () { $("findBtn").disabled = false; msg($("findMsg"), "네트워크 연결을 확인해주세요."); });
 }
 function orderCard(o, i) {
-  var isShip = o.method === "배송", live = !o.cancelled && !o.shipped;
+  var isShip = o.method === "배송", isHold = o.method === HOLD_METHOD, live = !o.cancelled && !o.shipped;
   return '<div class="order' + (o.cancelled ? " cancelled" : "") + '" data-i="' + i + '">' +
     '<div class="h"><b>' + esc(o.name) + '</b><span class="no">' + esc(o.orderNo) + " · " + esc(o.at) + "</span>" +
-      '<span class="badge' + (isShip ? " ship" : "") + '">' + (isShip ? "배송" : "현장 수령") + "</span>" +
+      '<span class="badge' + (isShip ? " ship" : isHold ? " hold" : "") + '">' + (isShip ? "배송" : isHold ? "🏠 설치 확인 후 발송 · 보류" : "현장 수령") + "</span>" +
       (isShip && o.dest ? '<span class="badge ' + (o.dest === "MCK" ? "mck" : "direct") + '">' + (o.dest === "MCK" ? "MCK" : "직접 발송") + "</span>" : "") +
       (o.shipped ? '<span class="badge done">발송 완료</span>' : "") +
       (o.cancelled ? '<span class="badge cancel">취소됨' + (o.cancelledAt ? " · " + esc(o.cancelledAt) : "") + "</span>" : "") + "</div>" +
-    '<div class="info">' + esc(o.phone) + (o.pay ? " · " + (o.pay === "계좌이체" ? "🏦 계좌이체 (입금자 " + esc(o.payer || o.name) + ")" : "💳 페이히어") : "") + (isShip ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") : "") + "</div>" +
+    '<div class="info">' + esc(o.phone) + (o.pay ? " · " + (o.pay === "계좌이체" ? "🏦 계좌이체 (입금자 " + esc(o.payer || o.name) + ")" : "💳 페이히어") : "") + (isShip || isHold ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") : "") + (isHold ? '<br><span style="color:#6b4f9e;font-weight:700">결제 완료 · 고객이 설치 가능하다고 알려오면 발송 진행 (' + esc(o.holdBy || "기한은 시트 집계 탭") + ")</span>" : "") + "</div>" +
     '<div class="items">' + o.items.map(function (it) { var pk = pickupText(it, o.method); return esc(itemLabel(it)) + " × " + it.qty + " · " + won(it.amount) + (pk ? " <b>(" + esc(pk) + ")</b>" : ""); }).join("<br>") + "<br><b>합계 " + won(o.total) + "</b></div>" +
     (o.cancelled ? "" :
-      '<div class="acts">' + (live ? '<button class="btn sec" data-a="edit">정보 수정</button>' : "") + '<button class="btn ghost" data-a="printC">고객용 인쇄</button><button class="btn ghost" data-a="printK">보관용 인쇄</button>' +
+      '<div class="acts">' + (live && isHold ? '<button class="btn" data-a="release">✅ 설치 확인됨 → 발송 진행</button>' : "") + (live ? '<button class="btn sec" data-a="edit">정보 수정</button>' : "") + '<button class="btn ghost" data-a="printC">고객용 인쇄</button><button class="btn ghost" data-a="printK">보관용 인쇄</button>' +
       (live ? '<button class="btn danger right" data-a="cancelOrder">주문 취소</button>' : "") + "</div>") +
     '<div class="edit" hidden></div><div class="msg"></div></div>';
 }
@@ -735,7 +742,44 @@ $("results").addEventListener("click", function (e) {
   if (b.dataset.a === "cancelEdit") { card.querySelector(".edit").hidden = true; return; }
   if (b.dataset.a === "save") return saveEdit(card, i);
   if (b.dataset.a === "cancelOrder") return cancelOrder(card, i);
+  if (b.dataset.a === "release") return releaseHold(card, i);
 });
+/* 보류 목록: 설치 확인을 기다리는 주문만 */
+$("holdBtn").addEventListener("click", function () {
+  var b = $("holdBtn"); b.disabled = true; msg($("findMsg"), "보류 중인 주문을 불러오는 중…", "info");
+  apiGet({ staff: "holds", token: tok }).then(function (res) {
+    b.disabled = false;
+    if (res.status === "unauth") return logout();
+    if (res.status === "locked") return lockedMsg($("findMsg"));
+    if (res.status !== "ok") return msg($("findMsg"), "불러오지 못했어요. 잠시 후 다시 시도해주세요.");
+    found = res.orders || [];
+    msg($("findMsg"), found.length ? "설치 확인을 기다리는 주문 " + found.length + "건 (최근 접수 순) · 확인 기한 " + (res.holdBy || "") : "설치 확인을 기다리는 주문이 없어요.", "info");
+    renderResults();
+  }).catch(function () { b.disabled = false; msg($("findMsg"), "네트워크 연결을 확인해주세요."); });
+});
+/* 설치 확인됨 → 발송 진행: 시트 수령방식을 배송으로 바꾸고 그때 MCK발주/직접발송 탭에 올림 */
+function releaseHold(card, i) {
+  var o = found[i], m = card.querySelector(".msg"), b = card.querySelector('[data-a="release"]');
+  var note = prompt(o.name + "님 주문(" + o.orderNo + ")을 발송 진행으로 바꿀까요?\n\n고객이 알려온 내용을 적어주세요 (예: 카톡 10/31 설치 가능). 비워도 돼요.", "");
+  if (note === null) return;
+  b.disabled = true; b.textContent = "처리 중…";
+  apiPost({ action: "releaseHold", token: tok, station: STATION, orderNo: o.orderNo, note: note }).then(function (res) {
+    b.disabled = false; b.textContent = "✅ 설치 확인됨 → 발송 진행";
+    if (res.status === "unauth") return logout();
+    if (res.status === "locked") return lockedMsg(m);
+    if (res.status === "shipped") return msg(m, "이미 발송 완료로 체크된 주문이에요.");
+    if (res.status === "cancelled") return msg(m, "취소된 주문이에요.");
+    if (res.status === "nothold") { if (res.order) { found[i] = res.order; renderResults(); } return msg($("findMsg"), "이미 발송 진행 중인 주문이에요.", "info"); }
+    if (res.status === "notfound") return msg(m, "시트에서 이 주문을 찾지 못했어요.");
+    if (res.status !== "ok") return msg(m, "바꾸지 못했어요." + (res.message ? " [" + res.message + "]" : ""));
+    found[i] = res.order;
+    if (order && order.orderNo === res.order.orderNo) { order = res.order; if (phase === "done") renderStatus("설치 확인 → 발송 진행으로 바꿨어요."); }
+    renderResults();
+    var nc = $("results").querySelector('.order[data-i="' + i + '"]');
+    var warn = res.shipError ? " ⚠ 발송 탭 기록에 문제가 있어요. 시트 " + (res.dest === "MCK" ? "MCK발주" : "직접발송") + " 탭을 확인해주세요." : "";
+    msg(nc.querySelector(".msg"), "발송 진행으로 바꿨어요 → " + (res.dest === "MCK" ? "MCK발주" : "직접발송") + " 탭에 올라갔어요. 발송 후 시트 현장구매에서 [발송 완료]를 체크해주세요." + warn, warn ? "err" : "ok");
+  }).catch(function () { b.disabled = false; b.textContent = "✅ 설치 확인됨 → 발송 진행"; msg(m, "네트워크 연결을 확인해주세요."); });
+}
 /* 주문 취소: 시트 현장구매 "취소" 열에 표시(집계에서 빠짐), 배송이면 토글업로드 줄 삭제 */
 function cancelOrder(card, i) {
   var o = found[i], m = card.querySelector(".msg"), b = card.querySelector('[data-a="cancelOrder"]');
@@ -757,7 +801,7 @@ function cancelOrder(card, i) {
   }).catch(function () { b.disabled = false; b.textContent = "주문 취소"; msg(m, "네트워크 연결을 확인해주세요."); });
 }
 function openEdit(card, o) {
-  var box = card.querySelector(".edit"), isShip = o.method === "배송";
+  var box = card.querySelector(".edit"), isShip = isShipLike(o.method);
   box.innerHTML =
     '<div class="row"><div class="field"><label class="t">성함</label><input type="text" name="name" value="' + esc(o.name) + '"></div>' +
     '<div class="field"><label class="t">연락처</label><input type="tel" name="phone" inputmode="numeric" value="' + esc(o.phone) + '"></div></div>' +
@@ -783,7 +827,7 @@ function saveEdit(card, i) {
   function v(n) { var el = box.querySelector('[name="' + n + '"]'); return el ? el.value.trim() : ""; }
   if (!v("name")) return msg(m, "성함을 입력해주세요.");
   if (digits(v("phone")).length < 10) return msg(m, "연락처를 확인해주세요.");
-  if (o.method === "배송" && !v("address")) return msg(m, "배송 주소를 입력해주세요.");
+  if (isShipLike(o.method) && !v("address")) return msg(m, "배송 주소를 입력해주세요.");
   b.disabled = true; b.textContent = "저장 중…";
   var mineOrder = order && order.orderNo === o.orderNo;
   if (mineOrder) editing++;

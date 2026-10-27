@@ -39,6 +39,8 @@
   .sum .tot b{font-size:26px;font-weight:900}
   .sum .meth{font-size:16px;font-weight:700;color:var(--accent-deep);margin-bottom:6px}
   .sum .meth.ship{color:var(--ship)}
+  .sum .meth.hold{color:#6b4f9e}
+  .done .holdnote{font-size:18px;color:#6b4f9e;font-weight:700;margin:4px auto 8px;line-height:1.5;max-width:640px}
   .who{border:1.5px solid var(--line);border-radius:16px;padding:6px 18px;background:#fdfbf8}
   .who .r{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:20px;line-height:1.5}
   .who .r:last-child{border-bottom:none}
@@ -144,6 +146,7 @@
       <h1>주문이 접수되었습니다</h1>
       <div class="no" id="doneNo"></div>
       <div class="ship" id="doneShip"></div>
+      <div class="holdnote" id="doneHold"></div>
       <div id="doneBank"></div>
       <p class="thanks">감사합니다. 고칠 부분이 생기면 직원에게 말씀해 주세요.</p>
       <button class="btn" id="okBtn">확인</button>
@@ -152,7 +155,7 @@
 
 </div>
 
-<script src="common.js?v=10"></script>
+<script src="common.js?v=11"></script>
 <script>
 /* 이 아이패드는 직원 비밀번호를 저장하지 않음: 처음에 비밀번호로 "기기 토큰"을 받아 그것만 저장 (지금 진행 중인 주문만 다룰 수 있음) */
 var TOKEN_KEY = "bebeknow_booth_token_" + STATION;
@@ -162,6 +165,7 @@ var seenDraw = "", drawT = null, rollT = null;   // 마지막으로 보여준 �
 var drawPhase = "";   // "" | "rolling"(추첨 창 열림, 숫자 도는 중) | "reveal"(당첨 번호 보여주는 중)
 var drawOn = false;   // 맥북에서 추첨 창이 열려 있는지
 var bank = null;      // 입금 계좌 (계좌이체 주문일 때만 서버가 보내줌)
+var holdBy = "";      // 설치 확인 기한 문구 (배송 보류 주문일 때 서버가 보내줌)
 try { localStorage.removeItem("bebeknow_booth_pin_ipad"); } catch (e) {}     // 예전 시험판이 남긴 비밀번호 삭제
 
 function show(id) { view = id; gen++; ["login", "idle", "form", "done", "draw"].forEach(function (k) { $(k).hidden = k !== id; }); window.scrollTo(0, 0); }
@@ -200,7 +204,7 @@ function toIdle(note, keepSkip) {
   clearTimeout(idleT); clearTimeout(drawT); clearInterval(rollT); drawPhase = "";
   if (cur && !keepSkip) skipId = cur.id;
   cur = null; order = null;
-  $("who").innerHTML = ""; $("sum").innerHTML = ""; $("doneNo").textContent = ""; $("doneBank").innerHTML = "";
+  $("who").innerHTML = ""; $("sum").innerHTML = ""; $("doneNo").textContent = ""; $("doneBank").innerHTML = ""; $("doneHold").textContent = "";
   $("idleNote").textContent = note || "";
   show("idle");
 }
@@ -213,6 +217,7 @@ function poll() {
     if (res.status !== "ok") return;
     if (res.shipDate) shipDate = res.shipDate;
     bank = res.bank || null;
+    if (res.hold) holdBy = res.hold;
     var s = res.session;
     misses = s ? 0 : misses + 1;
     if (busy) return;                                       // 저장 중에는 화면을 바꾸지 않음
@@ -288,9 +293,9 @@ function bankHtml(total, payer) {
 function openConfirm(s) {
   clearTimeout(idleT);
   cur = s; order = null;
-  var isShip = s.method === "배송", c = s.customer || {};
+  var isShip = isShipLike(s.method), isHold = s.method === HOLD_METHOD, c = s.customer || {};
   $("sum").innerHTML =
-    '<div class="meth' + (isShip ? " ship" : "") + '">' + (isShip ? "🚚 배송 주문 · " + esc(SHIP_NOTE) : "🛍️ 현장 수령") + "</div>" +
+    '<div class="meth' + (isHold ? " hold" : isShip ? " ship" : "") + '">' + (isHold ? "🏠 설치 확인 후 발송 · " + esc(holdNote(holdBy)) : isShip ? "🚚 배송 주문 · " + esc(SHIP_NOTE) : "🛍️ 현장 수령") + "</div>" +
     s.items.map(function (it) {
       var pk = pickupText(it, s.method);
       return '<div class="it"><span>' + (it.color ? '<span class="dot ' + esc(it.color) + '"></span>' : "") + esc(itemLabel(it)) + " × " + esc(it.qty) +
@@ -349,14 +354,15 @@ $("reviseBtn").addEventListener("click", function () {
 
 /* ---------- 완료 (15초 뒤 대기 화면) ---------- */
 function showDone() {
-  var o = order, isShip = o.method === "배송";
+  var o = order, isShip = isShipLike(o.method), isHold = o.method === HOLD_METHOD;
   $("doneNo").textContent = "주문번호 " + o.orderNo;
-  $("doneShip").textContent = isShip ? SHIP_NOTE : "직원에게 제품을 받아 가세요";
+  $("doneShip").textContent = isHold ? "설치 확인 후 발송" : isShip ? SHIP_NOTE : "직원에게 제품을 받아 가세요";
+  $("doneHold").textContent = isHold ? holdNote(o.holdBy || holdBy) : "";
   var transfer = o.pay === "계좌이체";
   $("doneBank").innerHTML = transfer ? bankHtml(o.total, o.payer || o.name) : "";
   show("done");
   clearTimeout(idleT);
-  idleT = setTimeout(function () { if (view === "done") toIdle(""); }, transfer ? 90000 : 15000);   // 계좌이체는 입금할 시간을 넉넉히
+  idleT = setTimeout(function () { if (view === "done") toIdle(""); }, transfer ? 90000 : isHold ? 40000 : 15000);   // 계좌이체는 입금할 시간을, 보류는 안내를 읽을 시간을 넉넉히
 }
 $("okBtn").addEventListener("click", function () { toIdle(""); });
 

@@ -26,6 +26,11 @@ var FULL_NAMES = {
 var PICKUP_NOTE = "콧물흡입기 현장 수령";
 /* 배송 안내 문구. 발송 일정이 확정되기 전까지는 날짜 대신 이 문구를 보여줌 (서버가 주는 다음 영업일 날짜는 쓰지 않음) */
 var SHIP_NOTE = "행사 종료 후 순차 발송 (영업일 기준 2~3일)";
+/* 설치 확인 후 발송(배송 보류): 현장 결제 + 주소를 받고, 고객이 집에서 설치 가능 여부를 확인해 알려주면 그때 발송. 기한 문구는 시트 집계 탭 "배송 보류 · 확인 기한" */
+var HOLD_METHOD = "배송 보류";
+function isShipLike(m) { return m === "배송" || m === HOLD_METHOD; }
+function methodLabel(m) { return m === "배송" ? "🚚 배송" : m === HOLD_METHOD ? "🏠 설치 확인 후 발송" : "🛍️ 현장 수령"; }
+function holdNote(by) { return "집에서 설치 가능 여부를 확인하신 뒤 " + (by || "기한 내에") + " 베베노 카카오채널로 알려 주세요 (주문번호 + 설치 가능/불가). 설치가 어려우면 전액 환불해 드려요."; }
 
 function $(id) { return document.getElementById(id); }
 function priceOf(product) { for (var i = 0; i < PRODUCTS.length; i++) if (PRODUCTS[i].key === product) return PRODUCTS[i].price; return 0; }
@@ -47,7 +52,7 @@ function addrHtml(o) {
 function productLabel(key) { for (var i = 0; i < PRODUCTS.length; i++) if (PRODUCTS[i].key === key) return PRODUCTS[i].label || key; return key; }
 function itemLabel(it) { return productLabel(it.product) + (it.color ? " · " + it.color : ""); }
 /* 세트에서 콧물흡입기만 현장에서 가져간 경우 표시 (배송 주문에서만 의미 있음) */
-function pickupText(it, method) { return it.pickup && it.product === SET_KEY && method === "배송" ? PICKUP_NOTE : ""; }
+function pickupText(it, method) { return it.pickup && it.product === SET_KEY && isShipLike(method) ? PICKUP_NOTE : ""; }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function msg(el, text, cls) { el.className = "msg" + (text ? " " + (cls || "err") : ""); el.textContent = text || ""; }
 

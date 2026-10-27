@@ -45,7 +45,9 @@ var PO_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAACmCAYAAABJGaV
     ".po .mg{margin-top:2mm;border:.35mm solid #000;padding:1.4mm 2mm}",
     ".po .mg .kv{border-bottom:none;padding:0;row-gap:.6mm}",
     ".po .mg .ttl{font-weight:900;font-size:.9em;margin-bottom:1mm}",
-    ".po .foot{border-top:.35mm solid #000;padding-top:1.6mm;font-size:.85em;text-align:center}"
+    ".po .foot{border-top:.35mm solid #000;padding-top:1.6mm;font-size:.85em;text-align:center}",
+    /* 설치 확인 후 발송 안내 */
+    ".po .hold{margin-top:2mm;border:.5mm solid #000;padding:1.5mm 2mm;font-size:.92em;line-height:1.4}.po .hold b{font-weight:900}"
   ].join("\n");
   document.head.appendChild(css);
 
@@ -60,7 +62,7 @@ function renderPO(o, copy) {
   var company = copy === "company";
   var items = o.items || [];
   var total = items.reduce(function (s, it) { return s + (Number(it.amount) || 0); }, 0);
-  var isShip = o.method === "배송";
+  var isShip = isShipLike(o.method), isHold = o.method === HOLD_METHOD;
   var addr = isShip ? addrHtml(o) : "현장 수령";
   var rows = items.map(function (it) {
     return "<tr><td class=\"n\">" + esc(FULL_NAMES[it.product] || it.product) + (it.color ? " <span class=\"opt\">(" + esc(it.color) + ")</span>" : "") +
@@ -73,7 +75,7 @@ function renderPO(o, copy) {
     var picks = items.filter(function (it) { return pickupText(it, o.method); })
       .map(function (it) { return "콧물흡입기(" + esc(it.color) + ") × " + esc(it.qty); });
     mg = '<div class="mg"><div class="ttl">관리 정보</div><dl class="kv">' +
-      "<dt>수령 방식</dt><dd class=\"strong\">" + (isShip ? "배송" + (o.dest ? " · " + (o.dest === "MCK" ? "MCK 발주" : "직접 발송") : "") : "현장 수령") + "</dd>" +
+      "<dt>수령 방식</dt><dd class=\"strong\">" + (isHold ? "설치 확인 후 발송 · 보류 (" + esc(o.holdBy || "기한 미정") + ")" : isShip ? "배송" + (o.dest ? " · " + (o.dest === "MCK" ? "MCK 발주" : "직접 발송") : "") : "현장 수령") + "</dd>" +
       "<dt>결제</dt><dd class=\"strong\">" + (o.pay === "계좌이체" ? "계좌이체 · 입금자 " + esc(o.payer || o.name) : o.pay ? esc(o.pay) : "-") + "</dd>" +
       "<dt>이벤트 참여</dt><dd>" + (o.participant ? "O" : "X") + "</dd>" +
       (picks.length ? "<dt>현장 전달</dt><dd class=\"strong\">" + picks.join("<br>") + " · 택배는 아기비데만</dd>" : "") +
@@ -98,6 +100,7 @@ function renderPO(o, copy) {
     '<div class="sec brandf">Order Items</div>' +
     '<table><thead><tr><th>제품</th><th class="q">수량</th><th class="a">금액</th></tr></thead><tbody>' + rows + "</tbody></table>" +
     '<div class="total"><span>합계</span><strong>' + won(total) + "</strong></div>" +
+    (isHold && !company ? '<div class="hold"><b>🏠 설치 확인 후 발송</b> (결제 완료) · 집에서 설치 가능 여부 확인 후 <b>' + esc(o.holdBy || "기한 내") + "</b> 카카오톡 <b>베베노</b> 채널로 주문번호 <b>" + esc(o.orderNo) + "</b>와 설치 가능/불가를 알려 주세요. 설치가 어려우면 전액 환불.</div>" : "") +
     mg +
     '<div class="spacer"></div>' +
     (company ? '<div class="foot">회사 보관용 · ' + esc(o.orderNo) + "</div>" : '<div class="foot">Easy breath, Easy life · bebeknow.com</div>');
