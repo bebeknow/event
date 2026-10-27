@@ -30,9 +30,9 @@ var SHIP_NOTE = "행사 종료 후 순차 발송 (영업일 기준 2~3일)";
 var HOLD_METHOD = "배송 보류";
 function isShipLike(m) { return m === "배송" || m === HOLD_METHOD; }
 function methodLabel(m) { return m === "배송" ? "🚚 배송" : m === HOLD_METHOD ? "🏠 설치 확인 후 발송" : "🛍️ 현장 수령"; }
-function holdNote(by) { return "집에서 설치 가능 여부를 확인하신 뒤 " + (by || "기한 내에") + " 네이버 톡톡으로 알려 주세요."; }
+function holdNote(by) { return "집에서 설치 가능 여부를 확인하신 뒤 " + (by || "기한 내에") + " 네이버 톡톡으로 알려 주세요. 기한이 지나면 자동으로 배송돼요."; }
 /* 화면용: 기한(11월 4일(화)까지)이 중간에서 줄 바뀌지 않게 */
-function holdNoteHtml(by) { return "집에서 설치 가능 여부를 확인하신 뒤 <b style=\"white-space:nowrap\">" + esc(by || "기한 내에") + "</b> 네이버 톡톡으로 알려 주세요."; }
+function holdNoteHtml(by) { return "집에서 설치 가능 여부를 확인하신 뒤 <b style=\"white-space:nowrap\">" + esc(by || "기한 내에") + "</b> 네이버 톡톡으로 알려 주세요.<br>기한이 지나면 자동으로 배송돼요."; }
 
 function $(id) { return document.getElementById(id); }
 function priceOf(product) { for (var i = 0; i < PRODUCTS.length; i++) if (PRODUCTS[i].key === product) return PRODUCTS[i].price; return 0; }
