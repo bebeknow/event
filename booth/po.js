@@ -100,7 +100,7 @@ function renderPO(o, copy) {
     '<div class="sec brandf">Order Items</div>' +
     '<table><thead><tr><th>제품</th><th class="q">수량</th><th class="a">금액</th></tr></thead><tbody>' + rows + "</tbody></table>" +
     '<div class="total"><span>합계</span><strong>' + won(total) + "</strong></div>" +
-    (isHold && !company ? '<div class="hold"><b>🏠 설치 확인 후 발송</b> (결제 완료) · 집에서 설치 가능 여부 확인 후 <b>' + esc(o.holdBy || "기한 내") + "</b> 카카오톡 <b>베베노</b> 채널로 주문번호 <b>" + esc(o.orderNo) + "</b>와 설치 가능/불가를 알려 주세요. 설치가 어려우면 전액 환불.</div>" : "") +
+    (isHold && !company ? '<div class="hold"><b>🏠 설치 확인 후 발송</b> (결제 완료) · 집에서 설치 가능 여부를 확인하신 뒤 <b>' + esc(o.holdBy || "기한 내") + "</b> <b>네이버 톡톡</b>으로 알려 주세요.</div>" : "") +
     mg +
     '<div class="spacer"></div>' +
     (company ? '<div class="foot">회사 보관용 · ' + esc(o.orderNo) + "</div>" : '<div class="foot">Easy breath, Easy life · bebeknow.com</div>');

@@ -30,7 +30,7 @@ var SHIP_NOTE = "행사 종료 후 순차 발송 (영업일 기준 2~3일)";
 var HOLD_METHOD = "배송 보류";
 function isShipLike(m) { return m === "배송" || m === HOLD_METHOD; }
 function methodLabel(m) { return m === "배송" ? "🚚 배송" : m === HOLD_METHOD ? "🏠 설치 확인 후 발송" : "🛍️ 현장 수령"; }
-function holdNote(by) { return "집에서 설치 가능 여부를 확인하신 뒤 " + (by || "기한 내에") + " 베베노 카카오채널로 알려 주세요 (주문번호 + 설치 가능/불가). 설치가 어려우면 전액 환불해 드려요."; }
+function holdNote(by) { return "집에서 설치 가능 여부를 확인하신 뒤 " + (by || "기한 내에") + " 네이버 톡톡으로 알려 주세요."; }
 
 function $(id) { return document.getElementById(id); }
 function priceOf(product) { for (var i = 0; i < PRODUCTS.length; i++) if (PRODUCTS[i].key === product) return PRODUCTS[i].price; return 0; }
