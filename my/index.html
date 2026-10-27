@@ -83,7 +83,7 @@
     </div>
   </div>
   <p class="note">입력한 번호는 확인에만 쓰이고, 이 화면에는 이름 같은 개인정보가 나오지 않아요.</p>
-  <footer>bebeknow · v2026.10.27-1</footer>
+  <footer>bebeknow · v2026.10.27-2</footer>
 </div>
 
 <script>
@@ -125,7 +125,7 @@ function render(res){
   if(res.status === "busy"){ showMsg("확인 요청이 많아요. 잠시 뒤에 다시 눌러 주세요."); return; }
   if(res.status === "bad"){ showMsg("휴대폰 번호를 다시 확인해 주세요."); return; }
   if(res.status === "none"){ box.hidden = true; showMsg("참여 기록을 찾지 못했어요. 이벤트에 참여할 때 넣은 번호인지 확인해 주세요."); return; }
-  if(res.status !== "ok"){ showMsg("확인하지 못했어요. 부스 직원에게 물어봐 주세요."); return; }
+  if(res.status !== "ok"){ showMsg("확인하지 못했어요. 부스 스태프에게 물어봐 주세요."); return; }
   if(res.now) skew = res.now - Date.now();
   resultHM = "";
   box.hidden = false;
@@ -133,7 +133,7 @@ function render(res){
     $("rlbl").textContent = "이벤트 참여 확인";
     $("rnum").textContent = "✓";
     $("when").textContent = "";
-    setState("wait", "참여가 확인됐어요", "응모번호는 부스 직원에게 물어봐 주세요.");
+    setState("wait", "참여가 확인됐어요", "응모번호는 부스 스태프에게 물어봐 주세요.");
     return;
   }
   $("rlbl").textContent = "럭키드로우 응모번호";

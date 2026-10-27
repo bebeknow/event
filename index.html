@@ -475,7 +475,7 @@
         <a data-link="kakao" href="#" target="_blank" rel="noopener noreferrer">카카오톡 채널</a>
       </div>
       <div class="foot-brand">bebeknow</div>
-      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.10.27-1</span></p>
+      <p class="foot-txt">주식회사 라이프비기닝 · bebeknow<br>수집된 정보는 안내된 목적 외에 사용되지 않습니다.<br><span id="pageVer" style="opacity:.55">v2026.10.27-2</span></p>
     </footer>
   </div>
 
@@ -551,22 +551,6 @@ var LINKS = {
  * ============================================================ */
 var GAS_URL = "https://script.google.com/macros/s/AKfycbwOrp74H1BYqzJ-8Wv7jv4q5qJ8K0qfA1z6YpHIRz-LsfTCHWrP8SoGe_8QYl51Q_zOew/exec";
 
-/* ============================================================
- * [3] 구글폼 설정 (GAS_URL이 비어 있을 때만 사용)
- *  응답은 구글시트 "베베노 느린 우체통 이벤트(응답)"에 자동 저장됩니다.
- * ============================================================ */
-var GF = {
-  action: "https://docs.google.com/forms/d/e/1FAIpQLSdjPWGPc31a0-SEVeKS-C2T6EQDVCtPmyhC0P4CqMHW9VI29A/formResponse",
-  entries: {
-    name: "entry.905327440",
-    phone: "entry.784976325",
-    address: "entry.1972831091",
-    baby: "entry.731690939",
-    event: "entry.1409737991",
-    agree1: "entry.262244604",
-    agree2: "entry.1705169096"
-  }
-};
 
 /* ---------- 링크 적용 ---------- */
 (function applyLinks(){
@@ -848,25 +832,8 @@ document.getElementById("eventForm").addEventListener("submit", function(ev){
     return;
   }
 
-  /* ===== B. 구글폼으로 제출 (GAS_URL 미설정 시 — 중복 차단 없음) ===== */
-  if(!GF.action || !GF.entries.name){
-    return showErr("폼 연결 설정이 아직 완료되지 않았습니다. 담당자에게 알려주세요.");
-  }
-  var p = new URLSearchParams();
-  p.append(GF.entries.name, name);
-  p.append(GF.entries.phone, phone);
-  p.append(GF.entries.address, "");
-  if(GF.entries.baby) p.append(GF.entries.baby, "");
-  if(GF.entries.event) p.append(GF.entries.event, "미션 이벤트");
-  if(GF.entries.agree1) p.append(GF.entries.agree1, "개인정보 수집·이용에 동의합니다");
-  if(GF.entries.agree2) p.append(GF.entries.agree2, agree2.value==="yes" ? "마케팅 정보 수신에 동의합니다" : "동의하지 않습니다");
-
-  lock();
-  fetch(GF.action, {
-    method:"POST", mode:"no-cors",
-    headers:{"Content-Type":"application/x-www-form-urlencoded"},
-    body:p.toString()
-  }).then(function(){ finish(null); }).catch(function(){ finish(null); });
+  /* 서버 주소가 비어 있으면 저장할 곳이 없음 (예전 구글폼 예비 경로는 2026-10-27 삭제) */
+  return showErr("서버 연결 설정이 비어 있어요. 스태프에게 알려주세요.");
 
   /* ===== 완료 화면 ===== */
   function finish(res){

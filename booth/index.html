@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>베베노 부스 · 직원</title>
+<title>베베노 부스 · 스태프</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap">
 <link rel="stylesheet" href="booth.css?v=9">
@@ -143,7 +143,7 @@
 
   <!-- 로그인 -->
   <div id="login" style="max-width:420px;margin:12vh auto 0">
-    <div class="top"><img class="logo" src="../img/logo.png?v=1" alt="bebeknow"><span class="title">부스 직원 화면</span></div>
+    <div class="top"><img class="logo" src="../img/logo.png?v=1" alt="bebeknow"><span class="title">부스 스태프 화면</span></div>
     <div class="card">
       <label class="t" for="pin">비밀번호 <small>(시트 "집계" 탭 B2)</small></label>
       <input type="password" id="pin" inputmode="numeric" maxlength="8" autocomplete="off" style="font-size:26px;letter-spacing:.2em;text-align:center">
@@ -155,7 +155,7 @@
   <div id="app" hidden>
     <div class="top">
       <img class="logo" src="../img/logo.png?v=1" alt="bebeknow">
-      <span class="title">부스 직원</span>
+      <span class="title">부스 스태프</span>
       <div class="tabs"><button id="tabTake" class="on">접수</button><button id="tabFind">주문 찾기 · 수정</button></div>
       <span class="sp"></span>
       <button class="draw" id="openDraw" type="button">🎲 이벤트 추첨</button>
@@ -235,14 +235,14 @@
       </div>
     </div>
 
-    <!-- 이벤트 추첨 (같은 화면 안에서, 직원 로그인 그대로) — 뽑으면 대기 중인 아이패드에도 크게 나옴 -->
+    <!-- 이벤트 추첨 (같은 화면 안에서, 스태프 로그인 그대로) — 뽑으면 대기 중인 아이패드에도 크게 나옴 -->
     <div class="draw-layer" id="drawLayer" hidden>
       <div class="bar"><div><b>🎲 이벤트 추첨</b> <span id="ipadState">아이패드 상태를 확인하는 중…</span></div>
         <div class="btns"><button type="button" id="ipadRoll">아이패드 숫자 돌리기</button><button type="button" id="closeDraw">← 접수로 돌아가기</button></div></div>
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.27-6</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.27-7</span></footer>
   </div>
 </div>
 
@@ -250,7 +250,7 @@
 <script src="common.js?v=13"></script>
 <script src="po.js?v=12"></script>
 <script>
-/* 비밀번호는 로그인 때 한 번만 쓰고, 이후에는 직원용 토큰(1일)으로 요청 — 비밀번호 잠금이 걸려도 이미 로그인한 화면은 동작 */
+/* 비밀번호는 로그인 때 한 번만 쓰고, 이후에는 스태프용 토큰(1일)으로 요청 — 비밀번호 잠금이 걸려도 이미 로그인한 화면은 동작 */
 var TOKEN_KEY = "bebeknow_booth_staff_token", ACK_KEY = "bebeknow_booth_ack";
 var tok = "";
 try { sessionStorage.removeItem("bebeknow_booth_pin"); } catch (e) {}
@@ -258,7 +258,7 @@ var cart = [];            // {product, color, qty, amount, manual}
 var phase = "edit";       // edit → sending → waiting(아이패드 입력 중) → done(접수 완료)
 var sessId = "", order = null, lastRev = 0, pollT = null, shipDate = "";
 var lastSend = null;      // {id, sig}: 보내기가 응답 없이 끝났을 때 같은 내용이면 같은 번호로 다시 보냄(중복 주문 방지)
-var editing = 0;          // 직원이 주문을 고치는 중이면 상태 확인이 그 변경을 "고객 수정"으로 오인하지 않게
+var editing = 0;          // 스태프가 주문을 고치는 중이면 상태 확인이 그 변경을 "고객 수정"으로 오인하지 않게
 var reviseId = "";        // 고객이 "고칠 부분이 있어요"를 누른 세션 (비우기 때 확인 처리)
 function cartSig() { return JSON.stringify([radio("method"), cart.map(function (l) { return [l.product, l.color, l.qty, l.amount, !!l.pickup]; }), custData()]); }
 
@@ -289,7 +289,7 @@ window.addEventListener("offline", function () { netState(false); });
 
 function radio(name) { var r = document.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ""; }
 
-/* ---------- 고객 정보 (직원이 입력, 아이패드는 확인만) ---------- */
+/* ---------- 고객 정보 (스태프가 입력, 아이패드는 확인만) ---------- */
 var CUST = { name: "cName", phone: "cPhone", zip: "cZip", address: "cAddr", address2: "cAddr2", request: "cReq" };
 function custData() {
   var d = {}, ship = isShipLike(radio("method"));
@@ -554,7 +554,7 @@ $("sendBtn").addEventListener("click", function () {
   var btn = $("sendBtn");
   btn.textContent = "보내는 중…"; setPhase("sending");
   var ack = ""; try { ack = sessionStorage.getItem(ACK_KEY) || ""; } catch (e) {}
-  /* 같은 연락처로 30분 안에 접수된 주문이 있으면 먼저 물어봄 (직원이 두 번 접수하는 실수 방지). 조회가 실패하면 그냥 진행 */
+  /* 같은 연락처로 30분 안에 접수된 주문이 있으면 먼저 물어봄 (스태프가 두 번 접수하는 실수 방지). 조회가 실패하면 그냥 진행 */
   var dupCheck = lastSend.dupOk ? Promise.resolve(true)
     : apiGet({ staff: "orders", token: tok, q: digits(cd.phone) }).then(function (r) {
         var list = (r && r.status === "ok" && r.orders) || [], now = Date.now();
@@ -853,7 +853,7 @@ function saveEdit(card, i) {
       if (res.status !== "ok") return msg(m, "저장하지 못했어요." + (res.message ? " [" + res.message + "]" : ""));
       found[i] = res.order;
       if (order && order.orderNo === res.order.orderNo) {       // 방금 접수한 주문을 고친 경우: 상태 확인이 또 인쇄하지 않게
-        order = res.order; if (res.rev != null) lastRev = Math.max(lastRev, res.rev); if (phase === "done") renderStatus("직원이 정보를 고쳤어요.");
+        order = res.order; if (res.rev != null) lastRev = Math.max(lastRev, res.rev); if (phase === "done") renderStatus("스태프가 정보를 고쳤어요.");
       }
       renderResults();
       var nc = $("results").querySelector('.order[data-i="' + i + '"]');

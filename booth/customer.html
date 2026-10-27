@@ -60,7 +60,7 @@
   }
   @media (max-width: 999px){ .fl{margin-bottom:16px} }
 
-  /* 이벤트 추첨 결과 (직원이 맥북에서 뽑으면 대기 중인 아이패드에 크게) */
+  /* 이벤트 추첨 결과 (스태프가 맥북에서 뽑으면 대기 중인 아이패드에 크게) */
   #draw{min-height:calc(100vh - 60px);min-height:calc(100dvh - 60px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px}
   #draw .dlbl{font-size:24px;font-weight:800;color:var(--accent-deep)}
   #draw .dnum{font-size:clamp(140px,26vw,240px);font-weight:900;line-height:1;letter-spacing:.04em;font-variant-numeric:tabular-nums}
@@ -91,11 +91,11 @@
 <body>
 <div class="wrap">
 
-  <!-- 처음 한 번: 직원이 비밀번호 입력 (이 아이패드는 비밀번호 대신 전용 열쇠만 기억) -->
+  <!-- 처음 한 번: 스태프가 비밀번호 입력 (이 아이패드는 비밀번호 대신 전용 열쇠만 기억) -->
   <div id="login" hidden style="max-width:440px;margin:14vh auto 0">
     <div class="card">
       <img src="../img/logo.png?v=1" alt="bebeknow" style="width:200px;max-width:70%;height:auto;display:block;margin:0 auto 10px">
-      <p style="text-align:center;color:var(--ink-soft);margin-bottom:18px">고객 화면 · 직원이 처음 한 번만 설정</p>
+      <p style="text-align:center;color:var(--ink-soft);margin-bottom:18px">고객 화면 · 스태프가 처음 한 번만 설정</p>
       <label class="t" for="pin">비밀번호</label>
       <input type="password" id="pin" inputmode="numeric" maxlength="8" autocomplete="off" style="font-size:28px;letter-spacing:.2em;text-align:center">
       <button class="btn" id="loginBtn" style="margin-top:12px">시작</button>
@@ -108,7 +108,7 @@
     <img class="logo" src="../img/logo.png?v=1" alt="bebeknow">
     <div class="slogan">Easy breath, Easy life</div>
     <div class="note" id="idleNote"></div>
-    <div class="wait">직원이 주문을 준비하면 이 화면에 표시됩니다</div>
+    <div class="wait">스태프가 주문을 준비하면 이 화면에 표시됩니다</div>
   </div>
 
   <!-- 이벤트 추첨 결과 -->
@@ -117,10 +117,10 @@
     <div class="dlbl" id="drawLbl">럭키드로우 추첨 중…</div>
     <div class="dnum" id="drawNum">---</div>
     <div class="dwho" id="drawWho"></div>
-    <div class="dsub">당첨되신 분은 직원에게 말씀해 주세요</div>
+    <div class="dsub">당첨되신 분은 스태프에게 말씀해 주세요</div>
   </div>
 
-  <!-- 주문 확인 (직원이 입력한 내용을 고객이 확인) -->
+  <!-- 주문 확인 (스태프가 입력한 내용을 고객이 확인) -->
   <div id="form" hidden>
     <div class="head"><h1>주문 내용을 확인해 주세요</h1><img class="logo" src="../img/logo.png?v=1" alt="bebeknow"></div>
     <div class="card fcols">
@@ -149,7 +149,7 @@
       <div class="ship" id="doneShip"></div>
       <div class="holdnote" id="doneHold"></div>
       <div id="doneBank"></div>
-      <p class="thanks">감사합니다. 고칠 부분이 생기면 직원에게 말씀해 주세요.</p>
+      <p class="thanks">감사합니다. 고칠 부분이 생기면 스태프에게 말씀해 주세요.</p>
       <button class="btn" id="okBtn">확인</button>
     </div>
   </div>
@@ -158,7 +158,7 @@
 
 <script src="common.js?v=13"></script>
 <script>
-/* 이 아이패드는 직원 비밀번호를 저장하지 않음: 처음에 비밀번호로 "기기 토큰"을 받아 그것만 저장 (지금 진행 중인 주문만 다룰 수 있음) */
+/* 이 아이패드는 스태프 비밀번호를 저장하지 않음: 처음에 비밀번호로 "기기 토큰"을 받아 그것만 저장 (지금 진행 중인 주문만 다룰 수 있음) */
 var TOKEN_KEY = "bebeknow_booth_token_" + STATION;
 var token = "", view = "", cur = null, order = null, skipId = "", pollT = null, idleT = null, shipDate = "";
 var busy = false, gen = 0, misses = 0;
@@ -171,7 +171,7 @@ try { localStorage.removeItem("bebeknow_booth_pin_ipad"); } catch (e) {}     // 
 
 function show(id) { view = id; gen++; ["login", "idle", "form", "done", "draw"].forEach(function (k) { $(k).hidden = k !== id; }); window.scrollTo(0, 0); }
 
-/* ---------- 처음 한 번: 직원이 비밀번호 입력 → 기기 토큰 ---------- */
+/* ---------- 처음 한 번: 스태프가 비밀번호 입력 → 기기 토큰 ---------- */
 $("loginBtn").addEventListener("click", function () {
   var p = $("pin").value.trim();
   if (!p) return msg($("loginMsg"), "비밀번호를 입력해주세요.");
@@ -210,7 +210,7 @@ function toIdle(note, keepSkip) {
   show("idle");
 }
 
-/* ---------- 직원이 보낸 주문 확인 (1.5초 간격) ---------- */
+/* ---------- 스태프가 보낸 주문 확인 (1.5초 간격) ---------- */
 function poll() {
   clearTimeout(pollT);
   getSession().then(function (res) {
@@ -231,10 +231,10 @@ function poll() {
       if (view === "idle" && drawOn) return startRolling(res.drawMode.time);                     // 맥북에서 추첨 창을 열면 숫자 돌리기 시작
       if (view === "draw" && drawPhase === "rolling" && !drawOn) return toIdle("");              // 추첨 창을 닫으면 대기 화면
     } else if (view === "form" && cur) {
-      if (s && s.id === cur.id && (s.state === "cancelled" || s.state === "revise")) return toIdle("직원이 내용을 고치고 있어요. 잠시만 기다려 주세요.");
+      if (s && s.id === cur.id && (s.state === "cancelled" || s.state === "revise")) return toIdle("스태프가 내용을 고치고 있어요. 잠시만 기다려 주세요.");
       if (s && s.id === cur.id && s.state === "done" && s.order) { order = s.order; return showDone(); }   // 저장은 됐는데 응답만 끊긴 경우
-      if (s && s.id !== cur.id) return fresh ? openConfirm(s) : toIdle("직원이 주문을 바꿨어요. 잠시만 기다려 주세요.");
-      if (!s && misses >= 3) toIdle("연결이 끊겼어요. 직원에게 말씀해 주세요.", true);   // 한두 번 비어도 확인 화면은 유지
+      if (s && s.id !== cur.id) return fresh ? openConfirm(s) : toIdle("스태프가 주문을 바꿨어요. 잠시만 기다려 주세요.");
+      if (!s && misses >= 3) toIdle("연결이 끊겼어요. 스태프에게 말씀해 주세요.", true);   // 한두 번 비어도 확인 화면은 유지
     }
   }).catch(function () {}).then(function () { if (view !== "login") pollT = setTimeout(poll, 1500); });
 }
@@ -281,7 +281,7 @@ function revealDraw(d) {
 
 /* ---------- 계좌이체 안내 ---------- */
 function bankHtml(total, payer) {
-  if (!bank || !bank.account) return '<div class="bankbox"><div class="bt">🏦 계좌이체로 결제해 주세요</div><div class="miss">입금 계좌는 직원에게 문의해 주세요.</div></div>';
+  if (!bank || !bank.account) return '<div class="bankbox"><div class="bt">🏦 계좌이체로 결제해 주세요</div><div class="miss">입금 계좌는 스태프에게 문의해 주세요.</div></div>';
   return '<div class="bankbox"><div class="bt">🏦 계좌이체로 결제해 주세요</div>' +
     (bank.bank ? '<div class="r"><span>은행</span><b>' + esc(bank.bank) + "</b></div>" : "") +
     '<div class="r"><span>계좌번호</span><b class="acct">' + esc(bank.account) + "</b></div>" +
@@ -328,7 +328,7 @@ $("submitBtn").addEventListener("click", function () {
     setBusy(false); btn.textContent = label;
     if (gen !== myGen) return;                              // 그 사이 화면이 바뀜 — 이 응답은 화면에 쓰지 않음
     if (res.status === "unauth") return needLogin();
-    if (res.status === "cancelled") return toIdle("직원이 내용을 고치고 있어요. 잠시만 기다려 주세요.");
+    if (res.status === "cancelled") return toIdle("스태프가 내용을 고치고 있어요. 잠시만 기다려 주세요.");
     if (res.status !== "ok") return msg($("formMsg"), "접수하지 못했어요. 다시 눌러주세요." + (res.message ? " [" + res.message + "]" : ""));
     order = res; showDone();
   }).catch(function () {
@@ -341,24 +341,24 @@ $("submitBtn").addEventListener("click", function () {
 $("reviseBtn").addEventListener("click", function () {
   if (busy || !cur) return;
   var myGen = gen;
-  setBusy(true); msg($("formMsg"), "직원에게 알리는 중…", "info");
+  setBusy(true); msg($("formMsg"), "스태프에게 알리는 중…", "info");
   apiPost({ action: "revise", token: token, station: STATION, id: cur.id }).then(function (res) {
     setBusy(false);
     if (gen !== myGen) return;
     if (res.status === "unauth") return needLogin();
     var s = res.session;
-    if (res.status !== "ok") return msg($("formMsg"), "직원에게 알리지 못했어요. 다시 누르거나 직원에게 직접 말씀해 주세요.");
+    if (res.status !== "ok") return msg($("formMsg"), "스태프에게 알리지 못했어요. 다시 누르거나 스태프에게 직접 말씀해 주세요.");
     if (s && s.id === cur.id && s.state === "done" && s.order) { order = s.order; return showDone(); }
-    if (s && s.id === cur.id && s.state === "waiting") return msg($("formMsg"), "직원에게 알리지 못했어요. 다시 눌러주세요.");
-    toIdle("직원이 고쳐서 다시 보여드릴게요. 고칠 내용을 직원에게 말씀해 주세요.");
-  }).catch(function () { setBusy(false); if (gen === myGen) msg($("formMsg"), "직원에게 알리지 못했어요. 직원에게 직접 말씀해 주세요."); });
+    if (s && s.id === cur.id && s.state === "waiting") return msg($("formMsg"), "스태프에게 알리지 못했어요. 다시 눌러주세요.");
+    toIdle("스태프가 고쳐서 다시 보여드릴게요. 고칠 내용을 스태프에게 말씀해 주세요.");
+  }).catch(function () { setBusy(false); if (gen === myGen) msg($("formMsg"), "스태프에게 알리지 못했어요. 스태프에게 직접 말씀해 주세요."); });
 });
 
 /* ---------- 완료 (15초 뒤 대기 화면) ---------- */
 function showDone() {
   var o = order, isShip = isShipLike(o.method), isHold = o.method === HOLD_METHOD;
   $("doneNo").textContent = "주문번호 " + o.orderNo;
-  $("doneShip").textContent = isHold ? "설치 확인 후 발송" : isShip ? SHIP_NOTE : "직원에게 제품을 받아 가세요";
+  $("doneShip").textContent = isHold ? "설치 확인 후 발송" : isShip ? SHIP_NOTE : "스태프에게 제품을 받아 가세요";
   $("doneHold").innerHTML = isHold ? holdNoteHtml(o.holdBy || holdBy) : "";
   var transfer = o.pay === "계좌이체";
   $("doneBank").innerHTML = transfer ? bankHtml(o.total, o.payer || o.name) : "";
