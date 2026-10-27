@@ -39,8 +39,9 @@
   .sum .tot b{font-size:26px;font-weight:900}
   .sum .meth{font-size:16px;font-weight:700;color:var(--accent-deep);margin-bottom:6px}
   .sum .meth.ship{color:var(--ship)}
-  .sum .meth.hold{color:#6b4f9e}
-  .done .holdnote{font-size:18px;color:#6b4f9e;font-weight:700;margin:4px auto 8px;line-height:1.5;max-width:640px}
+  .sum .meth.hold{color:#6b4f9e;margin-bottom:2px}
+  .sum .holdline{font-size:15px;color:#6b4f9e;line-height:1.5;margin-bottom:10px;word-break:keep-all;overflow-wrap:break-word}
+  .done .holdnote{font-size:18px;color:#6b4f9e;font-weight:700;margin:4px auto 8px;line-height:1.5;max-width:640px;word-break:keep-all;overflow-wrap:break-word}
   .who{border:1.5px solid var(--line);border-radius:16px;padding:6px 18px;background:#fdfbf8}
   .who .r{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:20px;line-height:1.5}
   .who .r:last-child{border-bottom:none}
@@ -155,7 +156,7 @@
 
 </div>
 
-<script src="common.js?v=12"></script>
+<script src="common.js?v=13"></script>
 <script>
 /* 이 아이패드는 직원 비밀번호를 저장하지 않음: 처음에 비밀번호로 "기기 토큰"을 받아 그것만 저장 (지금 진행 중인 주문만 다룰 수 있음) */
 var TOKEN_KEY = "bebeknow_booth_token_" + STATION;
@@ -295,7 +296,8 @@ function openConfirm(s) {
   cur = s; order = null;
   var isShip = isShipLike(s.method), isHold = s.method === HOLD_METHOD, c = s.customer || {};
   $("sum").innerHTML =
-    '<div class="meth' + (isHold ? " hold" : isShip ? " ship" : "") + '">' + (isHold ? "🏠 설치 확인 후 발송 · " + esc(holdNote(holdBy)) : isShip ? "🚚 배송 주문 · " + esc(SHIP_NOTE) : "🛍️ 현장 수령") + "</div>" +
+    '<div class="meth' + (isHold ? " hold" : isShip ? " ship" : "") + '">' + (isHold ? "🏠 설치 확인 후 발송" : isShip ? "🚚 배송 주문 · " + esc(SHIP_NOTE) : "🛍️ 현장 수령") + "</div>" +
+    (isHold ? '<div class="holdline">' + holdNoteHtml(holdBy) + "</div>" : "") +
     s.items.map(function (it) {
       var pk = pickupText(it, s.method);
       return '<div class="it"><span>' + (it.color ? '<span class="dot ' + esc(it.color) + '"></span>' : "") + esc(itemLabel(it)) + " × " + esc(it.qty) +
@@ -357,7 +359,7 @@ function showDone() {
   var o = order, isShip = isShipLike(o.method), isHold = o.method === HOLD_METHOD;
   $("doneNo").textContent = "주문번호 " + o.orderNo;
   $("doneShip").textContent = isHold ? "설치 확인 후 발송" : isShip ? SHIP_NOTE : "직원에게 제품을 받아 가세요";
-  $("doneHold").textContent = isHold ? holdNote(o.holdBy || holdBy) : "";
+  $("doneHold").innerHTML = isHold ? holdNoteHtml(o.holdBy || holdBy) : "";
   var transfer = o.pay === "계좌이체";
   $("doneBank").innerHTML = transfer ? bankHtml(o.total, o.payer || o.name) : "";
   show("done");
