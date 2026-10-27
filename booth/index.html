@@ -12,7 +12,7 @@
   body{padding:16px 22px 28px}
   .wrap{max-width:1460px;margin:0 auto}
   .top{display:flex;align-items:center;gap:14px;margin-bottom:14px}
-  .top .logo{font-size:26px;color:var(--accent-deep)}
+  .top .logo{height:22px;width:auto;display:block}
   .top .title{font-size:15px;font-weight:700;color:var(--ink-soft)}
   .tabs{display:flex;gap:6px;margin-left:12px}
   .tabs button{padding:9px 16px;font-size:15px;font-weight:700;border-radius:999px;border:1.5px solid var(--line);background:#fff;color:var(--ink-soft)}
@@ -141,7 +141,7 @@
 
   <!-- 로그인 -->
   <div id="login" style="max-width:420px;margin:12vh auto 0">
-    <div class="top"><span class="logo brandf">bebeknow</span><span class="title">부스 직원 화면</span></div>
+    <div class="top"><img class="logo" src="../img/logo.png?v=1" alt="bebeknow"><span class="title">부스 직원 화면</span></div>
     <div class="card">
       <label class="t" for="pin">비밀번호 <small>(시트 "집계" 탭 B2)</small></label>
       <input type="password" id="pin" inputmode="numeric" maxlength="8" autocomplete="off" style="font-size:26px;letter-spacing:.2em;text-align:center">
@@ -152,7 +152,7 @@
 
   <div id="app" hidden>
     <div class="top">
-      <span class="logo brandf">bebeknow</span>
+      <img class="logo" src="../img/logo.png?v=1" alt="bebeknow">
       <span class="title">부스 직원</span>
       <div class="tabs"><button id="tabTake" class="on">접수</button><button id="tabFind">주문 찾기 · 수정</button></div>
       <span class="sp"></span>
@@ -238,13 +238,13 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.27-1</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.27-2</span></footer>
   </div>
 </div>
 
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <script src="common.js?v=10"></script>
-<script src="po.js?v=9"></script>
+<script src="po.js?v=10"></script>
 <script>
 /* 비밀번호는 로그인 때 한 번만 쓰고, 이후에는 직원용 토큰(1일)으로 요청 — 비밀번호 잠금이 걸려도 이미 로그인한 화면은 동작 */
 var TOKEN_KEY = "bebeknow_booth_staff_token", ACK_KEY = "bebeknow_booth_ack";

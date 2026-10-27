@@ -23,14 +23,14 @@
 
   /* 대기 화면 */
   #idle{min-height:calc(100vh - 60px);min-height:calc(100dvh - 60px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px}
-  #idle .logo{font-size:clamp(56px,11vw,96px);color:var(--accent-deep);line-height:1}
+  #idle .logo{width:clamp(300px,52vw,540px);max-width:88%;height:auto;display:block}
   #idle .slogan{font-size:20px;color:var(--ink-soft)}
   #idle .wait{margin-top:28px;font-size:16px;color:var(--ink-soft)}
   #idle .note{font-size:16px;color:var(--accent-deep);font-weight:700;min-height:1.5em}
 
   /* 확인 화면 */
   .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-  .head .logo{font-size:30px;color:var(--accent-deep)}
+  .head .logo{height:24px;width:auto;display:block;flex-shrink:0}
   .head h1{font-size:24px;font-weight:800}
   .sum{background:var(--accent-tint);border-radius:16px;padding:16px 18px}
   .sum .it{display:flex;justify-content:space-between;gap:12px;font-size:18px;padding:5px 0}
@@ -91,7 +91,7 @@
   <!-- 처음 한 번: 직원이 비밀번호 입력 (이 아이패드는 비밀번호 대신 전용 열쇠만 기억) -->
   <div id="login" hidden style="max-width:440px;margin:14vh auto 0">
     <div class="card">
-      <div class="brandf" style="font-size:34px;color:var(--accent-deep);text-align:center;margin-bottom:6px">bebeknow</div>
+      <img src="../img/logo.png?v=1" alt="bebeknow" style="width:200px;max-width:70%;height:auto;display:block;margin:0 auto 10px">
       <p style="text-align:center;color:var(--ink-soft);margin-bottom:18px">고객 화면 · 직원이 처음 한 번만 설정</p>
       <label class="t" for="pin">비밀번호</label>
       <input type="password" id="pin" inputmode="numeric" maxlength="8" autocomplete="off" style="font-size:28px;letter-spacing:.2em;text-align:center">
@@ -102,7 +102,7 @@
 
   <!-- 대기 -->
   <div id="idle" hidden>
-    <div class="logo brandf">bebeknow</div>
+    <img class="logo" src="../img/logo.png?v=1" alt="bebeknow">
     <div class="slogan">Easy breath, Easy life</div>
     <div class="note" id="idleNote"></div>
     <div class="wait">직원이 주문을 준비하면 이 화면에 표시됩니다</div>
@@ -110,7 +110,7 @@
 
   <!-- 이벤트 추첨 결과 -->
   <div id="draw" hidden>
-    <div class="logo brandf" style="font-size:40px;color:var(--accent-deep)">bebeknow</div>
+    <img src="../img/logo.png?v=1" alt="bebeknow" style="width:220px;max-width:60%;height:auto;display:block">
     <div class="dlbl" id="drawLbl">럭키드로우 추첨 중…</div>
     <div class="dnum" id="drawNum">---</div>
     <div class="dwho" id="drawWho"></div>
@@ -119,7 +119,7 @@
 
   <!-- 주문 확인 (직원이 입력한 내용을 고객이 확인) -->
   <div id="form" hidden>
-    <div class="head"><h1>주문 내용을 확인해 주세요</h1><span class="logo brandf">bebeknow</span></div>
+    <div class="head"><h1>주문 내용을 확인해 주세요</h1><img class="logo" src="../img/logo.png?v=1" alt="bebeknow"></div>
     <div class="card fcols">
       <div class="fl">
         <div class="sum" id="sum"></div>
