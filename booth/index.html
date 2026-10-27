@@ -242,7 +242,7 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.27-7</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.27-8</span></footer>
   </div>
 </div>
 
@@ -504,8 +504,11 @@ function renderCart() {
   if (!cart.length) box.innerHTML = '<div class="empty">왼쪽에서 제품을 누르면 여기에 담깁니다.</div>';
   else box.innerHTML = cart.map(function (l, i) {
     /* 세트 + 배송: 콧물흡입기만 지금 가져가면 체크 → 택배에는 아기비데만 */
+    /* 설치 확인 후 발송(보류)은 택배가 아기비데만: 세트의 콧물흡입기는 현장 수령으로 고정 */
+    var holdSet = l.product === SET_KEY && radio("method") === HOLD_METHOD;
+    if (holdSet) l.pickup = true;
     var pick = l.product === SET_KEY && isShipLike(radio("method"))
-      ? '<label class="pick"><input type="checkbox" data-a="pick"' + (l.pickup ? " checked" : "") + (phase !== "edit" ? " disabled" : "") + "> " + PICKUP_NOTE + "</label>" : "";
+      ? '<label class="pick"><input type="checkbox" data-a="pick"' + (l.pickup ? " checked" : "") + (phase !== "edit" || holdSet ? " disabled" : "") + "> " + PICKUP_NOTE + (holdSet ? " (고정)" : "") + "</label>" : "";
     return '<div class="line" data-i="' + i + '">' +
       '<div class="nm">' + (l.color ? '<span class="dot ' + esc(l.color) + '"></span>' : "") + esc(itemLabel(l)) + pick + "</div>" +
       '<div class="qty"><button type="button" data-a="minus" aria-label="수량 줄이기">−</button><b>' + l.qty + '</b><button type="button" data-a="plus" aria-label="수량 늘리기">+</button></div>' +
