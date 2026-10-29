@@ -202,6 +202,7 @@
         </div>
         <div id="sendBox">
           <button class="btn" id="sendBtn">아이패드로 확인 보내기</button>
+          <button class="btn" id="receiptBtn" hidden>🧾 수령증 출력하기</button>
           <div class="msg" id="takeMsg"></div>
           <button class="btn ghost" id="clearBtn" style="margin-top:8px;padding:10px;font-size:14px">새 고객으로 비우기</button>
         </div>
@@ -242,7 +243,7 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.29-1</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.29-2</span></footer>
   </div>
 </div>
 
@@ -303,16 +304,22 @@ function fillCust(c) {
   $("cPay").checked = !!(c && c.pay === "계좌이체");
   $("cPayer").value = (c && c.payer) || "";
   $("cPayerBox").hidden = !$("cPay").checked;
+  syncSendBtn();
 }
 /* 계좌이체 체크 → 입금자명 칸 (비어 있으면 고객 성함으로 채움) */
 $("cPay").addEventListener("change", function () {
   $("cPayerBox").hidden = !this.checked;
   if (this.checked && !$("cPayer").value.trim()) $("cPayer").value = $("cName").value.trim();
 });
-function syncShip() { $("cShip").hidden = !isShipLike(radio("method")); if ($("cart")) renderCart(); }
+function syncShip() { $("cShip").hidden = !isShipLike(radio("method")); syncSendBtn(); if ($("cart")) renderCart(); }
+/* 현장 수령에 성함·연락처가 모두 비어 있으면 [수령증 출력하기](아이패드 없이 바로 접수), 하나라도 있으면 [아이패드로 확인 보내기] */
+function isAnonPickup() { return radio("method") === "현장" && !$("cName").value.trim() && !$("cPhone").value.trim(); }
+function syncSendBtn() { var a = isAnonPickup(); $("receiptBtn").hidden = !a; $("sendBtn").hidden = a; }
 Array.prototype.forEach.call(document.querySelectorAll('input[name="method"]'), function (r) { r.addEventListener("change", syncShip); });
 $("cPhone").addEventListener("input", function () { this.value = fmtPhone(this.value); });
 $("custCard").addEventListener("input", saveDraft);
+$("custCard").addEventListener("input", syncSendBtn);
+syncSendBtn();
 $("custCard").addEventListener("change", saveDraft);
 $("cPay").addEventListener("change", saveDraft);
 $("cAddrBtn").addEventListener("click", function () {
@@ -609,10 +616,39 @@ $("sendBtn").addEventListener("click", function () {
     });
 });
 
+/* ---------- 수령증 출력하기: 현장 수령 · 성함·연락처 없음 → 아이패드 없이 바로 시트 저장 + 고객용·보관용 인쇄 ---------- */
+var receiptReq = null;   // 같은 내용으로 다시 누르면(응답 끊김) 같은 번호 → 시트에는 한 번만 저장
+$("receiptBtn").addEventListener("click", function () {
+  msg($("takeMsg"), "");
+  if (!cart.length) return msg($("takeMsg"), "제품을 먼저 담아주세요.");
+  if (!isAnonPickup()) return syncSendBtn();
+  var cd = custData();
+  if (cd.pay === "계좌이체" && !cd.payer) { $("cPayer").focus(); return msg($("takeMsg"), "입금자명을 입력해주세요."); }
+  var sig = cartSig();
+  if (!receiptReq || receiptReq.sig !== sig) receiptReq = { id: uid(), sig: sig };
+  var btn = $("receiptBtn");
+  btn.textContent = "접수 중…"; setPhase("sending");
+  apiPost(Object.assign({ action: "order", token: tok, reqId: receiptReq.id, method: "현장",
+            items: cart.map(function (l) { return { product: l.product, color: l.color, qty: l.qty, amount: l.amount, pickup: false }; }) }, cd))
+    .then(function (res) {
+      netState(true);
+      btn.textContent = "🧾 수령증 출력하기";
+      if (res.status === "unauth") return logout();
+      if (res.status === "locked") { setPhase("edit"); return lockedMsg($("takeMsg")); }
+      if (res.status !== "ok") { setPhase("edit"); return msg($("takeMsg"), "접수하지 못했어요." + (res.message ? " [" + res.message + "]" : "")); }
+      receiptReq = null; order = res; lastRev = 0; clearDraft();
+      setPhase("done"); printBoth(order); loadStock();
+    }).catch(function () {
+      netState(false);
+      btn.textContent = "🧾 수령증 출력하기"; setPhase("edit"); saveDraft();
+      msg($("takeMsg"), "응답이 없어요. 입력한 내용은 그대로 남아 있으니, 인터넷을 확인하고 다시 눌러주세요. (같은 주문은 한 번만 저장됩니다)");
+    });
+});
+
 function setPhase(p) {
   phase = p;
   $("sendBox").hidden = p !== "edit" && p !== "sending";
-  $("sendBtn").disabled = p === "sending";
+  $("sendBtn").disabled = p === "sending"; $("receiptBtn").disabled = p === "sending";
   Array.prototype.forEach.call(document.querySelectorAll('input[name="method"]'), function (r) { r.disabled = p !== "edit"; });
   Object.keys(CUST).forEach(function (k) { $(CUST[k]).disabled = p !== "edit"; });
   $("cPay").disabled = p !== "edit"; $("cPayer").disabled = p !== "edit";
@@ -642,7 +678,7 @@ function renderStatus(note) {
   }
   box.innerHTML = '<div class="big">✓ 접수 완료 · ' + esc(o.orderNo) + "</div>" +
     "<p>" + (note || "Purchase Order 고객용·보관용 두 장을 출력했어요.") + "</p>" +
-    '<div class="who"><b>' + esc(o.name) + "</b> · " + esc(o.phone) +
+    '<div class="who"><b>' + esc(o.name) + "</b> · " + esc(o.phone || "연락처 없음") +
       (isShipLike(o.method) ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") +
         (o.method === HOLD_METHOD ? '<br><b style="color:#6b4f9e">🏠 설치 확인 후 발송 (결제 완료 · 발송 보류)</b><br>' + esc(holdNote(o.holdBy)) + "<br>고객 연락이 오면 [주문 찾기 · 수정] → [보류 목록] → [설치 확인됨 → 발송 진행]" : "<br>📦 " + esc(SHIP_NOTE))
         : "<br>🛍️ 현장 수령") +
