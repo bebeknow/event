@@ -94,7 +94,7 @@ function renderPO(o, copy) {
     "</dl>" +
     '<dl class="kv">' +
       "<dt>고객명</dt><dd class=\"strong\">" + esc(o.name) + "</dd>" +
-      "<dt>연락처</dt><dd>" + esc(o.phone) + "</dd>" +
+      "<dt>연락처</dt><dd>" + esc(o.phone || "-") + "</dd>" +
       "<dt>" + (isShip ? "배송지" : "수령") + "</dt><dd>" + addr + "</dd>" +
     "</dl>" +
     '<div class="sec brandf">Order Items</div>' +

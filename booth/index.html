@@ -188,8 +188,8 @@
       <div class="card cust" id="custCard">
         <h2>고객 정보</h2>
         <div class="row">
-          <div class="field"><label class="t" for="cName">성함</label><input type="text" id="cName" autocomplete="off"></div>
-          <div class="field"><label class="t" for="cPhone">연락처</label><input type="tel" id="cPhone" inputmode="numeric" placeholder="010-0000-0000" autocomplete="off"></div>
+          <div class="field"><label class="t" for="cName">성함 <small>(현장 수령은 선택)</small></label><input type="text" id="cName" autocomplete="off"></div>
+          <div class="field"><label class="t" for="cPhone">연락처 <small>(현장 수령은 선택)</small></label><input type="tel" id="cPhone" inputmode="numeric" placeholder="010-0000-0000" autocomplete="off"></div>
         </div>
         <div id="cShip" hidden>
           <div class="field">
@@ -242,13 +242,13 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.27-9</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.29-1</span></footer>
   </div>
 </div>
 
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <script src="common.js?v=14"></script>
-<script src="po.js?v=13"></script>
+<script src="po.js?v=14"></script>
 <script>
 /* 비밀번호는 로그인 때 한 번만 쓰고, 이후에는 스태프용 토큰(1일)으로 요청 — 비밀번호 잠금이 걸려도 이미 로그인한 화면은 동작 */
 var TOKEN_KEY = "bebeknow_booth_staff_token", ACK_KEY = "bebeknow_booth_ack";
@@ -546,8 +546,10 @@ $("sendBtn").addEventListener("click", function () {
   msg($("takeMsg"), "");
   if (!cart.length) return msg($("takeMsg"), "제품을 먼저 담아주세요.");
   var cd = custData();
-  if (!cd.name) { $("cName").focus(); return msg($("takeMsg"), "고객 성함을 입력해주세요."); }
-  if (digits(cd.phone).length < 10 || digits(cd.phone).length > 11) { $("cPhone").focus(); return msg($("takeMsg"), "연락처를 확인해주세요."); }
+  var onsite = radio("method") === "현장", pd = digits(cd.phone).length;   // 현장 수령은 성함·연락처 선택 (비우면 시트에 "현장 고객")
+  if (!cd.name && !onsite) { $("cName").focus(); return msg($("takeMsg"), "고객 성함을 입력해주세요."); }
+  if (!(onsite && pd === 0) && (pd < 10 || pd > 11)) { $("cPhone").focus(); return msg($("takeMsg"), "연락처를 확인해주세요."); }
+  if (cd.pay === "계좌이체" && !cd.payer && !cd.name) { $("cPayer").focus(); return msg($("takeMsg"), "입금자명을 입력해주세요."); }
   if (isShipLike(radio("method")) && !cd.address) { $("cAddr").focus(); return msg($("takeMsg"), "배송 주소를 입력해주세요."); }
   if (cd.pay === "계좌이체" && !cd.payer) { cd.payer = cd.name; $("cPayer").value = cd.name; }
   var sig = cartSig();
@@ -558,7 +560,7 @@ $("sendBtn").addEventListener("click", function () {
   btn.textContent = "보내는 중…"; setPhase("sending");
   var ack = ""; try { ack = sessionStorage.getItem(ACK_KEY) || ""; } catch (e) {}
   /* 같은 연락처로 30분 안에 접수된 주문이 있으면 먼저 물어봄 (스태프가 두 번 접수하는 실수 방지). 조회가 실패하면 그냥 진행 */
-  var dupCheck = lastSend.dupOk ? Promise.resolve(true)
+  var dupCheck = lastSend.dupOk || !pd ? Promise.resolve(true)
     : apiGet({ staff: "orders", token: tok, q: digits(cd.phone) }).then(function (r) {
         var list = (r && r.status === "ok" && r.orders) || [], now = Date.now();
         var recent = list.filter(function (o) {
@@ -835,8 +837,9 @@ function openEdit(card, o) {
 function saveEdit(card, i) {
   var o = found[i], box = card.querySelector(".edit"), m = card.querySelector(".msg"), b = box.querySelector('[data-a="save"]');
   function v(n) { var el = box.querySelector('[name="' + n + '"]'); return el ? el.value.trim() : ""; }
-  if (!v("name")) return msg(m, "성함을 입력해주세요.");
-  if (digits(v("phone")).length < 10) return msg(m, "연락처를 확인해주세요.");
+  var onsite = o.method === "현장", pd = digits(v("phone")).length;
+  if (!v("name") && !onsite) return msg(m, "성함을 입력해주세요.");
+  if (!(onsite && pd === 0) && (pd < 10 || pd > 11)) return msg(m, "연락처를 확인해주세요.");
   if (isShipLike(o.method) && !v("address")) return msg(m, "배송 주소를 입력해주세요.");
   b.disabled = true; b.textContent = "저장 중…";
   var mineOrder = order && order.orderNo === o.orderNo;

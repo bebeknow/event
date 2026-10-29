@@ -307,7 +307,7 @@ function openConfirm(s) {
     (c.pay === "계좌이체" ? bankHtml(s.total, c.payer || c.name) : "");
   $("who").innerHTML =
     '<div class="r"><span>성함</span><b>' + esc(c.name) + "</b></div>" +
-    '<div class="r"><span>연락처</span><b>' + esc(c.phone) + "</b></div>" +
+    '<div class="r"><span>연락처</span><b>' + esc(c.phone || "-") + "</b></div>" +
     (isShip ? '<div class="r"><span>배송지</span><b>' + addrHtml(c) + "</b></div>" +
               (c.request ? '<div class="r"><span>요청사항</span><b>' + esc(c.request) + "</b></div>" : "") : "");
   $("askShip").hidden = !isShip;
