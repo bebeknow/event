@@ -243,7 +243,7 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.29-2</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.30-1</span></footer>
   </div>
 </div>
 
@@ -428,7 +428,7 @@ window.addEventListener("message", function (e) {
 });
 $("openDraw").addEventListener("click", function () {
   var fr = $("drawFrame");
-  if (!fr.src) fr.src = "../draw/?embed=1";
+  if (!fr.src) fr.src = "../draw/?embed=1&v=20261030";   // 추첨 페이지를 고치면 v 숫자도 올려야 맥북이 새 화면을 받음
   $("drawLayer").hidden = false;
   setDrawMode(true);
 });
