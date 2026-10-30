@@ -226,7 +226,7 @@
       <div class="card ez" id="ezCard" style="margin-top:16px">
         <div class="bar">
           <b>📄 배송 주문 엑셀</b>
-          <select id="ezDest"><option value="mck">MCK 발주 (아기비데만 택배)</option><option value="direct">직접 발송 (콧물흡입기·약병 포함)</option></select>
+          <select id="ezDest"><option value="mck">MCK 발주 (아기비데)</option><option value="direct">직접 발송 (콧물흡입기·약병)</option></select>
           <select id="ezScope"><option value="today">오늘 접수분</option><option value="unshipped">발송 완료 안 된 전부</option></select>
           <button class="btn ghost" id="ezPreview" type="button">미리보기</button>
           <button class="btn" id="ezBtn" type="button">엑셀 내려받기</button>
@@ -243,13 +243,13 @@
       <iframe id="drawFrame" title="이벤트 추첨"></iframe>
     </div>
 
-    <footer>bebeknow booth · <span id="ver">v2026.10.30-1</span></footer>
+    <footer>bebeknow booth · <span id="ver">v2026.10.30-2</span></footer>
   </div>
 </div>
 
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <script src="common.js?v=14"></script>
-<script src="po.js?v=14"></script>
+<script src="po.js?v=15"></script>
 <script>
 /* 비밀번호는 로그인 때 한 번만 쓰고, 이후에는 스태프용 토큰(1일)으로 요청 — 비밀번호 잠금이 걸려도 이미 로그인한 화면은 동작 */
 var TOKEN_KEY = "bebeknow_booth_staff_token", ACK_KEY = "bebeknow_booth_ack";
@@ -688,7 +688,7 @@ function renderStatus(note) {
       })() +
       (o.pay === "계좌이체" ? '<br><b style="color:var(--accent-deep)">🏦 계좌이체 · 입금자 ' + esc(o.payer || o.name) + "</b> — 입금 확인 후 제품 전달" : "") +
       (o.participant ? "<br>🎁 이벤트 참여자" : "") +
-      (o.method === "배송" && o.dest ? '<br><b style="color:' + (o.dest === "MCK" ? "#2f5d9e" : "#b35c1e") + '">' + (o.dest === "MCK" ? "📦 MCK 발주 (아기비데 택배)" : "📦 직접 발송 (사무실에서 토글로)") + "</b>" : "") +
+      (o.method === "배송" && o.dest ? '<br><b style="color:' + (o.dest === "MCK" ? "#2f5d9e" : "#b35c1e") + '">' + (o.dest === "MCK" ? "📦 MCK 발주 (아기비데 택배)" : o.dest === "MCK+직접" ? "📦 아기비데는 MCK 발주 · 나머지는 직접 발송 (따로 도착)" : "📦 직접 발송 (사무실에서 토글로)") + "</b>" : "") +
       (o.shipLogged === false && o.method === "배송" ? '<br><span style="color:var(--err)">⚠ 발송 탭 기록 실패 — 시트에서 직접 확인</span>' : "") +
       (o.holdLogged === false ? '<br><span style="color:var(--err)">⚠ 배송 보류 탭 기록 실패 — 시트 현장구매에는 있으니 보류 탭에 직접 적어주세요</span>' : "") +
     "</div>" +
@@ -765,7 +765,7 @@ function orderCard(o, i) {
   return '<div class="order' + (o.cancelled ? " cancelled" : "") + '" data-i="' + i + '">' +
     '<div class="h"><b>' + esc(o.name) + '</b><span class="no">' + esc(o.orderNo) + " · " + esc(o.at) + "</span>" +
       '<span class="badge' + (isShip ? " ship" : isHold ? " hold" : "") + '">' + (isShip ? "배송" : isHold ? "🏠 설치 확인 후 발송 · 보류" : "현장 수령") + "</span>" +
-      (isShip && o.dest ? '<span class="badge ' + (o.dest === "MCK" ? "mck" : "direct") + '">' + (o.dest === "MCK" ? "MCK" : "직접 발송") + "</span>" : "") +
+      (isShip && o.dest ? '<span class="badge ' + (o.dest === "MCK" ? "mck" : "direct") + '">' + (o.dest === "MCK" ? "MCK" : o.dest === "MCK+직접" ? "MCK+직접" : "직접 발송") + "</span>" : "") +
       (o.shipped ? '<span class="badge done">발송 완료</span>' : "") +
       (o.cancelled ? '<span class="badge cancel">취소됨' + (o.cancelledAt ? " · " + esc(o.cancelledAt) : "") + "</span>" : "") + "</div>" +
     '<div class="info">' + esc(o.phone) + (o.pay ? " · " + (o.pay === "계좌이체" ? "🏦 계좌이체 (입금자 " + esc(o.payer || o.name) + ")" : "💳 페이히어") : "") + (isShip || isHold ? "<br>" + addrHtml(o) + (o.request ? "<br>요청: " + esc(o.request) : "") : "") + (isHold ? '<br><span style="color:#6b4f9e;font-weight:700">결제 완료 · 고객이 설치 가능하다고 알려오면 발송 진행 (' + esc(o.holdBy || "기한은 시트 집계 탭") + ")</span>" : "") + "</div>" +
@@ -824,8 +824,8 @@ function releaseHold(card, i) {
     if (order && order.orderNo === res.order.orderNo) { order = res.order; if (phase === "done") renderStatus("설치 확인 → 발송 진행으로 바꿨어요."); }
     renderResults();
     var nc = $("results").querySelector('.order[data-i="' + i + '"]');
-    var warn = res.shipError ? " ⚠ 발송 탭 기록에 문제가 있어요. 시트 " + (res.dest === "MCK" ? "MCK발주" : "직접발송") + " 탭을 확인해주세요." : "";
-    msg(nc.querySelector(".msg"), "발송 진행으로 바꿨어요 → " + (res.dest === "MCK" ? "MCK발주" : "직접발송") + " 탭에 올라갔어요. 발송 후 시트 현장구매에서 [발송 완료]를 체크해주세요." + warn, warn ? "err" : "ok");
+    var warn = res.shipError ? " ⚠ 발송 탭 기록에 문제가 있어요. 시트 " + (res.dest === "MCK" ? "MCK발주" : res.dest === "MCK+직접" ? "MCK발주·직접발송" : "직접발송") + " 탭을 확인해주세요." : "";
+    msg(nc.querySelector(".msg"), "발송 진행으로 바꿨어요 → " + (res.dest === "MCK" ? "MCK발주" : res.dest === "MCK+직접" ? "MCK발주·직접발송" : "직접발송") + " 탭에 올라갔어요. 발송 후 시트 현장구매에서 [발송 완료]를 체크해주세요." + warn, warn ? "err" : "ok");
   }).catch(function () { b.disabled = false; b.textContent = "✅ 설치 확인됨 → 발송 진행"; msg(m, "네트워크 연결을 확인해주세요."); });
 }
 /* 주문 취소: 시트 현장구매 "취소" 열에 표시(집계에서 빠짐), 배송이면 토글업로드 줄 삭제 */
