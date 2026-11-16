@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>우리 집 세면대 확인 · 베베노 아기비데</title>
 <meta name="description" content="세면대 품번을 검색하면 베베노 아기비데 설치 가능 여부를 알려드려요.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="베베노">
+<meta property="og:title" content="우리 집 세면대에 설치될까요? · 베베노 아기비데">
+<meta property="og:description" content="세면대 품번을 검색하면 설치 가능 여부를 바로 알려드려요.">
+<meta property="og:url" content="https://bebeknow.github.io/event/sink/">
+<meta property="og:image" content="https://bebeknow.github.io/event/sink/og.png?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <style>
   :root {
     --bg: #faf7f3; --card: #ffffff; --ink: #2b2420; --ink2: #6f655e; --line: #ebe3da;
@@ -50,6 +59,14 @@
   .guide ul { margin: 0; padding-left: 18px; font-size: 14px; }
   .guide li { margin: 3px 0; }
   .guide p { font-size: 13px; color: var(--ink2); margin: 10px 0 0; }
+  .req { display: grid; gap: 10px; margin-top: 14px; text-align: left; }
+  .req label { display: grid; gap: 4px; font-size: 13px; color: var(--ink2); }
+  .req input, .req select { font-size: 16px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); width: 100%; }
+  .req .agree { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .req .agree input { width: 20px; height: 20px; padding: 0; flex: 0 0 auto; }
+  .req button { padding: 13px; border: 0; border-radius: 12px; background: var(--brand); color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .req button:disabled { opacity: .6; }
+  .rmsg { margin: 0; font-size: 13px; color: #b3261e; min-height: 1em; }
   footer { text-align: center; font-size: 12px; color: var(--ink2); margin-top: 28px; }
 </style>
 </head>
@@ -84,14 +101,17 @@
     <a class="talk" id="talkGuide" href="#" target="_blank" rel="noopener">네이버 톡톡으로 사진 보내기</a>
   </section>
 
-  <footer>베베노 · 라이프비기닝 &nbsp;|&nbsp; 목록은 매장 확인 결과에 따라 계속 업데이트돼요 (기준 <span id="asof"></span>) · v2026.11.16-1</footer>
+  <footer>베베노 · 라이프비기닝 &nbsp;|&nbsp; 목록은 매장 확인 결과에 따라 계속 업데이트돼요 (기준 <span id="asof"></span>) · v2026.11.16-2</footer>
 </div>
 
+
 <script>
-// 품번 목록: [브랜드, 품번, 상태] — 상태 0 = 설치 가능, 1 = 확인 필요 (매장 확인 후 2 = 설치 어려움 추가 예정)
+// 품번 목록: 서버(구글 시트 "세면대" 탭)에서 받는다. 못 받으면 아래 내장 목록(올린 날 기준)으로.
+// [브랜드, 품번, 상태] — 상태 0 = 설치 가능, 1 = 확인 필요, 2 = 설치 어려움
 const DATA = [["DAELIM","CL-370",0],["DAELIM","CL-371",0],["DAELIM","CL-373",0],["DAELIM","CL-384",0],["DAELIM","CL-385",1],["DAELIM","CL-386",1],["DAELIM","CL-463",0],["DAELIM","CL-822",0],["DAELIM","CL-831",1],["DAELIM","CL-832",1],["DAELIM","CL-833",1],["DAELIM","CL-840",1],["DAELIM","BL-101",1],["DAELIM","BL-201",0],["DAELIM","BL-301",0],["DAELIM","CL-106",1],["DAELIM","CL-108",1],["DAELIM","CL-1200",0],["DAELIM","CL-1300",0],["DAELIM","CL-1400",1],["DAELIM","CL-1500",0],["DAELIM","CL-300",0],["DAELIM","CL-310",0],["DAELIM","CL-332",1],["DAELIM","CL-359",0],["DAELIM","CL-360",0],["DAELIM","CL-361",0],["DAELIM","CL-364",0],["DAELIM","CL-366",0],["DAELIM","CL-368",0],["DAELIM","CL-369",0],["DAELIM","CL-372",0],["DAELIM","CL-383",0],["DAELIM","CL-423",1],["DAELIM","CL-440",1],["DAELIM","CL-463D",0],["DAELIM","CL-750",1],["DAELIM","CL-755",1],["DAELIM","CL-755S",1],["DAELIM","CL-760",0],["DAELIM","CL-762",0],["DAELIM","CL-815",1],["DAELIM","CL-823",1],["DAELIM","CL-825",0],["DAELIM","CL-826",0],["DAELIM","CL-827",0],["DAELIM","CL-828",0],["DAELIM","CL-830",1],["DAELIM","CL-855",0],["DAELIM","CL-861S",0],["DAELIM","CL-906",0],["DAELIM","CL-907",0],["DAELIM","CL-910",1],["DAELIM","PL-1010",1],["DAELIM","PL-1020",0],["DAELIM","PL-1030",0],["DAELIM","PL-1040",0],["DAELIM","PL-1042",0],["DAELIM","PL-1044",0],["DAELIM","PL-1050",1],["DAELIM","PL-1060",0],["DAELIM","PL-1062",0],["DAELIM","PL-1063",0],["DAELIM","PL-1064",0],["DAELIM","PL-1070",0],["DAELIM","PL-1080",0],["DAELIM","PL-2020",1],["DAELIM","PL-2022",0],["DAELIM","PL-2040",1],["DAELIM","PL-2060",0],["DAELIM","PL-3010",0],["DAELIM","PL-3070",0],["DAELIM","CL-333",0],["DAELIM","CL-336",0],["DAELIM","CL-336D",0],["DAELIM","CL-340N",1],["DAELIM","CL-341",1],["DAELIM","CL-344",0],["DAELIM","CL-345",0],["DAELIM","CL-347",1],["DAELIM","CL-347D",1],["DAELIM","CL-349",1],["DAELIM","CL-350",0],["DAELIM","CL-352",0],["DAELIM","CL-353",1],["DAELIM","CL-354D",0],["DAELIM","CL-355D",0],["DAELIM","CL-358",1],["DAELIM","CL-339",1],["DAELIM","CL-347A",1],["inus","IL672E",0],["inus","IL609E",0],["inus","IL678E",0],["inus","L959",0],["inus","IL674E",0],["inus","IL673E",0],["inus","L751",1],["inus","IL501",1],["inus","L758",1],["inus","L757",1],["inus","L953",0],["inus","L957",0],["inus","L825",1],["inus","IBL1681",0],["inus","L826",0],["inus","L631",0],["inus","L933",1],["inus","L764",0],["inus","IL558",1],["KELIM","L-205ULF",0],["KELIM","L-206",0],["KELIM","L-208(F)",1],["KELIM","L-208U(F)",1],["KELIM","L-208UL",1],["KELIM","L-212UF",0],["KELIM","L-212UFA",0],["KELIM","L-221F",1],["KELIM","L-254UD(UFD)",1],["KELIM","L-306(F)",0],["KELIM","L-307",0],["KELIM","L-307D",0],["KELIM","L-307DN",0],["KELIM","L-307U",0],["KELIM","L-307UD",0],["KELIM","L-307UL",0],["KELIM","L-308D",0],["KELIM","L-308DL",0],["KELIM","L-308UD",0],["KELIM","L-317FD",0],["KELIM","L-317UFD",0],["KELIM","L-317ULF",0],["KELIM","L-317ULFD",0],["KELIM","L-322UF",0],["KELIM","L-323UF",0],["KELIM","L-324UF",0],["KELIM","L-325UF",0],["KELIM","L-326UF",0],["KELIM","L-328UFA",0],["KELIM","L-329UF",0],["KELIM","L-354D",1],["KELIM","L-354U",1],["KELIM","L-354UD",1],["KELIM","L-358UFD",1],["KELIM","L-901",0],["KELIM","L-902",1],["KELIM","L-902N",0],["KELIM","L-903FS",0],["KELIM","L-904",0],["KELIM","L-907",0],["KELIM","L-908TD",1],["KELIM","L-922F",1],["KELIM","L-944F",0],["KELIM","L-945F",0],["KELIM","L-946FD",0],["KELIM","L-947F",0],["KELIM","L-948F",0],["KELIM","L-955F",0],["KELIM","L-956F",0],["KELIM","L-957F",0],["KELIM","L-1106(F)",0],["KELIM","L-1107(F)",1],["KELIM","L-1107D",1],["KELIM","L-1107U(F)",1],["KELIM","L-1160",0],["KELIM","L-1160LD",0],["KELIM","L-2220",1],["KELIM","L-116F",1],["HANSSEM","PB-161H",0],["HANSSEM","PB-160H",0],["HANSSEM","PB-166H",0],["HANSSEM","PB-191H",0],["HANSSEM","HSB-4550",1],["HANSSEM","PB-601H",1],["HANSSEM","LH-097HS",0],["HANSSEM","PB-172H",0],["HANSSEM","PB-261H",0],["HANSSEM","LH-092",0],["HANSSEM","PB-164H",0],["DOOSUNG","DSL-801",0],["DOOSUNG","DSL-802",0],["DOOSUNG","DSL-300",0],["DOOSUNG","DSL-313A",0],["DOOSUNG","DSL-301",1],["DOOSUNG","DSL-303",0],["DOOSUNG","DSL-304",0],["DOOSUNG","DSL-305",0],["DOOSUNG","DSL-306",1],["DOOSUNG","DSL-307",0],["DOOSUNG","DSL-308",0],["DOOSUNG","DSL-309",0],["DOOSUNG","DSL-310",1],["DOOSUNG","DSL-312",0],["DOOSUNG","DSL-313",0],["DOOSUNG","DSL-314",1],["DOOSUNG","DSL-315",0],["DOOSUNG","DSL-316",0],["DOOSUNG","DSL-317",0],["DOOSUNG","DSL-318",0],["DOOSUNG","DSL-507",0],["DOOSUNG","DSL-508",0],["DOOSUNG","DSL-510",0],["iNTO","L-334",0],["iNTO","L-330",0],["iNTO","L-333",0],["iNTO","L-331",0],["iNTO","L-337",0],["iNTO","L-332",1],["iNTO","L-336",0],["iNTO","L-110",1],["iNTO","L-114",0],["iNTO","L-109",1],["iNTO","L-108(3H)",1],["iNTO","L-104(1H)",1],["iNTO","L-102",1],["iNTO","L-101",1],["DOBIDOS","DL-740",0],["DOBIDOS","DL 505",0],["DOBIDOS","DL 521",0],["DOBIDOS","DL 402",0],["DOBIDOS","DL 522SS",0],["DOBIDOS","DL-501",0],["DOBIDOS","DL 710SS",0],["DOBIDOS","DL 321SS",0],["DOBIDOS","DL 321",0],["DOBIDOS","DL 522",0],["DOBIDOS","DL 320",0],["DOBIDOS","DL 301SS",1],["DOBIDOS","DL 406/P",0],["DOBIDOS","DL 403SS/P",0],["DOBIDOS","DL 304",0],["DOBIDOS","DL 511SS",0],["DOBIDOS","DL 311SS",0],["DOBIDOS","DL 512",0],["DOBIDOS","DL 313",0],["DOBIDOS","DL 312",1],["DOBIDOS","DL 202",1],["DOBIDOS","DL 204/P",1],["DOBIDOS","DL 206/A",0],["DOBIDOS","DL 301/P",0],["DOBIDOS","DL 303/P",0],["DOBIDOS","DL 403/P",0],["DOBIDOS","DL 406SS/A",0],["DOBIDOS","DL 406/A",0],["DOBIDOS","DL 502",1],["DOBIDOS","DL 504/P",0],["DOBIDOS","DL 310",0],["DOBIDOS","DL 510",0],["DOBIDOS","DL 311",0],["DOBIDOS","DL 511N",0],["DOBIDOS","DL 710F",0],["DOBIDOS","DL 711G",0],["ROYAL","RWL731",0],["ROYAL","RWL730",0],["ROYAL","RSL718-1W",0],["ROYAL","RWL705-1H",0],["ROYAL","RWL 706",0],["ROYAL","RWLA055",0],["ROYAL","RWL 709-1H",0],["ROYAL","RSL708-1W",0],["ROYAL","RWL034-1H",1],["ROYAL","RWL750A",0],["ROYAL","RWL703-1W",0],["ROYAL","RWL752-1H",0],["ROYAL","RWL702",0],["ROYAL","RWL021",0],["ROYAL","RSL211",1],["ROYAL","RWL247",0],["ROYAL","RWL133",0],["ROYAL","RWL024",1],["ROYAL","RWL023",1],["ROYAL","RWL203B",1],["ROYAL","RWL11",1],["ROYAL","RWL710A",0],["ROYAL","RWL701",0],["soolim","SL-3340",0],["soolim","SL-3320",0],["soolim","SL-5333",0],["soolim","SL-5222",0],["soolim","SL-5111",1],["soolim","SLP-103",1],["soolim","SLP-1V2",1],["soolim","SLP-233",0],["soolim","SLP-232",0],["soolim","SLP-5530H",0],["soolim","SLP-5540",0],["soolim","SLP-5550S",0],["soolim","SLP-235H",1],["soolim","SLP-3360",0],["soolim","SLP-3370",0],["soolim","SLP-3390",0],["soolim","SLP-3399",0],["soolim","SL-3000",0],["soolim","SL-5000",0],["soolim","SL-630",0],["soolim","SL-640",0],["soolim","SL-608",0],["soolim","SL-334",0],["CLINS","HSL 709J",0],["CLINS","HSL 707J",0],["CLINS","HSL 611J",0],["CLINS","HSL 609J",0],["CLINS","HSL 607J",0],["CLINS","HSL 607V",0],["CLINS","HSL 603H",0],["CLINS","HSL 602-1V",0],["CLINS","HSL 601S",1],["CLINS","HSL 4500V",1],["CLINS","HSL 4300V",1],["CLINS","HSL 4200V",1],["CLINS","HSL 4100",1],["CLINS","HSL 408V",1],["CLINS","HSL 402S",0],["CLINS","HSL 311V",0],["CLINS","HSL 307V",1],["CLINS","HSL 306S",0],["CLINS","HSL 304S",1],["CLINS","HSL 303S",1],["CLINS","HSL 302S",1],["CLINS","HSL 203",1],["HAELIM","DL-600",1],["HAELIM","DL-100",0],["HAELIM","DL-220",0],["HAELIM","DL-550",0],["AMERICAN STANDARD","CCASF420",0],["AMERICAN STANDARD","CCASF411",0],["AMERICAN STANDARD","CCASF412",0],["AMERICAN STANDARD","CCAS0626",0],["AMERICAN STANDARD","C150000L",0],["AMERICAN STANDARD","C154000L",0],["AMERICAN STANDARD","CCASF551",1],["AMERICAN STANDARD","C101400L",0],["AMERICAN STANDARD","CCASF526",0],["AMERICAN STANDARD","CCAS1512",0],["AMERICAN STANDARD","CL0953I",0],["AMERICAN STANDARD","CCAS1560",0],["AMERICAN STANDARD","C136100L",1],["AMERICAN STANDARD","CCASF516",0],["AMERICAN STANDARD","C135500L",0],["AMERICAN STANDARD","C135700L",0],["AMERICAN STANDARD","CCASF515",0],["AMERICAN STANDARD","CCAS0628",0],["AMERICAN STANDARD","CCASF611",0],["AMERICAN STANDARD","CCASF517",0],["AMERICAN STANDARD","C151500L",0],["AMERICAN STANDARD","C151600L",0],["AMERICAN STANDARD","CCASF753",1]];
 const AS_OF = "2026-11-16";
-const TALK_URL = "https://talk.naver.com/W46FM2"; // 네이버 톡톡 상담 주소 (예: https://talk.naver.com/ct/...) — 비어 있으면 버튼을 숨긴다
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwOrp74H1BYqzJ-8Wv7jv4q5qJ8K0qfA1z6YpHIRz-LsfTCHWrP8SoGe_8QYl51Q_zOew/exec";
+const TALK_URL = "https://talk.naver.com/W46FM2";
 const BRAND = {
   "DAELIM": "대림바스", "inus": "이누스", "KELIM": "계림", "HANSSEM": "한샘", "DOOSUNG": "두성", "iNTO": "인토",
   "DOBIDOS": "도비도스", "ROYAL": "로얄", "soolim": "수림", "CLINS": "클린스", "HAELIM": "해림", "AMERICAN STANDARD": "아메리칸스탠다드"
@@ -103,17 +123,22 @@ const STATUS = [
 ];
 const PAGE = 30;
 const norm = s => String(s).toUpperCase().replace(/[^0-9A-Z가-힣]/g, "");
-const rows = DATA.map(([b, m, st]) => ({ b, m, st, ko: BRAND[b] || b, key: norm(m), bkey: norm(b) + norm(BRAND[b] || "") }));
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-let brand = "", shown = PAGE;
+const ko = b => BRAND[b] || b;
+const talkBtn = label => TALK_URL ? `<a class="talk" href="${TALK_URL}" target="_blank" rel="noopener">${label}</a>` : "";
+let rows = [], brand = "", shown = PAGE, sentReq = {}, missTimer = 0;
 
-$("asof").textContent = AS_OF;
+function setData(list, asof) {
+  rows = list.map(([b, m, st]) => ({ b, m, st: +st || 0, ko: ko(b), key: norm(m), bkey: norm(b) + norm(ko(b)) }));
+  $("asof").textContent = asof;
+  const brands = [...new Set(rows.map(r => r.b))];
+  if (brand && !brands.includes(brand)) brand = "";
+  $("chips").innerHTML = [`<button class="chip" type="button" data-b="" aria-pressed="${!brand}">전체</button>`]
+    .concat(brands.map(b => `<button class="chip" type="button" data-b="${esc(b)}" aria-pressed="${b === brand}">${esc(ko(b))}</button>`)).join("");
+  render();
+}
 if (TALK_URL) $("talkGuide").href = TALK_URL; else $("talkGuide").hidden = true;
-
-const brands = [...new Set(rows.map(r => r.b))];
-$("chips").innerHTML = ['<button class="chip" type="button" data-b="" aria-pressed="true">전체</button>']
-  .concat(brands.map(b => `<button class="chip" type="button" data-b="${esc(b)}" aria-pressed="false">${esc(BRAND[b] || b)}</button>`)).join("");
 $("chips").addEventListener("click", e => {
   const c = e.target.closest(".chip"); if (!c) return;
   brand = c.dataset.b; shown = PAGE;
@@ -126,7 +151,6 @@ function find() {
   let list = rows.filter(r => !brand || r.b === brand);
   if (q) {
     list = list.filter(r => r.key.includes(q) || r.bkey.includes(q));
-    // 품번이 정확히 같거나 앞부분이 같은 것을 먼저
     list.sort((a, b) => (b.key === q) - (a.key === q) || b.key.startsWith(q) - a.key.startsWith(q));
   }
   return { q, list };
@@ -134,22 +158,75 @@ function find() {
 
 function card(r) {
   const s = STATUS[r.st] || STATUS[1];
-  const img = "https://search.naver.com/search.naver?where=image&query=" + encodeURIComponent((BRAND[r.b] || r.b) + " 세면대 " + r.m);
+  const img = "https://search.naver.com/search.naver?where=image&query=" + encodeURIComponent(ko(r.b) + " 세면대 " + r.m);
   return `<article class="item ${s.cls}">
     <div class="row"><div><div class="model">${esc(r.m)}</div><div class="brand">${esc(r.ko)}</div></div><span class="badge">${s.badge}</span></div>
     ${s.msg ? `<p class="msg">${s.msg}</p>` : ""}
     <div class="links"><a href="${img}" target="_blank" rel="noopener">사진으로 확인하기 ↗</a></div>
-    ${r.st && TALK_URL ? `<a class="talk" href="${TALK_URL}" target="_blank" rel="noopener">톡톡으로 사진 보내기</a>` : ""}
+    ${r.st ? talkBtn("톡톡으로 사진 보내기") : ""}
   </article>`;
+}
+
+/* 등록 안 된 품번: 확인 요청 양식 */
+function reqForm(raw) {
+  const done = sentReq[norm(raw)];
+  if (done) return `<div class="empty"><b>확인 요청을 받았어요</b>확인되는 대로 목록에 올려 드릴게요.${done === 2 ? "<br>남겨 주신 연락처로 결과를 알려드릴게요." : ""}<br>더 빨리 알고 싶으시면 톡톡으로 사진을 보내 주세요.${talkBtn("톡톡으로 사진 보내기")}</div>`;
+  const opts = [`<option value="">모르겠어요</option>`]
+    .concat([...new Set(rows.map(r => r.b))].map(b => `<option value="${esc(b)}">${esc(ko(b))}</option>`), [`<option value="기타">기타 브랜드</option>`]).join("");
+  return `<div class="empty"><b>아직 등록되지 않은 세면대예요</b>품번을 남겨 주시면 저희가 확인해서 목록에 올려 드릴게요.
+    <form class="req" id="reqForm">
+      <label>세면대 품번<input id="rq" maxlength="40" value="${esc(raw)}" required></label>
+      <label>브랜드<select id="rb">${opts}</select></label>
+      <label>연락처 (선택 · 결과를 문자로 받고 싶으시면)<input id="rp" type="tel" inputmode="tel" maxlength="13" placeholder="010-0000-0000"></label>
+      <label class="agree" id="agreeRow" hidden><input type="checkbox" id="ra"> 확인 결과 안내에만 쓰고, 안내 후 지우는 데 동의해요</label>
+      <button type="submit" id="rs">확인 요청 보내기</button>
+      <p class="rmsg" id="rmsg"></p>
+    </form>
+    ${talkBtn("사진으로 바로 물어보기 (톡톡)")}</div>`;
+}
+function bindReq() {
+  const f = $("reqForm"); if (!f) return;
+  $("rp").addEventListener("input", () => { $("agreeRow").hidden = !$("rp").value.trim(); });
+  f.addEventListener("submit", e => {
+    e.preventDefault();
+    const q = $("rq").value.trim(), phone = $("rp").value.replace(/\D/g, "");
+    if (norm(q).length < 2) { $("rmsg").textContent = "품번을 2글자 이상 적어 주세요."; return; }
+    if (phone && (phone.length < 10 || phone.length > 11)) { $("rmsg").textContent = "연락처를 다시 확인해 주세요."; return; }
+    if (phone && !$("ra").checked) { $("rmsg").textContent = "연락처를 남기시려면 동의에 체크해 주세요."; return; }
+    $("rs").disabled = true; $("rmsg").textContent = "보내는 중…";
+    post({ action: "sinkReq", kind: "request", q, brand: $("rb").value, phone }).then(r => {
+      if (r && r.status === "ok") { sentReq[norm($("q").value)] = sentReq[norm(q)] = phone ? 2 : 1; render(); }
+      else { $("rs").disabled = false; $("rmsg").textContent = "잠시 후 다시 보내 주세요. 급하시면 톡톡으로 물어봐 주세요."; }
+    }).catch(() => { $("rs").disabled = false; $("rmsg").textContent = "연결이 불안정해요. 잠시 후 다시 보내 주세요."; });
+  });
+}
+function post(body) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 20000);
+  return fetch(GAS_URL, { method: "POST", body: JSON.stringify(body), signal: ctl.signal, redirect: "follow" }).then(r => r.json()).finally(() => clearTimeout(t));
+}
+/* 검색했는데 없는 품번은 자동으로 기록 (같은 품번은 한 번만) — 어떤 세면대를 더 확인할지 정하는 데 씀 */
+function logMiss(raw) {
+  clearTimeout(missTimer);
+  const k = norm(raw);
+  if (k.length < 3 || /^[가-힣]+$/.test(k)) return;
+  missTimer = setTimeout(() => {
+    let seen = {}; try { seen = JSON.parse(sessionStorage.getItem("sinkMiss") || "{}"); } catch (e) {}
+    if (seen[k]) return;
+    seen[k] = 1; try { sessionStorage.setItem("sinkMiss", JSON.stringify(seen)); } catch (e) {}
+    post({ action: "sinkReq", kind: "miss", q: raw.trim() }).catch(() => {});
+  }, 2500);
 }
 
 function render() {
   const { q, list } = find();
   if (!list.length) {
     $("meta").textContent = "";
-    $("list").innerHTML = `<div class="empty"><b>목록에 없는 세면대예요</b>품번을 다시 확인해 주시거나, 아래 설치 조건을 확인해 주세요.<br>사진을 보내 주시면 설치 가능 여부를 알려드려요.${TALK_URL ? `<a class="talk" href="${TALK_URL}" target="_blank" rel="noopener">톡톡으로 사진 보내기</a>` : ""}</div>`;
-    $("more").hidden = true; return;
+    $("list").innerHTML = q ? reqForm($("q").value.trim()) : `<div class="empty"><b>목록을 불러오는 중이에요</b></div>`;
+    $("more").hidden = true; bindReq();
+    if (q) logMiss($("q").value);
+    return;
   }
+  clearTimeout(missTimer);
   const ok = list.filter(r => r.st === 0).length;
   $("meta").textContent = (q || brand ? "검색 결과 " : "등록된 세면대 ") + list.length + "개 · 설치 가능 " + ok + "개";
   $("list").innerHTML = list.slice(0, shown).map(card).join("");
@@ -160,7 +237,18 @@ $("q").addEventListener("input", () => {
   shown = PAGE; render();
 });
 $("more").addEventListener("click", () => { shown += PAGE; render(); });
-render();
+
+setData(DATA, AS_OF);
+(function load() {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 15000);
+  fetch(GAS_URL + "?sink=list", { signal: ctl.signal, redirect: "follow" }).then(r => r.json()).then(j => {
+    // 입력 중인 양식이 날아가지 않게, 요청 양식을 쓰는 중이면 목록만 바꾸고 다시 그리지 않음
+    if (!(j && j.status === "ok" && Array.isArray(j.list) && j.list.length)) return;
+    const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest("#reqForm");
+    if (typing) { rows = j.list.map(([b, m, st]) => ({ b, m, st: +st || 0, ko: ko(b), key: norm(m), bkey: norm(b) + norm(ko(b)) })); return; }
+    setData(j.list, (j.at || "").slice(0, 10) || AS_OF);
+  }).catch(() => {}).finally(() => clearTimeout(t));
+})();
 </script>
 </body>
 </html>
